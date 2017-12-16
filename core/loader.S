@@ -18,7 +18,9 @@
 extern setup_gdt
 extern setup_idt
 extern init_kernel_interrupt
+extern setup_pic
 extern clear_screen
+
 
 global loader                   ; Kernel entry point
 
@@ -63,7 +65,8 @@ section .text:
     ; Setup kernel interrupt handlers
     call init_kernel_interrupt
 
-    
+    ; Setup PIC
+    call setup_pic
     
   ; Hang forever, this should never happen
   .loop:
