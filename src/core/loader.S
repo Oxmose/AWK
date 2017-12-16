@@ -21,6 +21,8 @@ extern init_kernel_interrupt
 extern setup_pic
 extern clear_screen
 extern kernel_kickstart
+extern _edata
+extern mem_heap_end
 
 global loader                   ; Kernel entry point
 
@@ -32,16 +34,21 @@ KERNEL_STACK_SIZE equ 32768
 ;-----------------------------
 ; MULTIBOOT SETTINGS
 ;-----------------------------
-MAGIC_NUMBER equ 0x1BADB002           ; define the magic number constant
-FLAGS        equ 0x0                  ; multiboot flags
-CHECKSUM     equ -MAGIC_NUMBER-FLAGS  ; calculate the checksum
+MODULEALIGN equ 1<<0
+MEMINFO     equ 1<<1
+FLAGS       equ MODULEALIGN | MEMINFO
+MAGIC       equ 0x1BADB002
+CHECKSUM    equ -(MAGIC + FLAGS)
+
+section .multiboot
+  align 4
+  multiboot_header:
+    dd MAGIC
+    dd FLAGS
+    dd CHECKSUM
 
 section .text:
-  align 4                     ; the code must be 4 byte aligned
-  dd MAGIC_NUMBER             ; write the magic number to the machine code,
-  dd FLAGS                    ; the flags,
-  dd CHECKSUM                 ; and the checksum
-
+  align 4
   loader:                        
     ; Make sure interrupts are disabled and clear flags
     push  dword 0
@@ -52,6 +59,15 @@ section .text:
     
     ; Init base pointer
     xor ebp, ebp
+
+    ; Blank all uninitialized memory
+    mov  edi, _edata
+    xor  eax, eax
+    blank_mem:  
+        mov  [edi], eax
+        add  edi, 4
+        cmp  edi, mem_heap_end
+        jl  blank_mem
 
     ; Cleat screen
     call clear_screen

@@ -30,6 +30,7 @@ SECTIONS
     .data BLOCK(4K) : ALIGN(4K)
     {
         *(.data)
+        _edata  =  .;
     }
  
     /* Read-write data and stack */
@@ -53,5 +54,9 @@ SECTIONS
     cpu_gdt      = 0x10006; /* SIZE = SHOULD BE LESS THAN 65488Bits */
 
 
-    cpu_tss = 0x20000; /* Kernel primary TSS */
+    /* Beginning of kernel memory heap */
+    mem_heap = 0x1000000;
+
+    /* End of kernel memory heap */
+    mem_heap_end = 0x2000000;
 }

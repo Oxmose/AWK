@@ -29,7 +29,7 @@
 #define PIT_COMM_PORT      0x34
 #define PIT_DATA_PORT      0x40
 #define PIT_COMM_SET_FREQ  0x43
-#define PIT_FREQ           20
+#define PIT_FREQ           100
 #define PIT_IRQ            0
 #define PIT_INTERRUPT_LINE 32
 
