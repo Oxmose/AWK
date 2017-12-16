@@ -34,6 +34,7 @@
 /* Screen runtime parameters */
 static colorscheme_t screen_scheme = BG_BLACK | FG_WHITE;
 static cursor_t      screen_cursor;
+static cursor_t      last_printed_cursor;
 
 uint16_t *get_memory_addr(uint8_t line, uint8_t column)
 {
@@ -80,19 +81,13 @@ void clear_screen(void)
 }
 
 OS_RETURN_E put_cursor_at(uint8_t line, uint8_t column)
-{
-    if(line > SCREEN_LINE_SIZE - 1 || column > SCREEN_COL_SIZE - 1)
-    {
-        return OS_ERR_OUT_OF_BOUND;
-    }
-    
+{   
     /* Set new cursor position */
     screen_cursor.x = column;
     screen_cursor.y = line;
 
     /* Display new position on screen */
     int16_t cursor_position = column + line * SCREEN_COL_SIZE;
-
     /* Send low part to the screen */
     outb(CURSOR_COMM_LOW, SCREEN_COMM_PORT);
     outb((int8_t)(cursor_position & 0x00FF), SCREEN_DATA_PORT);
@@ -120,8 +115,14 @@ OS_RETURN_E save_cursor(cursor_t *buffer)
 
 OS_RETURN_E restore_cursor(const cursor_t buffer)
 {
+    if(buffer.x >= SCREEN_COL_SIZE || buffer.y >= SCREEN_LINE_SIZE)
+    {
+        return OS_ERR_OUT_OF_BOUND;
+    }
     /* Restore cursor attributes */
-    return put_cursor_at(buffer.y, buffer.x);
+    put_cursor_at(buffer.y, buffer.x);
+
+    return OS_NO_ERR;
 }
 
 void process_char(const char character)
@@ -131,7 +132,7 @@ void process_char(const char character)
     {
         /* Display character and move cursor */
         print_char(screen_cursor.y, screen_cursor.x++, 
-                   character);
+                character);
 
         /* Manage end of line cursor position */
         if(screen_cursor.x > SCREEN_COL_SIZE - 1)
@@ -151,7 +152,6 @@ void process_char(const char character)
             put_cursor_at(screen_cursor.y, screen_cursor.x);
         }
     }
-
     else
     {
         /* Manage special ACSII characters*/
@@ -159,29 +159,43 @@ void process_char(const char character)
         {
             /* Backspace */
             case '\b':
-                if(screen_cursor.x > 0)
+                if(last_printed_cursor.y == screen_cursor.y)
                 {
-                    put_cursor_at(screen_cursor.y, screen_cursor.x - 1);
-                    print_char(screen_cursor.y, screen_cursor.x, ' '); 
+                    if(screen_cursor.x > last_printed_cursor.x)
+                    {
+                        put_cursor_at(screen_cursor.y, screen_cursor.x - 1);
+                        print_char(screen_cursor.y, screen_cursor.x, ' '); 
+                    }
                 }
-                else if(screen_cursor.y > 0)
-                {  
-                    put_cursor_at(screen_cursor.y - 1, 
-                                  SCREEN_COL_SIZE - 1);
-                    print_char(screen_cursor.y, screen_cursor.x, ' ');
+                else if(last_printed_cursor.y < screen_cursor.y)
+                {
+                    if(screen_cursor.x > 0)
+                    {
+                        put_cursor_at(screen_cursor.y, screen_cursor.x - 1);
+                        print_char(screen_cursor.y, screen_cursor.x, ' '); 
+                    }
+                    else
+                    {       
+                        put_cursor_at(screen_cursor.y - 1, 
+                                      SCREEN_COL_SIZE - 1);
+                        print_char(screen_cursor.y, screen_cursor.x, ' ');
+                    }
                 }
                 break;
             /* Tab */
             case '\t':
                 if(screen_cursor.x + 8 < SCREEN_COL_SIZE - 1)
                 {
-                    put_cursor_at(screen_cursor.y, screen_cursor.x  +
-                                  (8 - screen_cursor.x % 8));
+                    put_cursor_at(screen_cursor.y,
+                            screen_cursor.x  +
+                            (8 - screen_cursor.x % 8));
                 }
                 else
                 {
-                    put_cursor_at(screen_cursor.y, SCREEN_COL_SIZE - 1);
+                    put_cursor_at(screen_cursor.y,
+                            SCREEN_COL_SIZE - 1);
                 }
+
                 break;
             /* Line feed */
             case '\n':
@@ -197,7 +211,10 @@ void process_char(const char character)
             /* Clear screen */
             case '\f':
                 clear_screen();
-                put_cursor_at(0, 0);
+                break;
+            /* Line return */
+            case '\r':
+                put_cursor_at(screen_cursor.y, 0);
                 break;
             /* Undefined */
             default:
@@ -205,6 +222,7 @@ void process_char(const char character)
         }
     }
 }
+
 void scroll(const SCROLL_DIRECTION_E direction, const uint8_t lines_count)
 {
     uint8_t to_scroll;
@@ -230,8 +248,8 @@ void scroll(const SCROLL_DIRECTION_E direction, const uint8_t lines_count)
             {
                 memmove(get_memory_addr(i, 0), get_memory_addr(i + 1, 0),  
                         sizeof(uint16_t) * SCREEN_COL_SIZE);
-
             }
+
             /* Clear last line */
             for(i = 0; i < SCREEN_COL_SIZE; ++i)
             {
@@ -242,9 +260,30 @@ void scroll(const SCROLL_DIRECTION_E direction, const uint8_t lines_count)
 
     /* Replace cursor */
     put_cursor_at(SCREEN_LINE_SIZE - to_scroll, 0);
+
+    if(to_scroll <= last_printed_cursor.y)
+    {
+        last_printed_cursor.y -= to_scroll;
+    }
+    else
+    {
+        last_printed_cursor.x = 0;
+        last_printed_cursor.y = 0;
+    }
 }
 
 void console_putbytes(const char *string, const uint32_t size)
+{
+    /* Output each character of the string */
+    uint32_t i;
+    for(i = 0; i < size; ++i)
+    {
+        process_char(string[i]);
+    }
+    last_printed_cursor = screen_cursor;
+}
+
+void console_write_keyboard(const char *string, const uint32_t size)
 {
     /* Output each character of the string */
     uint32_t i;
@@ -265,8 +304,15 @@ OS_RETURN_E save_color_scheme(colorscheme_t *buffer)
     {
         return OS_ERR_NULL_POINTER;
     }
+
     /* Save color scheme into buffer */
     *buffer = screen_scheme;
 
     return OS_NO_ERR;
+}
+
+void restore_color_scheme(const colorscheme_t buffer)
+{
+    /* Retore color scheme */
+    screen_scheme = buffer;
 }

@@ -167,19 +167,4 @@ OS_RETURN_E save_color_scheme(colorscheme_t *buffer);
  */
 void console_putbytes(const char *str, const uint32_t len);
 
-/* Used by the kernel to display strings on the screen from a keybaord input.
- *
- * @param str The string to display on the screen from a keybaord input.
- * @param len The length of the string to display.
- *
- */
-void console_write_keyboard(const char *string, const uint32_t size);
-
-/* Allow to set a protected zone from the top of the screen to display various
- * things without being overwritten by user output.
- *
- * @param lines The number of lines to protect from the top of the screen.
- */
-void set_protected_lines_count(const uint8_t lines);
-
 #endif /* __VGA_TEXT_H_ */
