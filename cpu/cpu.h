@@ -8,8 +8,6 @@
  *
  * Version: 1.0
  *
- * See: cpu.c
- *
  * CPU management functions
  ******************************************************************************/
 
@@ -183,5 +181,4 @@ __inline__ static int cpu_test_and_set(volatile uint32_t *lock)
 {
     return cpu_compare_and_swap(lock, 0, 1); 
 }
-
 #endif /* __CPU_H_ */

@@ -20,7 +20,7 @@ extern setup_idt
 extern init_kernel_interrupt
 extern setup_pic
 extern clear_screen
-
+extern kernel_kickstart
 
 global loader                   ; Kernel entry point
 
@@ -67,6 +67,9 @@ section .text:
 
     ; Setup PIC
     call setup_pic
+
+    ; Kickstrat kernel
+    call kernel_kickstart
     
   ; Hang forever, this should never happen
   .loop:
