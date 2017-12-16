@@ -43,8 +43,10 @@ SECTIONS
 
     _end = .;
 
-     /* CPU structure placed in lower memory */
-    cpu_idt = 0x01000; /* SIZE = 16384bits */
+    /* CPU structure placed in lower memory */
+    cpu_idt_size = 0x01000; /* SIZE = 16384bits */
+    cpu_idt_base = 0x01002; /* SIZE = 16384bits */
+    cpu_idt      = 0x01006; /* SIZE = 16384bits */
 
     cpu_gdt_size = 0x10000; /* 16 bits */
     cpu_gdt_base = 0x10002; /* 32 bits */    
