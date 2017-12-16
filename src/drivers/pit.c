@@ -37,13 +37,25 @@ void pit_interrupt_handler(cpu_state_t *cpu_state, uint32_t int_id,
                            stack_state_t *stack_state)
                                              
 {
+    (void)cpu_state;
+    (void)stack_state;
+    (void)int_id;
+
     /* Update system time */
     ++tick_count;
     uptime += 1000 / PIT_FREQ;
 
-    (void)cpu_state;
-    (void)stack_state;
-    (void)int_id;
+    /* Execute events */
+    uint32_t i;
+    for(i = 0; i < PIT_MAX_EVENT_COUNT; ++i)
+    {
+        /* Check update frequency */
+        if(pit_events[i].enabled  == 1 && 
+           tick_count % pit_events[i].period == 0)
+        {
+            pit_events[i].execute();
+        }
+    }
 
     /* Send EOI signal */
     set_IRQ_EOI(PIT_IRQ);
@@ -91,7 +103,7 @@ uint32_t get_current_uptime(void)
     return uptime;
 }
 
-OS_RETURN_E register_pit_event(void (*function)(void*), 
+OS_RETURN_E register_pit_event(void (*function)(void), 
                                  const uint32_t period,
                                  OS_EVENT_ID *event_id)
 { 
@@ -127,7 +139,7 @@ OS_RETURN_E register_pit_event(void (*function)(void*),
     pit_events[i].enabled  = 1;
     if(event_id != NULL)
     {
-        *event_id = -1;
+        *event_id = i;
     }
 
     enable_interrupt();
@@ -146,6 +158,7 @@ OS_RETURN_E unregister_pit_event(const OS_EVENT_ID event_id)
 
     if(pit_events[event_id].enabled == 0)
     {
+        enable_interrupt();
         return OS_ERR_NO_SUCH_ID;
     }
 

@@ -64,7 +64,7 @@ void init_kernel_interrupt(void)
 		kernel_interrupt_handlers[i].handler = panic;
 	}
 
-	kernel_success("KIH Initialized\n", 16);
+	kernel_success("KIH Initialized\n");
 }
 
 OS_RETURN_E register_interrupt_handler(const uint32_t interrupt_line, 

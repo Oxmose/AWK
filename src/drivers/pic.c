@@ -1,6 +1,6 @@
 /*******************************************************************************
  *
- * File: pic.h
+ * File: pic.c
  *
  * Author: Alexy Torres Aurora Dugo
  *
@@ -43,7 +43,7 @@ void setup_pic()
 	outb(0xFF, PIC_MASTER_DATA_PORT);
 	outb(0xFF, PIC_SLAVE_DATA_PORT);
 
-	kernel_success("PIC Initialized\n", 16);
+	kernel_success("PIC Initialized\n");
 }
 
 OS_RETURN_E set_IRQ_mask(const uint32_t IRQ_number, const uint8_t enabled)

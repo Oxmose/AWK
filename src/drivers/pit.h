@@ -43,7 +43,7 @@
 /* Main pit event structure */
 struct pit_event
 {
-    void        (*execute)(void*);
+    void        (*execute)(void);
     uint32_t    period;
     OS_EVENT_ID event_id;
 
@@ -92,7 +92,7 @@ uint32_t get_cpu_tick_count(void);
  * error.
  * @returns The error code. 
  */
-OS_RETURN_E register_pit_event(void (*function)(void*), 
+OS_RETURN_E register_pit_event(void (*function)(void), 
                                  const uint32_t period,
                                  OS_EVENT_ID *event_id);
 
