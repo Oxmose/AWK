@@ -25,16 +25,20 @@ void kernel_kickstart(void)
 	err = init_pit();
 	if(err == OS_NO_ERR)
 	{
-		kernel_success("PIT Initialized\n", 16);
+		kernel_success("PIT Initialized\n");
 	}
 	else
 	{
-		kernel_error("PIT Initialization error [", 26);
-		kernel_print_unsigned_hex(err, 3);
-		kernel_print("]\n", 2);
+		kernel_error("PIT Initialization error [%d]\n", err);
 	}
 
 	/* Enable interrupts */
 	enable_interrupt();
-	kernel_success("INT unleached\n", 14);
+	kernel_info("INT unleached\n");
+
+	for(int i = 0; i < 5; ++i)
+	{
+		int m = 5/i;
+		m++;
+	}
 }

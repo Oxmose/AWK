@@ -689,9 +689,7 @@ void setup_gdt(void)
     __asm__ __volatile__("movw %w0,%%ss" :: "r" (KERNEL_DS));
     __asm__ __volatile__("ljmp %0, $flab \n\t flab: \n\t" :: "i" (KERNEL_CS));
 
-    kernel_success("GDT Initialized at ", 19);
-    kernel_print_unsigned_hex(cpu_gdt_base, 8);
-    kernel_print("\n", 1);
+    kernel_success("GDT Initialized at 0x%x\n",cpu_gdt_base);;
 }
 
 void setup_idt(void)
@@ -717,7 +715,5 @@ void setup_idt(void)
     /* Load the GDT */
     __asm__ __volatile__("lidt %0" :: "m" (cpu_idt_size), "m" (cpu_idt_base));
 
-    kernel_success("IDT Initialized at ", 19);
-    kernel_print_unsigned_hex(cpu_idt_base, 8);
-    kernel_print("\n", 1);    
+    kernel_success("IDT Initialized at 0x%x\n", cpu_idt_base);
 }

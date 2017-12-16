@@ -12,21 +12,25 @@
  * output too allow early kernel boot output and debug.
  ******************************************************************************/
 
+#include "../lib/stdio.h"        /* printf, vprintf */
+#include "../drivers/vga_text.h" /* save_color_scheme, set_color_sheme */
 
-#include "../lib/stdint.h"       /* Generic int types */
-#include "../drivers/vga_text.h" /* console_putbytes, process_char, 
-                                  * colorscheme_t, save_color_scheme, 
-                                  * set_color_scheme
-                                  */
 /* Header file */
 #include "kernel_output.h"
 
-void kernel_print(const char *string, uint32_t size)
+void kernel_printf(const char *fmt, ...)
 {
-    console_putbytes(string, size);
+    /* Print tag */
+    printf("[SYS] ");
+
+    /* Prtinf format string */
+    __builtin_va_list    args;
+    __builtin_va_start(args, fmt);
+    vprintf(fmt, args);
+    __builtin_va_end(args);
 }
 
-void kernel_error(const char *string, uint32_t size)
+void kernel_error(const char *fmt, ...)
 {
     colorscheme_t buffer;
     colorscheme_t new_scheme = FG_RED | BG_BLACK;
@@ -38,16 +42,19 @@ void kernel_error(const char *string, uint32_t size)
     set_color_scheme(new_scheme);
 
     /* Print tag */
-    console_putbytes("[ERROR] ", 8);
+    printf("[ERROR] ");
 
     /* Restore original screen color scheme */
     set_color_scheme(buffer);
 
-    /* Print message */
-    console_putbytes(string, size);
+    /* Printf format string */
+    __builtin_va_list    args;
+    __builtin_va_start(args, fmt);
+    vprintf(fmt, args);
+    __builtin_va_end(args);
 }
 
-void kernel_success(const char *string, uint32_t size)
+void kernel_success(const char *fmt, ...)
 {
     colorscheme_t buffer;
     colorscheme_t new_scheme = FG_GREEN | BG_BLACK;
@@ -55,68 +62,42 @@ void kernel_success(const char *string, uint32_t size)
     /* No need to test return value */
     save_color_scheme(&buffer);
 
-    /* Set GREEN on BLACK color scheme */
+    /* Set REG on BLACK color scheme */
     set_color_scheme(new_scheme);
 
     /* Print tag */
-    console_putbytes("[OK] ", 5);
+    printf("[OK] ");
 
     /* Restore original screen color scheme */
     set_color_scheme(buffer);
 
-    /* Print message */
-    console_putbytes(string, size);
+    /* Printf format string */
+    __builtin_va_list    args;
+    __builtin_va_start(args, fmt);
+    vprintf(fmt, args);
+    __builtin_va_end(args);
 }
 
-void kernel_print_unsigned_hex(const uint32_t value, uint32_t size)
+void kernel_info(const char *fmt, ...)
 {
-    int8_t i;
-    char val;
+    colorscheme_t buffer;
+    colorscheme_t new_scheme = FG_CYAN | BG_BLACK;
 
-    process_char('0');
-    process_char('x');
+    /* No need to test return value */
+    save_color_scheme(&buffer);
 
-    if(size == 0)
-        return;
+    /* Set REG on BLACK color scheme */
+    set_color_scheme(new_scheme);
 
-    --size;
+    /* Print tag */
+    printf("[INFO] ");
 
-    if(size > 7)
-    {
-        size = 7;
-    }
+    /* Restore original screen color scheme */
+    set_color_scheme(buffer);
 
-    for(i = 7 - (7 - size); i >= 0; --i)
-    {
-        val = (char)((value >> (i * 4) & 0xF));
-        if(val > 9)
-            val += 55;
-        else
-            val += 48;
-        process_char(val);
-    }
-}
-
-void kernel_print_unsigned64_hex(const uint32_t value, uint32_t size)
-{
-    int8_t i;
-    char val;
-
-    process_char('0');
-    process_char('x');
-
-    if(size > 15)
-    {
-        size = 15;
-    }
-
-    for(i = 15 - (15- size); i >= 0; --i)
-    {
-        val = (char)((value >> (i * 4) & 0xF));
-        if(val > 9)
-            val += 55;
-        else
-            val += 48;
-        process_char(val);
-    }
+    /* Printf format string */
+    __builtin_va_list    args;
+    __builtin_va_start(args, fmt);
+    vprintf(fmt, args);
+    __builtin_va_end(args);
 }

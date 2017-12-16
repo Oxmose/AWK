@@ -15,44 +15,32 @@
 #ifndef __KERNEL_OUTPUT_H_
 #define __KERNEL_OUTPUT_H_
 
-#include "../lib/stdint.h" /* Generic int types */
-
-/* Print the desired string to the screen.
+/* Print the desired string to the screen. Add a [SYS] tag at the 
+ * beggining of the string before printing it.
  *
- * @param string The string to output.
- * @param size The size of the string to output.
+ * @param __format The format string to output.
  */
-void kernel_print(const char *string, uint32_t size);
+void kernel_print(const char *__format, ...) __attribute__((format (printf, 1, 2)));
 
 /* Print the desired string to the screen. Add a red [ERROR] tag at the 
  * beggining of the string before printing it.
  *
- * @param string The string to output.
- * @param size The size of the string to output.
+ * @param __format The format string to output.
  */
-void kernel_error(const char *string, uint32_t size);
+void kernel_error(const char *__format, ...) __attribute__((format (printf, 1, 2)));
 
 /* Print the desired string to the screen. Add a green [OK] tag at the 
  * beggining of the string before printing it.
  *
- * @param string The string to output.
- * @param size The size of the string to output.
+ * @param __format The format string to output.
  */
-void kernel_success(const char *string, uint32_t size);
+void kernel_success(const char *__format, ...) __attribute__((format (printf, 1, 2)));
 
-/* Print the 32 bits variable in hexadecimal format with the 0x prefix.
+/* Print the desired string to the screen. Add a cyan [INFO] tag at the 
+ * beggining of the string before printing it.
  *
- * @param value The variable to output.
- * @param size The size to be printed (number of hex character to print).
+ * @param __format The format string to output.
  */
-void kernel_print_unsigned_hex(const uint32_t value, uint32_t size);
-
-/* Print the 64 bits variable in hexadecimal format with the 0x prefix.
- *
- * @param value The variable to output.
- * @param size The size to be printed (number of hex character to print).
- */
-void kernel_print_unsigned64_hex(const uint32_t value, uint32_t size);
-
+void kernel_info(const char *__format, ...) __attribute__((format (printf, 1, 2)));
 
 #endif /* __KERNEL_OUTPUT_H_ */
