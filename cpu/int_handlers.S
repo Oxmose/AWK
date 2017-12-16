@@ -37,6 +37,13 @@ section .text:
 
     generic_interrupt_handler:               ; Generic interrupt handler
         ; Save registers before calling interrupt
+
+        push    ds
+        push    es
+        push    fs
+        push    gs
+        push    ss
+
         push    eax
         push    ebx
         push    ecx
@@ -58,6 +65,12 @@ section .text:
         pop     ecx  
         pop     ebx
         pop     eax
+
+        pop     ss
+        pop     gs
+        pop     fs
+        pop     es
+        pop     ds
 
         ; Restore the esp (interrupt and error code)
         add     esp, 8

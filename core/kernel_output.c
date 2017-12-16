@@ -67,7 +67,7 @@ void kernel_success(const char *string, uint32_t size)
     console_putbytes(string, size);
 }
 
-void print_unsigned(uint32_t value)
+void kernel_print_unsigned_hex(const uint32_t value, uint32_t size)
 {
     int8_t i;
     char val;
@@ -75,7 +75,17 @@ void print_unsigned(uint32_t value)
     process_char('0');
     process_char('x');
 
-    for(i = 7; i >= 0; --i)
+    if(size == 0)
+        return;
+
+    --size;
+
+    if(size > 7)
+    {
+        size = 7;
+    }
+
+    for(i = 7 - (7 - size); i >= 0; --i)
     {
         val = (char)((value >> (i * 4) & 0xF));
         if(val > 9)
@@ -86,7 +96,7 @@ void print_unsigned(uint32_t value)
     }
 }
 
-void print_unsigned_64(uint64_t value)
+void kernel_print_unsigned64_hex(const uint32_t value, uint32_t size)
 {
     int8_t i;
     char val;
@@ -94,7 +104,12 @@ void print_unsigned_64(uint64_t value)
     process_char('0');
     process_char('x');
 
-    for(i = 15; i >= 0; --i)
+    if(size > 15)
+    {
+        size = 15;
+    }
+
+    for(i = 15 - (15- size); i >= 0; --i)
     {
         val = (char)((value >> (i * 4) & 0xF));
         if(val > 9)

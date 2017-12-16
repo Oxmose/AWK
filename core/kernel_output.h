@@ -45,12 +45,21 @@ void kernel_success(const char *string, uint32_t size);
  *
  * @param value The variable to output.
  */
-void print_unsigned(const uint32_t value);
+void kernel_print_unsigned(const uint32_t value);
+
+/* Print the 32 bits variable in hexadecimal format with the 0x prefix.
+ *
+ * @param value The variable to output.
+ * @param size The size to be printed (number of hex character to print).
+ */
+void kernel_print_unsigned_hex(const uint32_t value, uint32_t size);
 
 /* Print the 64 bits variable in hexadecimal format with the 0x prefix.
  *
  * @param value The variable to output.
+ * @param size The size to be printed (number of hex character to print).
  */
-void print_unsigned_64(const uint64_t value);
+void kernel_print_unsigned64_hex(const uint32_t value, uint32_t size);
+
 
 #endif /* __KERNEL_OUTPUT_H_ */

@@ -21,7 +21,7 @@
 /* Generic int types */
 #include "../lib/stdint.h"
 
-/* kernel_success, print_unsigned */
+/* kernel_success, kernel_print_unsigned_hex */
 #include "../core/kernel_output.h"
 
 /* Kernel GDT structure */
@@ -128,7 +128,7 @@ void setup_gdt(void)
     __asm__ __volatile__("ljmp %0, $flab \n\t flab: \n\t" :: "i" (KERNEL_CS));
 
     kernel_success("GDT Initialized at ", 19);
-    print_unsigned(cpu_gdt_base);
+    kernel_print_unsigned_hex(cpu_gdt_base, 8);
     kernel_print("\n", 1);
 }
 
@@ -700,6 +700,6 @@ void setup_idt(void)
     __asm__ __volatile__("lidt %0" :: "m" (cpu_idt_size), "m" (cpu_idt_base));
 
     kernel_success("IDT Initialized at ", 19);
-    print_unsigned(cpu_idt_base);
-    kernel_print("\n", 1);
+    kernel_print_unsigned_hex(cpu_idt_base, 8);
+    kernel_print("\n", 1);    
 }

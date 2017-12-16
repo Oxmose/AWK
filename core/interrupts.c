@@ -13,18 +13,31 @@
  * We also define the general interrupt handler here.
  ******************************************************************************/
 
+/* Generic int types */
+#include "../lib/stdint.h"
+
 /* Header file */
 #include "interrupts.h"
 
+/* kernel_print_unsigned_hex, kernel_print*/
 #include "kernel_output.h"
 
+/* panic */
+#include "panic.h"
+
 void kernel_interrupt_handler(cpu_state_t cpu_state,
-                              unsigned int int_id,
+                              uint32_t int_id,
                               stack_state_t stack_state)
 {
-	(void)cpu_state;
-	(void)stack_state;
-	kernel_print("INT ", 4);
-	print_unsigned(int_id);
-	kernel_print("  -  ", 5);
+	/* Div by 0 */
+	if(int_id == 0)
+	{
+		panic(cpu_state, int_id, stack_state);
+	}
+	else
+	{
+		kernel_print("\nINT ", 5);
+		kernel_print_unsigned_hex(int_id, 8);
+		__asm__ __volatile__("hlt");
+	}
 }
