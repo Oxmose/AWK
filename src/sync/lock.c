@@ -16,9 +16,10 @@
 /* Header file */
 #include "lock.h"
 
-/* Keep track on the nexting level */
-static uint32_t int_lock_nesting = 0;
+/* Keep track on the nexting level, kernel start with interrupt disabled */
+static uint32_t int_lock_nesting = 1;
 
+extern void kernel_print(const char* str, uint32_t size);
 void enable_interrupt(void)
 {
     if(int_lock_nesting > 0)

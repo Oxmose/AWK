@@ -17,6 +17,7 @@
 #include "../lib/stddef.h"       /* OS_RETURN_E */
 #include "../lib/string.h"       /* memset */
 #include "../cpu/cpu_settings.h" /* IDT_ENTRY_COUNT */
+#include "../sync/lock.h"          /* enable_interrupt, disable_interrupt */
 #include "kernel_output.h"       /* kernel_print_unsigned_hex, kernel_print, 
                                     kernel_success */
 #include "panic.h"               /* panic */
@@ -63,7 +64,7 @@ void init_kernel_interrupt(void)
 		kernel_interrupt_handlers[i].handler = panic;
 	}
 
-	kernel_success("Kernel interrupt handlers initialized\n", 38);
+	kernel_success("KIH Initialized\n", 16);
 }
 
 OS_RETURN_E register_interrupt_handler(const uint32_t interrupt_line, 
@@ -85,13 +86,18 @@ OS_RETURN_E register_interrupt_handler(const uint32_t interrupt_line,
         return OS_ERR_NULL_POINTER;
     }
 
+    disable_interrupt();
+
     if(kernel_interrupt_handlers[interrupt_line].handler != NULL)
     {
+        enable_interrupt();
     	return OS_ERR_INTERRUPT_ALREADY_REGISTERED;
     }
 
     kernel_interrupt_handlers[interrupt_line].handler = handler;
     kernel_interrupt_handlers[interrupt_line].enabled = 1;
+
+    enable_interrupt();
 
     return OS_NO_ERR;
 }
@@ -103,14 +109,19 @@ OS_RETURN_E remove_interrupt_handler(const uint32_t interrupt_line)
     {
         return OR_ERR_UNAUTHORIZED_INTERRUPT_LINE;
     }
+    
+    disable_interrupt();
 
 	if(kernel_interrupt_handlers[interrupt_line].handler == NULL)
     {
-    	return OS_ERR_INTERRUPT_NOT_REGISTERED;
+        enable_interrupt();
+        return OS_ERR_INTERRUPT_NOT_REGISTERED;
     }
 
     kernel_interrupt_handlers[interrupt_line].handler = NULL;
     kernel_interrupt_handlers[interrupt_line].enabled = 0;
+
+    enable_interrupt();
 
     return OS_NO_ERR;
 }

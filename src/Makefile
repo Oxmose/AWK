@@ -1,5 +1,5 @@
 # Noyau
-KERNEL = kernel.elf
+KERNEL = kernel.bin
 
 CORE_DIR = $(wildcard core/*.c core/*.S) 
 CPU_DIR = $(wildcard cpu/*.c cpu/*.S) 
@@ -49,5 +49,5 @@ debug:
 	$(QEMU) $(QEMUOPTS) -S
 
 bootable: all
-	cp kernel.bin ../iso/boot/
+	cp $(KERNEL) ../iso/boot/
 	grub2-mkrescue -o ../iso/bootable.iso ../iso

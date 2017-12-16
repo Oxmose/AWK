@@ -19,7 +19,6 @@
                                     * stack_state */
 #include "../lib/stdint.h"         /* Generioc int types */
 #include "../lib/stddef.h"         /* OS_RETURN_E, OS_EVENT_ID */
-#include "../core/kernel_output.h" /* kernel_print, kernel_print_unsigned_hex */
 #include "../sync/lock.h"          /* enable_interrupt, disable_interrupt */
 
 /* Header include */
@@ -38,11 +37,13 @@ void pit_interrupt_handler(cpu_state_t *cpu_state, uint32_t int_id,
                            stack_state_t *stack_state)
                                              
 {
-    kernel_print("TICK ", 5);
+    /* Update system time */
+    ++tick_count;
+    uptime += 1000 / PIT_FREQ;
+
     (void)cpu_state;
     (void)stack_state;
-    kernel_print_unsigned_hex(int_id, 2);
-    kernel_print("\n", 1);
+    (void)int_id;
 
     /* Send EOI signal */
     set_IRQ_EOI(PIT_IRQ);

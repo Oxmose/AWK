@@ -27,7 +27,7 @@ global loader                   ; Kernel entry point
 ;-----------------------------
 ; KERNEL STACK SETTIGNS
 ;-----------------------------
-KERNEL_STACK_SIZE equ 16384
+KERNEL_STACK_SIZE equ 32768
 
 ;-----------------------------
 ; MULTIBOOT SETTINGS
