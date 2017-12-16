@@ -82,14 +82,14 @@ void kernel_interrupt_handler(cpu_state_t cpu_state,
                               uint32_t int_id,
                               stack_state_t stack_state);
 
-/* Blanck the handerls memory and initialize the first 32 interrupt to catch 
+/* Blanck the handlers memory and initialize the first 32 interrupt to catch 
  * intel exceptions. 
  */
 void init_kernel_interrupt(void);
 
 /* Register a custom interrupt handler to be executed. The interrupt line must
  * be greater or equal to the minimal authorized custom interrupt line and less
- * or equal to the maximum one.
+ * than the maximum one.
  * @param interrupt_line The interrupt line to attach the handler to.
  * @param handler The handler for the desired interrupt.
  * @return The function returns OS_NO_ERR in case of succes, otherwise, please
@@ -105,7 +105,7 @@ OS_RETURN_E register_interrupt_handler(const uint32_t interrupt_line,
 
 /* Unregister a custom interrupt handler to be executed. The interrupt line must
  * be greater or equal to the minimal authorized custom interrupt line and less
- * or equal to the maximum one.
+ * than the maximum one.
  * @param interrupt_line The interrupt line to deattach the handler from.
  * @return The function returns OS_NO_ERR in case of succes, otherwise, please
  * refer to the error codes.

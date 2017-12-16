@@ -75,7 +75,7 @@ OS_RETURN_E register_interrupt_handler(const uint32_t interrupt_line,
                                        )
 {
     if(interrupt_line < MIN_INTERRUPT_LINE || 
-       interrupt_line > MAX_INTERRUPT_LINE)
+       interrupt_line >= MAX_INTERRUPT_LINE)
     {
         return OR_ERR_UNAUTHORIZED_INTERRUPT_LINE;
     }
@@ -99,7 +99,7 @@ OS_RETURN_E register_interrupt_handler(const uint32_t interrupt_line,
 OS_RETURN_E remove_interrupt_handler(const uint32_t interrupt_line)
 {
 	if(interrupt_line < MIN_INTERRUPT_LINE || 
-       interrupt_line > MAX_INTERRUPT_LINE)
+       interrupt_line >= MAX_INTERRUPT_LINE)
     {
         return OR_ERR_UNAUTHORIZED_INTERRUPT_LINE;
     }
