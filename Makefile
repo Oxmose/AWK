@@ -19,7 +19,7 @@ OBJCOPY = objcopy
 QEMU = /usr/bin/qemu-system-i386
 
 CFLAGS = -m32 -g -gstabs -std=c99 -nostdinc -fno-builtin -nostdlib -fno-stack-protector -nostartfiles -nodefaultlibs -Wall -Wextra -Werror -c
-ASFLAGS = -f elf
+ASFLAGS = -f elf -w+gnu-elf-extensions 
 LDFLAGS = -e loader -T linker.ld -melf_i386
 QEMUOPTS = -cpu core2duo -rtc base=localtime -m 64M -gdb tcp::1234 -kernel kernel.elf
 

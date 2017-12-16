@@ -21,7 +21,7 @@
 /* Generic int types */
 #include "../lib/stdint.h"
 
-/* kernel_success */
+/* kernel_success, print_unsigned */
 #include "../core/kernel_output.h"
 
 /* Kernel GDT structure */
@@ -78,13 +78,14 @@ void setup_gdt(void)
 
     /* Set the kernel code descriptor */
     uint32_t kernel_code_seg_flags = GDT_FLAG_GRANULARITY_4K | 
-                                         GDT_FLAG_32_BIT_SEGMENT |
-                                         GDT_FLAG_PL0 | 
-                                         GDT_FLAG_SEGMENT_PRESENT |
-                                         GDT_FLAG_CODE_TYPE;
-    uint32_t kernel_code_seg_type = GDT_TYPE_EXECUTABLE | 
-                                        GDT_TYPE_READABLE | 
-                                        GDT_TYPE_PROTECTED;
+                                     GDT_FLAG_32_BIT_SEGMENT |
+                                     GDT_FLAG_PL0 | 
+                                     GDT_FLAG_SEGMENT_PRESENT |
+                                     GDT_FLAG_CODE_TYPE;
+
+    uint32_t kernel_code_seg_type =  GDT_TYPE_EXECUTABLE | 
+                                     GDT_TYPE_READABLE | 
+                                     GDT_TYPE_PROTECTED;
 
     format_gdt_entry(&cpu_gdt[KERNEL_CS / 8], 
                      KERNEL_CODE_SEGMENT_BASE, KERNEL_CODE_SEGMENT_LIMIT,
@@ -99,12 +100,12 @@ void setup_gdt(void)
                                      GDT_FLAG_SEGMENT_PRESENT |
                                      GDT_FLAG_DATA_TYPE;
 
-    uint32_t kernel_data_seg_type = GDT_TYPE_WRITABLE | 
-                                        GDT_TYPE_GROW_DOWN;
+    uint32_t kernel_data_seg_type =  GDT_TYPE_WRITABLE | 
+                                     GDT_TYPE_GROW_DOWN;
+
     format_gdt_entry(&cpu_gdt[KERNEL_DS / 8], 
                      KERNEL_DATA_SEGMENT_BASE, KERNEL_DATA_SEGMENT_LIMIT,
                      kernel_data_seg_type, kernel_data_seg_flags);
-
 
     /* Set the GDT descriptor */
     cpu_gdt_size = ((sizeof(uint64_t) * GDT_ENTRY_COUNT) - 1);
@@ -120,5 +121,7 @@ void setup_gdt(void)
     __asm__ __volatile__("movw %w0,%%ss" :: "r" (KERNEL_DS));
     __asm__ __volatile__("ljmp %0, $flab \n\t flab: \n\t" :: "i" (KERNEL_CS));
 
-    kernel_success("GDT Initialized\n", 16);
+    kernel_success("GDT Initialized at ", 19);
+    print_unsigned(cpu_gdt_base);
+    kernel_print("\n", 1);
 }

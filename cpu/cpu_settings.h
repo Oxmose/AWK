@@ -25,8 +25,8 @@
 /* GDT Settings */
 #define GDT_ENTRY_COUNT 3
 
-#define KERNEL_CS 0x08
-#define KERNEL_DS 0x10
+#define KERNEL_CS    0x08
+#define KERNEL_DS    0x10
 
 #define KERNEL_CODE_SEGMENT_BASE  0x00000000
 #define KERNEL_CODE_SEGMENT_LIMIT 0x000FFFFF
@@ -79,6 +79,11 @@ void format_gdt_entry(uint64_t *entry,
 
 /* Setup a flat GDT for the kernel. Fills the entries in the GDT table and load
  * the new GDT. Set the segment registers (CS, DS, ES, FS, GS, SS).
+ */
+void setup_gdt(void);
+
+/* Setup a simple IDT for the kernel. Fills the entries in the IDT table by
+ * adding basic support to the x86 excetion (int 0 - 32)
  */
 void setup_gdt(void);
 

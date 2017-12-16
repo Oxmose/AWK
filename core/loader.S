@@ -16,6 +16,7 @@
 ; EXTERN FUNCTIONS
 ;-----------------------------------------
 extern setup_gdt
+;extern setup_idt
 extern clear_screen
 
 global loader                   ; Kernel entry point
@@ -54,6 +55,9 @@ section .text:
 
     ; Setup kernel GDT
     call setup_gdt
+
+    ; Setup kernel IDT
+    ;call setup_idt
 
   ; Hang forever, this should never happen
   .loop:
