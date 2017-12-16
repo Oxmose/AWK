@@ -14,7 +14,7 @@
 #ifndef __STDDEF_H_
 #define __STDDEF_H_
 
-#include "stdint.h"
+#include "stdint.h" /* Generic int types */
 
 #define NULL ((void *)0)
 
@@ -26,7 +26,9 @@ typedef enum OS_RETURN
     OS_NO_ERR,
     OS_ERR_NULL_POINTER,
     OS_ERR_OUT_OF_BOUND,
-    OS_ERR_QUEUE_EXCEED_MAX_LENGTH
+    OR_ERR_UNAUTHORIZED_INTERRUPT_LINE,
+    OS_ERR_INTERRUPT_ALREADY_REGISTERED,
+    OS_ERR_INTERRUPT_NOT_REGISTERED
 } OS_RETURN_E;
 
 #endif /* __STDDEF_H_ */

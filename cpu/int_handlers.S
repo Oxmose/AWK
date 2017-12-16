@@ -57,6 +57,7 @@ section .text:
         call    kernel_interrupt_handler
 
         ; Restore registers
+
         pop     esp
         pop     ebp
         pop     edi

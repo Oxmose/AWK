@@ -17,6 +17,7 @@
 ;-----------------------------------------
 extern setup_gdt
 extern setup_idt
+extern init_kernel_interrupt
 extern clear_screen
 
 global loader                   ; Kernel entry point
@@ -58,6 +59,9 @@ section .text:
 
     ; Setup kernel IDT
     call setup_idt
+
+    ; Setup kernel interrupt handlers
+    call init_kernel_interrupt
 
     
     

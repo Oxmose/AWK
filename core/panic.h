@@ -15,11 +15,8 @@
 #ifndef __PANIC_H_
 #define __PANIC_H_
 
-/* cpu_state_t, stack_state_t */
-#include "interrupts.h"
-
-/* Generic int types */
-#include "../lib/stdint.h"
+#include "interrupts.h" /* cpu_state_t, stack_state_t */
+#include "../lib/stdint.h" /* Generic int types */
 
 /* Display the kernel panic screen. This sreen dump the CPU registers and the 
  * stack state before the panis occurs (panic is usually called by interrupts).
@@ -28,6 +25,6 @@
  * @param stack_state The stack state before the interrupt that contain cs, eip, 
  * error code and the eflags register value.
  */
-void panic(cpu_state_t cpu_state, uint32_t int_id, stack_state_t stack_state);
+void panic(cpu_state_t *cpu_state, uint32_t int_id, stack_state_t *stack_state);
 
 #endif /* __PANIC_H_ */

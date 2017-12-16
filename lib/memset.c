@@ -12,11 +12,8 @@
  *
  ******************************************************************************/
 
-/* size_t */
-#include "stddef.h"
-
-/* int8_t, uint8_t, int32_t, uint32_t */
-#include "stdint.h"
+#include "stddef.h" /* size_t */
+#include "stdint.h" /* int8_t, uint8_t, int32_t, uint32_t */
 
 /* Header file */
 #include "string.h"

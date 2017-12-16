@@ -16,8 +16,7 @@
 #ifndef __CPU_H_
 #define __CPU_H_
 
-/* Generic int types */
-#include "../lib/stdint.h"
+#include "../lib/stdint.h" /* Generic int types */
 
 /******************************
  * CONSTANTS

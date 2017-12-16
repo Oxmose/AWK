@@ -19,11 +19,8 @@
 #ifndef __VGA_TEXT_H_
 #define __VGA_TEXT_H_
 
-/* Generic int types */
-#include "../lib/stdint.h"
-
-/* OS_RETURN_E, NULL */
-#include "../lib/stddef.h"
+#include "../lib/stdint.h" /* Generic int types */
+#include "../lib/stddef.h" /* OS_RETURN_E, NULL */
 
 /* SCREEN SETTINGS */
 #define SCREEN_ADDR         0xB8000

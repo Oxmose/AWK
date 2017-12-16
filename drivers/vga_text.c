@@ -16,17 +16,10 @@
  *
  ******************************************************************************/
 
-/* Generic int types */
-#include "../lib/stdint.h"
-
-/* OS_RETURN_E, NULL */
-#include "../lib/stddef.h"
-
-/* memmove */
-#include "../lib/string.h"
-
-/* outb */
-#include "../cpu/cpu.h"
+#include "../lib/stdint.h" /* Generic int types */
+#include "../lib/stddef.h" /* OS_RETURN_E, NULL */
+#include "../lib/string.h" /* memmove */
+#include "../cpu/cpu.h"    /* outb */
 
 /* Header file */
 #include "vga_text.h"

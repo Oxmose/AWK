@@ -12,13 +12,14 @@
  * output too allow early kernel boot output and debug.
  ******************************************************************************/
 
-/* Generic int types */
-#include "../lib/stdint.h"
 
-/* console_putbytes, process_char, colorscheme_t, save_color_scheme, 
- * set_color_scheme
- */
-#include "../drivers/vga_text.h"
+#include "../lib/stdint.h"       /* Generic int types */
+#include "../drivers/vga_text.h" /* console_putbytes, process_char, 
+                                  * colorscheme_t, save_color_scheme, 
+                                  * set_color_scheme
+                                  */
+/* Header file */
+#include "kernel_output.h"
 
 void kernel_print(const char *string, uint32_t size)
 {

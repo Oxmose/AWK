@@ -13,31 +13,104 @@
  * We also define the general interrupt handler here.
  ******************************************************************************/
 
-/* Generic int types */
-#include "../lib/stdint.h"
+#include "../lib/stdint.h"       /* Generic int types */
+#include "../lib/stddef.h"       /* OS_RETURN_E */
+#include "../lib/string.h"       /* memset */
+#include "../cpu/cpu_settings.h" /* IDT_ENTRY_COUNT */
+#include "kernel_output.h"       /* kernel_print_unsigned_hex, kernel_print, 
+                                    kernel_success */
+#include "panic.h"               /* panic */
+
 
 /* Header file */
 #include "interrupts.h"
 
-/* kernel_print_unsigned_hex, kernel_print*/
-#include "kernel_output.h"
+/* Handlers for each interrupt */
+static custom_handler_t kernel_interrupt_handlers[IDT_ENTRY_COUNT];
 
-/* panic */
-#include "panic.h"
-
+/*******************************************************************************
+ * GLOBAL INTERRUPT HANDLER 
+ ******************************************************************************/
 void kernel_interrupt_handler(cpu_state_t cpu_state,
                               uint32_t int_id,
                               stack_state_t stack_state)
 {
-	/* Div by 0 */
-	if(int_id == 0)
+	/* Execute custom handlers */
+	if(int_id < IDT_ENTRY_COUNT && 
+	   kernel_interrupt_handlers[int_id].enabled == 1 &&
+	   kernel_interrupt_handlers[int_id].handler != NULL)
 	{
-		panic(cpu_state, int_id, stack_state);
+		kernel_interrupt_handlers[int_id]
+			.handler(&cpu_state, int_id, &stack_state);
 	}
 	else
 	{
-		kernel_print("\nINT ", 5);
-		kernel_print_unsigned_hex(int_id, 8);
-		__asm__ __volatile__("hlt");
+		panic(&cpu_state, int_id, &stack_state);
 	}
+}
+
+void init_kernel_interrupt(void)
+{
+	/* Blank custo interrupt handlers */
+	memset(kernel_interrupt_handlers, 0, 
+		   sizeof(custom_handler_t) * IDT_ENTRY_COUNT);
+	
+	/* Attach Panic to the first 32 interrupt */
+	uint32_t i;
+	for(i = 0; i < 32; ++i)
+	{
+		kernel_interrupt_handlers[i].enabled = 1;
+		kernel_interrupt_handlers[i].handler = panic;
+	}
+
+	kernel_success("Kernel interrupt handlers initialized\n", 38);
+}
+
+OS_RETURN_E register_interrupt_handler(const uint32_t interrupt_line, 
+                                       void(*handler)(
+                                             cpu_state_t*, 
+                                             uint32_t, 
+                                             stack_state_t*
+                                             )
+                                       )
+{
+    if(interrupt_line < MIN_INTERRUPT_LINE || 
+       interrupt_line > MAX_INTERRUPT_LINE)
+    {
+        return OR_ERR_UNAUTHORIZED_INTERRUPT_LINE;
+    }
+
+    if(handler == NULL)
+    {
+        return OS_ERR_NULL_POINTER;
+    }
+
+    if(kernel_interrupt_handlers[interrupt_line].handler != NULL)
+    {
+    	return OS_ERR_INTERRUPT_ALREADY_REGISTERED;
+    }
+
+    kernel_interrupt_handlers[interrupt_line].handler = handler;
+    kernel_interrupt_handlers[interrupt_line].enabled = 1;
+
+    return OS_NO_ERR;
+}
+
+OS_RETURN_E remove_interrupt_handler(const uint32_t interrupt_line)
+{
+	if(interrupt_line < MIN_INTERRUPT_LINE || 
+       interrupt_line > MAX_INTERRUPT_LINE)
+    {
+        return OR_ERR_UNAUTHORIZED_INTERRUPT_LINE;
+    }
+
+	if(kernel_interrupt_handlers[interrupt_line].handler == NULL)
+    {
+    	return OS_ERR_INTERRUPT_NOT_REGISTERED;
+    }
+
+    kernel_interrupt_handlers[interrupt_line].handler = NULL;
+    kernel_interrupt_handlers[interrupt_line].enabled = 0;
+
+    return OS_NO_ERR;
 }

@@ -12,39 +12,35 @@
  * and the interrupt ID and cause.
  ******************************************************************************/
 
-/* kernel_print, kernel_print_unsigned_hex */
-#include "kernel_output.h"
+#include "kernel_output.h" /* kernel_print, kernel_print_unsigned_hex */
+#include "interrupts.h"    /* cpu_state_t, stack_state_t */
+#include "../lib/stdint.h" /* Generic int types */
+#include "../cpu/cpu.h"    /* hlt */
 
-/* cpu_state_t, stack_state_t */
-#include "interrupts.h"
+/* Header file */
+#include "panic.h"
 
-/* Generic int types */
-#include "../lib/stdint.h"
-
-/* hlt */
-#include "../cpu/cpu.h"
-
-void panic(cpu_state_t cpu_state, uint32_t int_id, stack_state_t stack_state)
+void panic(cpu_state_t *cpu_state, uint32_t int_id, stack_state_t *stack_state)
 {
 	/* Get EFLAGS one by one */
-	int8_t cf_f = (stack_state.eflags & 0x1);
-	int8_t pf_f = (stack_state.eflags & 0x4) >> 2;
-	int8_t af_f = (stack_state.eflags & 0x10) >> 4;
-	int8_t zf_f = (stack_state.eflags & 0x40) >> 6;
-	int8_t sf_f = (stack_state.eflags & 0x80) >> 7;
-	int8_t tf_f = (stack_state.eflags & 0x100) >> 8;
-	int8_t if_f = (stack_state.eflags & 0x200) >> 9;
-	int8_t df_f = (stack_state.eflags & 0x400) >> 10;
-	int8_t of_f = (stack_state.eflags & 0x800) >> 11;
-	int8_t nt_f = (stack_state.eflags & 0x4000) >> 14;
-	int8_t rf_f = (stack_state.eflags & 0x10000) >> 16;
-	int8_t vm_f = (stack_state.eflags & 0x20000) >> 17;
-	int8_t ac_f = (stack_state.eflags & 0x40000) >> 18;
-	int8_t id_f = (stack_state.eflags & 0x200000) >> 21;
-	int8_t iopl0_f = (stack_state.eflags & 0x1000) >> 12;
-	int8_t iopl1_f = (stack_state.eflags & 0x2000) >> 13;
-	int8_t vif_f = (stack_state.eflags & 0x8000) >> 19;
-	int8_t vip_f = (stack_state.eflags & 0x100000) >> 20;
+	int8_t cf_f = (stack_state->eflags & 0x1);
+	int8_t pf_f = (stack_state->eflags & 0x4) >> 2;
+	int8_t af_f = (stack_state->eflags & 0x10) >> 4;
+	int8_t zf_f = (stack_state->eflags & 0x40) >> 6;
+	int8_t sf_f = (stack_state->eflags & 0x80) >> 7;
+	int8_t tf_f = (stack_state->eflags & 0x100) >> 8;
+	int8_t if_f = (stack_state->eflags & 0x200) >> 9;
+	int8_t df_f = (stack_state->eflags & 0x400) >> 10;
+	int8_t of_f = (stack_state->eflags & 0x800) >> 11;
+	int8_t nt_f = (stack_state->eflags & 0x4000) >> 14;
+	int8_t rf_f = (stack_state->eflags & 0x10000) >> 16;
+	int8_t vm_f = (stack_state->eflags & 0x20000) >> 17;
+	int8_t ac_f = (stack_state->eflags & 0x40000) >> 18;
+	int8_t id_f = (stack_state->eflags & 0x200000) >> 21;
+	int8_t iopl0_f = (stack_state->eflags & 0x1000) >> 12;
+	int8_t iopl1_f = (stack_state->eflags & 0x2000) >> 13;
+	int8_t vif_f = (stack_state->eflags & 0x8000) >> 19;
+	int8_t vip_f = (stack_state->eflags & 0x100000) >> 20;
 
 
 	kernel_print("#=============================      OS PANIC      =============================#", 80);
@@ -65,48 +61,48 @@ void panic(cpu_state_t cpu_state, uint32_t int_id, stack_state_t stack_state)
 	/***************************************************************************************************/
 	kernel_print("|                                                                              |", 80);
 	kernel_print("| Instruction: ", 15);
-	kernel_print_unsigned_hex(stack_state.eip, 8);
+	kernel_print_unsigned_hex(stack_state->eip, 8);
 	kernel_print("                                                      |", 55);
 	kernel_print("|                                                                              |", 80);
 	/***************************************************************************************************/
 	kernel_print("|================================= CPU STATE ==================================|", 80);
 	kernel_print("|                                                                              |", 80);
 	kernel_print("| EAX: ", 7);
-	kernel_print_unsigned_hex(cpu_state.eax, 8);
+	kernel_print_unsigned_hex(cpu_state->eax, 8);
 	kernel_print("  |  EBX: ", 10);
-	kernel_print_unsigned_hex(cpu_state.ebx, 8);
+	kernel_print_unsigned_hex(cpu_state->ebx, 8);
 	kernel_print("  |  ECX: ", 10);
-	kernel_print_unsigned_hex(cpu_state.ecx, 8);
+	kernel_print_unsigned_hex(cpu_state->ecx, 8);
 	kernel_print("  |  EDX: ", 10);
-	kernel_print_unsigned_hex(cpu_state.edx, 8);
+	kernel_print_unsigned_hex(cpu_state->edx, 8);
 	kernel_print("  |", 3);
 	/***************************************************************************************************/
 	kernel_print("| ESI: ", 7);
-	kernel_print_unsigned_hex(cpu_state.esi, 8);
+	kernel_print_unsigned_hex(cpu_state->esi, 8);
 	kernel_print("  |  EDI: ", 10);
-	kernel_print_unsigned_hex(cpu_state.edi, 8);
+	kernel_print_unsigned_hex(cpu_state->edi, 8);
 	kernel_print("  |  EBP: ", 10);
-	kernel_print_unsigned_hex(cpu_state.ebp, 8);
+	kernel_print_unsigned_hex(cpu_state->ebp, 8);
 	kernel_print("  |  ESP: ", 10);
-	kernel_print_unsigned_hex(cpu_state.esp, 8);
+	kernel_print_unsigned_hex(cpu_state->esp, 8);
 	kernel_print("  |", 3);
 	kernel_print("|                                                                              |", 80);
 	/***************************************************************************************************/
 	kernel_print("|============================= SEGMENT REGISTERS ==============================|", 80);
 	kernel_print("|                                                                              |", 80);
 	kernel_print("| CS:  ", 7);
-	kernel_print_unsigned_hex(stack_state.cs, 8);
+	kernel_print_unsigned_hex(stack_state->cs, 8);
 	kernel_print("  |  DS:  ", 10);
-	kernel_print_unsigned_hex(cpu_state.ds, 8);
+	kernel_print_unsigned_hex(cpu_state->ds, 8);
 	kernel_print("  |  SS:  ", 10);
-	kernel_print_unsigned_hex(cpu_state.ss, 8);
+	kernel_print_unsigned_hex(cpu_state->ss, 8);
 	kernel_print("                      |", 23);
 	kernel_print("| ES:  ", 7);
-	kernel_print_unsigned_hex(cpu_state.es, 8);
+	kernel_print_unsigned_hex(cpu_state->es, 8);
 	kernel_print("  |  FS:  ", 10);
-	kernel_print_unsigned_hex(cpu_state.fs, 8);
+	kernel_print_unsigned_hex(cpu_state->fs, 8);
 	kernel_print("  |  GS:  ", 10);
-	kernel_print_unsigned_hex(cpu_state.gs, 8);
+	kernel_print_unsigned_hex(cpu_state->gs, 8);
 	kernel_print("                      |", 23);
 	kernel_print("|                                                                              |", 80);
 	/***************************************************************************************************/

@@ -15,8 +15,7 @@
 #ifndef __KERNEL_OUTPUT_H_
 #define __KERNEL_OUTPUT_H_
 
-/* Generic int types */
-#include "../lib/stdint.h"
+#include "../lib/stdint.h" /* Generic int types */
 
 /* Print the desired string to the screen.
  *

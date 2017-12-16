@@ -15,8 +15,7 @@
 #ifndef __CPU_SETTINGS_H_
 #define __CPU_SETTINGS_H_
 
-/* Generic int types */
-#include "../lib/stdint.h"
+#include "../lib/stdint.h" /* Generic int types */
 
 /**********************************
  * Kernel CPU constants
@@ -336,21 +335,6 @@ extern void interrupt_handler_255(void);
 /**********************************
  * Kernel CPU structures 
  *********************************/
-
-/**********************************
- * Kernel CPU settings functions
- *********************************/
-/* Format data given as parameter into a standard GDT entry. The result is 
- * directly written in the memory pointed by the entry parameter.
- * @param entry The pointer to the entry structure to format.
- * @param base  The base address of the segment for the GDT entry.
- * @param limit The limit address of the segment for the GDT entry.
- * @param type  The type of segment for the GDT entry.
- * @param flags The flags to be set for the GDT entry.
- */
-void format_gdt_entry(uint64_t *entry, 
-                      const uint32_t base, const uint32_t limit,  
-                      const uint8_t type, const uint32_t flags);
 
 /* Setup a flat GDT for the kernel. Fills the entries in the GDT table and load
  * the new GDT. Set the segment registers (CS, DS, ES, FS, GS, SS).

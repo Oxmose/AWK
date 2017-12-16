@@ -16,8 +16,16 @@
 #ifndef __INTERRUPTS_H_
 #define __INTERRUPTS_H_
 
-/* Generic int types */
-#include "../lib/stdint.h"
+#include "../lib/stdint.h"       /* Generic int types */
+#include "../lib/stddef.h"       /* OS_RETURN_E */
+#include "../cpu/cpu_settings.h" /* IDT_ENTRY_COUNT */
+
+#define MIN_INTERRUPT_LINE 32
+#define MAX_INTERRUPT_LINE IDT_ENTRY_COUNT
+
+/*****************************************
+ * STRUCTURES
+ ****************************************/
 
 /* Holds the CPU register values */
 struct cpu_state
@@ -49,6 +57,19 @@ struct stack_state
 } __attribute__((packed));
 typedef struct stack_state stack_state_t;
 
+struct custom_handler
+{
+    int8_t  pad0;
+    int16_t pad1;
+    int8_t enabled;
+    void(*handler)(cpu_state_t*, uint32_t, stack_state_t*);
+};
+typedef struct custom_handler custom_handler_t;
+
+/*****************************************
+ * FUNCTIONS
+ ****************************************/
+
 /* Generic and global interrupt handler. This function should only be called
  * by an assembly interrupt handler. The function will dispatch the interrupt
  * to the desired function to handler the interrupt.
@@ -60,5 +81,35 @@ typedef struct stack_state stack_state_t;
 void kernel_interrupt_handler(cpu_state_t cpu_state,
                               uint32_t int_id,
                               stack_state_t stack_state);
+
+/* Blanck the handerls memory and initialize the first 32 interrupt to catch 
+ * intel exceptions. 
+ */
+void init_kernel_interrupt(void);
+
+/* Register a custom interrupt handler to be executed. The interrupt line must
+ * be greater or equal to the minimal authorized custom interrupt line and less
+ * or equal to the maximum one.
+ * @param interrupt_line The interrupt line to attach the handler to.
+ * @param handler The handler for the desired interrupt.
+ * @return The function returns OS_NO_ERR in case of succes, otherwise, please
+ * refer to the error codes.
+ */
+OS_RETURN_E register_interrupt_handler(const uint32_t interrupt_line, 
+                                       void(*handler)(
+                                             cpu_state_t*, 
+                                             uint32_t, 
+                                             stack_state_t*
+                                             )
+                                       );
+
+/* Unregister a custom interrupt handler to be executed. The interrupt line must
+ * be greater or equal to the minimal authorized custom interrupt line and less
+ * or equal to the maximum one.
+ * @param interrupt_line The interrupt line to deattach the handler from.
+ * @return The function returns OS_NO_ERR in case of succes, otherwise, please
+ * refer to the error codes.
+ */
+OS_RETURN_E remove_interrupt_handler(const uint32_t interrupt_line);
 
 #endif /* __INTERRUPTS_H_ */
