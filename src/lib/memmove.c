@@ -13,15 +13,14 @@
  ******************************************************************************/
 
 #include "stddef.h" /* size_t */
-#include "stdint.h" /* int8_t */
 
 /* Header file */
 #include "string.h"
 
 void *memmove(void *dst, const void *src, size_t n)
 {
-    const int8_t *p = src;
-    int8_t *q = dst;
+    const char *p = src;
+    char *q = dst;
 #if defined(__i386__) || defined(__x86_64__)
     if (q < p) {
         __asm__ __volatile__("cld ; rep ; movsb"

@@ -1,6 +1,19 @@
+/*******************************************************************************
+ *
+ * File: kernel_kickstart.c
+ *
+ * Author: Alexy Torres Aurora Dugo
+ *
+ * Date: 15/12/2017
+ *
+ * Version: 1.0
+ *
+ * Init the rest of the kernel after GDT, IDT and PIC have been initialized.
+ * AT THIS POINT INTERRUPT SHOULD BE DISABLED
+ ******************************************************************************/
 
-#include "../drivers/pit.h"
-#include "../sync/lock.h"
+#include "../drivers/pit.h" /* init_pit */
+#include "../sync/lock.h"   /* enable_interrupt */
 
 #include "kernel_output.h"
 
@@ -21,7 +34,7 @@ void kernel_kickstart(void)
 		kernel_print("]\n", 2);
 	}
 
-
+	/* Enable interrupts */
 	enable_interrupt();
 	kernel_success("INT unleached\n", 14);
 }

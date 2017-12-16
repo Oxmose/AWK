@@ -89,6 +89,7 @@ section .text:
     
   ; Hang forever, this should never happen
   .loop:
+    cli
     hlt
     jmp .loop                   ; loop forever
 

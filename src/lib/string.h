@@ -15,45 +15,44 @@
 #ifndef __STRING_H_
 #define __STRING_H_
 
-#define __extern extern
 
 #define __alias(x) __attribute__((weak, alias(x)))
 
 #include "stddef.h" /* size_t */
-#include "stdint.h" /* int8_t, uint8_t, int32_t, uint32_t */
 
-__extern void *memccpy(void *, const void *, int32_t, size_t);
-__extern void *memchr(const void *, int32_t, size_t);
-__extern void *memrchr(const void *, int32_t, size_t);
-__extern int32_t memcmp(const void *, const void *, size_t);
-__extern void *memcpy(void *, const void *, size_t);
-__extern void *memmove(void *, const void *, size_t);
-__extern void *memset(void *, int32_t, size_t);
-__extern void *memmem(const void *, size_t, const void *, size_t);
-__extern void memswap(void *, void *, size_t);
-__extern int32_t strcasecmp(const int8_t *, const int8_t *);
-__extern int32_t strncasecmp(const int8_t *, const int8_t *, size_t);
-__extern int8_t *strcat(int8_t *, const int8_t *);
-__extern int8_t *strchr(const int8_t *, int);
-__extern int8_t *strrchr(const int8_t *, int);
-__extern int32_t strcmp(const int8_t *, const int8_t *);
-__extern int8_t *strcpy(int8_t *, const int8_t *);
-__extern size_t strcspn(const int8_t *, const int8_t *);
-__extern int8_t *strdup(const int8_t *);
-__extern int8_t *strndup(const int8_t *, size_t);
-__extern int8_t *strerror(int32_t);
-__extern int8_t *strsignal(int32_t);
-__extern size_t strlen(const int8_t *);
-__extern size_t strnlen(const int8_t *, size_t);
-__extern int8_t *strncat(int8_t *, const int8_t *, size_t);
-__extern size_t strlcat(int8_t *, const int8_t *, size_t);
-__extern int32_t strncmp(const int8_t *, const int8_t *, size_t);
-__extern int8_t *strncpy(int8_t *, const int8_t *, size_t);
-__extern size_t strlcpy(int8_t *, const int8_t *, size_t);
-__extern int8_t *strpbrk(const int8_t *, const int8_t *);
-__extern int8_t *strsep(int8_t **, const int8_t *);
-__extern size_t strspn(const int8_t *, const int8_t *);
-__extern int8_t *strstr(const int8_t *, const int8_t *);
-__extern int8_t *strtok(int8_t *, const int8_t *);
+extern void *memccpy(void *, const void *, int, size_t);
+extern void *memchr(const void *, int, size_t);
+extern void *memrchr(const void *, int, size_t);
+extern int memcmp(const void *, const void *, size_t);
+extern void *memcpy(void *, const void *, size_t);
+extern void *memmove(void *, const void *, size_t);
+extern void *memset(void *, int, size_t);
+extern void *memmem(const void *, size_t, const void *, size_t);
+extern void memswap(void *, void *, size_t);
+extern int strcasecmp(const char *, const char *);
+extern int strncasecmp(const char *, const char *, size_t);
+extern char *strcat(char *, const char *);
+extern char *strchr(const char *, int);
+extern char *strrchr(const char *, int);
+extern int strcmp(const char *, const char *);
+extern char *strcpy(char *, const char *);
+extern size_t strcspn(const char *, const char *);
+extern char *strdup(const char *);
+extern char *strndup(const char *, size_t);
+extern char *strerror(int);
+extern char *strsignal(int);
+extern size_t strlen(const char *);
+extern size_t strnlen(const char *, size_t);
+extern char *strncat(char *, const char *, size_t);
+extern size_t strlcat(char *, const char *, size_t);
+extern int strncmp(const char *, const char *, size_t);
+extern char *strncpy(char *, const char *, size_t);
+extern size_t strlcpy(char *, const char *, size_t);
+extern char *strpbrk(const char *, const char *);
+extern char *strsep(char **, const char *);
+extern size_t strspn(const char *, const char *);
+extern char *strstr(const char *, const char *);
+extern char *strtok(char *, const char *);
+extern size_t __strxspn(const char *s, const char *map, int parity);
 
 #endif                /* __STRING_H_ */
