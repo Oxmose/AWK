@@ -46,6 +46,15 @@ int perror(const int error)
 	    case OS_ERR_NO_SUCH_IRQ_LINE:
 	    	printf("No such IRQ line");
 	    	break;
+	    case OS_ERR_MALLOC:
+	    	printf("Malloc error");
+	    	break;
+	    case OS_ERR_UNAUTHORIZED_ACTION:
+	    	printf("Unauthorized action");
+	    	break;
+	    case OS_ERR_FORBIDEN_PRIORITY:
+	    	printf("Forbiden priority");
+	    	break;
 	    default:
 	    	printf("Unknown error");
 	}

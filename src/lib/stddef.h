@@ -18,8 +18,6 @@
 
 #define NULL ((void *)0)
 
-typedef uint32_t size_t;
-
 /* System return states */
 typedef enum OS_RETURN
 {
@@ -31,9 +29,38 @@ typedef enum OS_RETURN
     OS_ERR_INTERRUPT_NOT_REGISTERED,
     OS_ERR_NO_SUCH_IRQ_LINE,
     OS_ERR_NO_MORE_FREE_EVENT,
-    OS_ERR_NO_SUCH_ID
+    OS_ERR_NO_SUCH_ID,
+    OS_ERR_MALLOC,
+    OS_ERR_UNAUTHORIZED_ACTION,
+    OS_ERR_FORBIDEN_PRIORITY
 } OS_RETURN_E;
 
 typedef int32_t OS_EVENT_ID;
+
+#ifndef __SIZE_TYPE__
+#error __SIZE_TYPE__ not defined
+#endif
+
+typedef __SIZE_TYPE__ size_t;
+
+#ifndef __PTRDIFF_TYPE__
+#error __PTRDIFF_TYPE__ not defined
+#endif
+
+typedef __PTRDIFF_TYPE__ ptrdiff_t;
+
+#ifdef NDEBUG
+
+#define assert(expr) ((void)0)
+
+#else
+
+#define assert(expr) \
+	((void)((expr) ? 0 : \
+		(panic(__FILE__":%u: failed assertion `"#expr"'\n", \
+			__LINE__), 0)))
+
+#endif
+
 
 #endif /* __STDDEF_H_ */
