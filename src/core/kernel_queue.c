@@ -32,6 +32,7 @@ OS_RETURN_E enqueue_thread(kernel_thread_t *thread, thread_queue_t *queue[2],
     {
         return OS_ERR_MALLOC;
     }
+
     node->priority = priority;
     node->thread   = thread;
 
@@ -48,7 +49,7 @@ OS_RETURN_E enqueue_thread(kernel_thread_t *thread, thread_queue_t *queue[2],
     else
     {
         thread_queue_t *cursor = queue[0];
-        while(cursor != NULL && cursor->priority < priority)
+        while(cursor != NULL && cursor->priority > priority)
         {
             cursor = cursor->next;
         }
@@ -81,14 +82,13 @@ OS_RETURN_E enqueue_thread(kernel_thread_t *thread, thread_queue_t *queue[2],
 
 kernel_thread_t* dequeue_thread(thread_queue_t *queue[2],  OS_RETURN_E *error)
 {
+    if(error != NULL)
+    {
+        *error = OS_NO_ERR;
+    }
     /* If this priority queue is empty */
     if(queue[0] == NULL)
     {
-        if(error != NULL)
-        {
-            *error = OS_ERR_NO_SUCH_ID;
-        }
-
         return NULL;
     }
 
@@ -115,4 +115,53 @@ kernel_thread_t* dequeue_thread(thread_queue_t *queue[2],  OS_RETURN_E *error)
     }
 
     return ret;
+}
+
+
+OS_RETURN_E remove_thread(thread_queue_t *queue[2], kernel_thread_t *thread)
+{
+    /* If this priority queue is empty */
+    if(queue[0] == NULL)
+    {
+        return OS_ERR_NO_SUCH_ID;
+    }
+
+    /* Search for the thread */
+    thread_queue_t *node = queue[0];
+    while(node != NULL && node->thread != thread)
+    {
+        node = node->next;
+    }
+
+    /* No such thread */
+    if(node == NULL)
+    {
+        return OS_ERR_NO_SUCH_ID;
+    }
+
+    /* Manage link */
+    if(node->prev != NULL && node->next != NULL)
+    {
+        node->prev->next = node->next;
+        node->next->prev = node->prev;
+    }
+    else if(node->prev == NULL && node->next != NULL)
+    {
+        queue[0] = node->next;
+        node->next->prev = NULL;
+    }
+    else if(node->prev != NULL && node->next == NULL)
+    {
+        queue[1] = node->prev;
+        node->prev->next = NULL;
+    }
+    else
+    {
+        queue[0] = NULL;
+        queue[1] = NULL;
+    }
+
+    free(node);
+
+    return OS_NO_ERR;
 }

@@ -42,4 +42,6 @@ OS_RETURN_E enqueue_thread(kernel_thread_t *thread, thread_queue_t *queue[2],
 kernel_thread_t* dequeue_thread(thread_queue_t *queue[2],
                                 OS_RETURN_E *error);
 
+OS_RETURN_E remove_thread(thread_queue_t *queue[2], kernel_thread_t *thread);
+
 #endif /* __KERNEL_QUEUE_H_ */
