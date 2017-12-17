@@ -20,7 +20,7 @@
  *
  * @param __format The format string to output.
  */
-void kernel_print(const char *__format, ...) __attribute__((format (printf, 1, 2)));
+void kernel_printf(const char *__format, ...) __attribute__((format (printf, 1, 2)));
 
 /* Print the desired string to the screen. Add a red [ERROR] tag at the 
  * beggining of the string before printing it.

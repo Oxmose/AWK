@@ -20,7 +20,7 @@
 #include "../sync/lock.h"          /* enable_interrupt, disable_interrupt */
 #include "kernel_output.h"       /* kernel_print_unsigned_hex, kernel_print, 
                                     kernel_success */
-#include "panic.h"               /* panic */
+#include "panic.h"               /* panic, interrupt */
 
 
 /* Header file */
@@ -63,6 +63,10 @@ void init_kernel_interrupt(void)
 		kernel_interrupt_handlers[i].enabled = 1;
 		kernel_interrupt_handlers[i].handler = panic;
 	}
+
+  /* Attach the special PANIC interrupt for when we donMt know what to do */
+  kernel_interrupt_handlers[PANIC_INT_LINE].enabled = 1;
+  kernel_interrupt_handlers[PANIC_INT_LINE].handler = panic;
 
 	kernel_success("KIH Initialized\n");
 }

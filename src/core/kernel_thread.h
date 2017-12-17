@@ -84,6 +84,11 @@ typedef struct kernel_thread
     BLOCK_TYPE_E     block_type;
 
     struct kernel_thread *joining_thread;
+
+    /* Stats  TODO GETTERS */
+    uint32_t start_time;
+    uint32_t end_time;
+    uint32_t exec_time;
 } kernel_thread_t;
 
 typedef kernel_thread_t* thread_t;

@@ -46,7 +46,7 @@ run:
 	$(QEMU) $(QEMUOPTS) $(KERNEL)
 
 debug:
-	$(QEMU) $(QEMUOPTS) -S
+	$(QEMU) $(QEMUOPTS) $(KERNEL) -S
 
 bootable: all
 	cp $(KERNEL) ../iso/boot/
