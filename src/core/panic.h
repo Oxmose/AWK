@@ -18,6 +18,8 @@
 #include "interrupts.h" /* cpu_state_t, stack_state_t */
 #include "../lib/stdint.h" /* Generic int types */
 
+#define PANIC_INT_LINE 0x40
+
 /* Display the kernel panic screen. This sreen dump the CPU registers and the 
  * stack state before the panis occurs (panic is usually called by interrupts).
  * @param cpu_state The cpu registers structure.
@@ -26,5 +28,8 @@
  * error code and the eflags register value.
  */
 void panic(cpu_state_t *cpu_state, uint32_t int_id, stack_state_t *stack_state);
+
+/* Call the panic interrupt line */
+void kernel_panic(void);
 
 #endif /* __PANIC_H_ */
