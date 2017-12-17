@@ -11,7 +11,8 @@
  * Basic lock and synchronization primitives
  ******************************************************************************/
 
-#include "../cpu/cpu.h" /* sti, cli */
+#include "../cpu/cpu.h"    /* sti, cli, cpu_test_and_set */
+#include "../lib/stddef.h" /* OS_RETURN_E */
 
 /* Header file */
 #include "lock.h"
@@ -19,7 +20,6 @@
 /* Keep track on the nexting level, kernel start with interrupt disabled */
 static uint32_t int_lock_nesting = 1;
 
-extern void kernel_print(const char* str, uint32_t size);
 void enable_interrupt(void)
 {
     if(int_lock_nesting > 0)
@@ -36,4 +36,43 @@ void disable_interrupt(void)
 {
     cli();
     ++int_lock_nesting;
+}
+
+OS_RETURN_E spinlock_lock(lock_t *lock)
+{
+    if(lock == NULL)
+    {
+        return OS_ERR_NULL_POINTER;
+    }
+
+#if KERNEL_MONOCORE
+    enable_interrupt();
+    *lock = 1;
+#else
+    while(cpu_test_and_set(lock) == 1);
+#endif
+    
+    return OS_NO_ERR;
+}
+
+OS_RETURN_E spinlock_unlock(lock_t *lock)
+{
+    if(lock == NULL)
+    {
+        return OS_ERR_NULL_POINTER;
+    }
+
+#if KERNEL_MONOCORE
+    *lock = 0;
+    disable_interrupt();
+#else
+    *lock = 0;
+#endif
+
+    return OS_NO_ERR;
+}
+
+OS_RETURN_E spinlock_init(lock_t *lock)
+{
+    return spinlock_unlock(lock);
 }

@@ -96,6 +96,11 @@ char *get_current_thread_name(void);
  */
 uint32_t get_priority(void);
 
+/* Returns the executing thread structuer pointer.
+ * @returns The executing thread structuer pointer.
+ */
+kernel_thread_t *get_active_thread(void);
+
 /* Create a new thread in the thread table.
  *
  * @param thread The pointer to the thread structure.
@@ -117,5 +122,22 @@ OS_RETURN_E create_thread(thread_t *thread,
  * @returns OS_NO_ERR on success, error code otherwise.
  */
 OS_RETURN_E wait_thread(thread_t thread, void **ret_val);
+
+OS_RETURN_E unlock_thread(const thread_t thread,
+                          const BLOCK_TYPE_E block_type,
+                          const uint8_t do_schedule);
+
+OS_RETURN_E lock_thread(const BLOCK_TYPE_E block_type);
+
+/* Lock the current thread waiting for an IO.
+ * @param block_type The type of IO that locks the thread.
+ */
+void lock_io(const BLOCK_TYPE_E block_type);
+
+/* Unlock a thread that was waiting for an IO.
+ * Schedule if necessary.
+ * @param block_type The type of IO that locks the thread.
+ */
+void unlock_io(const BLOCK_TYPE_E block_type);
 
 #endif /* __SCHEDULER_H_ */

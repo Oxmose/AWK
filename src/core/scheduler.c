@@ -432,6 +432,11 @@ uint32_t get_priority(void)
     return active_thread->priority;
 }
 
+kernel_thread_t *get_active_thread(void)
+{
+    return active_thread;
+}
+
 OS_RETURN_E create_thread(thread_t *thread, 
                           void *(*function)(void*), 
                           const uint32_t priority, 
@@ -565,6 +570,73 @@ OS_RETURN_E wait_thread(thread_t thread, void **ret_val)
     free(thread);
 
     --thread_count;
+
+    return OS_NO_ERR;
+}
+
+OS_RETURN_E lock_thread(const BLOCK_TYPE_E block_type)
+{
+    /* Cant lock kernel thread */
+    if(active_thread == idle_thread)
+    {
+        return OS_ERR_UNAUTHORIZED_ACTION;
+    }
+
+    /* Lock the thread */
+    active_thread->state      = BLOCKED;
+    active_thread->block_type = block_type;
+
+    /* Schedule to an other thread */
+    schedule();
+
+    return OS_NO_ERR;
+}
+
+OS_RETURN_E unlock_thread(const thread_t thread,
+                          const BLOCK_TYPE_E block_type,
+                          const uint8_t do_schedule)
+{
+    /* Check thread value */
+    if(thread == NULL || thread  == idle_thread)
+    {
+        return OS_ERR_NO_SUCH_ID;
+    }
+
+    /* Check thread state */
+    if(thread->state != BLOCKED || 
+       thread->block_type != block_type)
+    {
+        switch(block_type)
+        {
+            case SEM:
+                return OS_ERR_NO_SEM_BLOCKED;
+            case MUTEX:
+                return OS_ERR_NO_MUTEX_BLOCKED;
+            case QUEUE:
+                return OS_ERR_NO_QUEUE_BLOCKED;
+            default:
+                return OS_ERR_NULL_POINTER;
+        }
+        
+    }
+
+    OS_RETURN_E err;
+    err = enqueue_thread(thread, active_threads_table, thread->priority);
+    
+    if(err != OS_NO_ERR)
+    {
+        kernel_error("Could not enqueue thread in active table[%d]\n", err);
+        kernel_panic();
+    }
+
+    /* Unlock thread state */
+    thread->state = READY;
+
+    /* Schedule if asked for */
+    if(do_schedule && active_thread->priority < thread->priority)
+    {
+        schedule();
+    }
 
     return OS_NO_ERR;
 }
