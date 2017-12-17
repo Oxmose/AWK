@@ -50,11 +50,16 @@ static uint32_t first_schedule = 0;
  *     - sleeping_threads: thread wakeup time
  *     - io_waiting_threads: thread priority
  *
+ * Global thread table used to browse the threads, even those
+ * kept in a nutex / semaphore or other structure and that do
+ * not appear in the three previous tables.
  * Index 0 is the head, 1 is the tail
  *******************************************************/
 static thread_queue_t *active_threads_table[2];
 static thread_queue_t *zombie_threads_table[2];
 static thread_queue_t *sleeping_threads_table[2];
+
+static thread_queue_t *global_threads_table[2];
 
 void *th_func(void*args)
 {
@@ -251,6 +256,8 @@ OS_RETURN_E init_scheduler(void)
     old_thread          = NULL;
 
     /* Init thread tables */
+    global_threads_table[0]   = NULL;
+    global_threads_table[1]   = NULL;
     active_threads_table[0]   = NULL;
     active_threads_table[1]   = NULL;
     zombie_threads_table[0]   = NULL;
@@ -312,6 +319,14 @@ OS_RETURN_E init_scheduler(void)
     ++thread_count;
 
     OS_RETURN_E err;
+
+    err = enqueue_thread(idle_thread, global_threads_table, 
+                         idle_thread->priority);
+    if(err != OS_NO_ERR)
+    {
+        kernel_error("Could not enqueue thread in global table[%d]\n", err);
+        kernel_panic();
+    }
 
     /* Register SW interrupt scheduling */
     err = register_interrupt_handler(SCHEDULER_SW_INT_LINE, schedule_int);
@@ -487,6 +502,13 @@ OS_RETURN_E create_thread(thread_t *thread,
         return err;
     }
 
+    err = enqueue_thread(new_thread, global_threads_table, 
+                         new_thread->priority);
+    if(err != OS_NO_ERR)
+    {
+        return err;
+    }
+
     ++thread_count;
 
     /* If the priority of the new thread is higher than the curent one */
@@ -520,6 +542,7 @@ OS_RETURN_E wait_thread(thread_t thread, void **ret_val)
         }
 
         remove_thread(zombie_threads_table, thread);
+        remove_thread(global_threads_table, thread);
         free(thread);
 
         return OS_NO_ERR;
@@ -538,6 +561,7 @@ OS_RETURN_E wait_thread(thread_t thread, void **ret_val)
     }
      
     remove_thread(zombie_threads_table, thread);
+    remove_thread(global_threads_table, thread);
     free(thread);
 
     --thread_count;
