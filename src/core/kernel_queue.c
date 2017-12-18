@@ -19,8 +19,9 @@
 /* Header include */
 #include "kernel_queue.h"
 
-OS_RETURN_E enqueue_thread(kernel_thread_t *thread, thread_queue_t *queue[2],
-                           const uint32_t priority)
+OS_RETURN_E kernel_enqueue_thread(kernel_thread_t *thread, 
+                                  thread_queue_t *queue[2],
+                                  const uint32_t priority)
 {
     if(thread == NULL)
     {
@@ -80,7 +81,8 @@ OS_RETURN_E enqueue_thread(kernel_thread_t *thread, thread_queue_t *queue[2],
     return OS_NO_ERR;
 }
 
-kernel_thread_t* dequeue_thread(thread_queue_t *queue[2],  OS_RETURN_E *error)
+kernel_thread_t* kernel_dequeue_thread(thread_queue_t *queue[2],  
+                                       OS_RETURN_E *error)
 {
     if(error != NULL)
     {
@@ -117,8 +119,8 @@ kernel_thread_t* dequeue_thread(thread_queue_t *queue[2],  OS_RETURN_E *error)
     return ret;
 }
 
-
-OS_RETURN_E remove_thread(thread_queue_t *queue[2], kernel_thread_t *thread)
+OS_RETURN_E kernel_remove_thread(thread_queue_t *queue[2], 
+                                 kernel_thread_t *thread)
 {
     /* If this priority queue is empty */
     if(queue[0] == NULL)

@@ -11,10 +11,12 @@
  * Mutex synchronization primitive implemantation.
  ******************************************************************************/
 
-#include "../core/scheduler.h"    /* lock_thread, unlock_thread */
-#include "../lib/stddef.h"        /* OS_RETURN_E */
-#include "../core/kernel_queue.h" /* thread_queue_t */
-#include "lock.h"	              /* lock_t */
+#include "../core/scheduler.h"     /* lock_thread, unlock_thread */
+#include "../lib/stddef.h"         /* OS_RETURN_E */
+#include "../core/kernel_queue.h"  /* thread_queue_t */
+#include "../core/kernel_output.h" /* kernel_error */
+#include "../core/panic.h"         /* kernel_panic */
+#include "lock.h"	               /* lock_t */
 
 /* Header include */
 #include "mutex.h"
@@ -59,18 +61,25 @@ OS_RETURN_E mutex_destroy(mutex_t *mutex)
 	/* Unlock all thread*/
 	kernel_thread_t *thread;
 	OS_RETURN_E err;
-	while((thread = dequeue_thread(mutex->waiting_threads, &err)) 
+	while((thread = kernel_dequeue_thread(mutex->waiting_threads, &err)) 
 		!= NULL)
     {
     	if(err != OS_NO_ERR)
         {
-        	/* TODO PANIC */
+        	kernel_error("Could not dequeue thread from mutex[%d]\n", err);
+            kernel_panic();
         }
-        unlock_thread(thread, MUTEX, 0);
+        err = unlock_thread(thread, MUTEX, 0);
+        if(err != OS_NO_ERR)
+        {
+        	kernel_error("Could not unlock thread from mutex[%d]\n", err);
+            kernel_panic();
+        }
     }
     if(err != OS_NO_ERR)
     {
-    	/* TODO PANIC */
+    	kernel_error("Could not dequeue thread from mutex[%d]\n", err);
+        kernel_panic();
     }
 
 
@@ -105,15 +114,23 @@ OS_RETURN_E mutex_pend(mutex_t *mutex)
 		  mutex->init == 1 &&
 		  mutex->state != 1)
 	{	
-		if(enqueue_thread(get_active_thread(), mutex->waiting_threads, 0)
-                != OS_NO_ERR)
+		OS_RETURN_E err;
+		err = kernel_enqueue_thread(get_active_thread(), 
+			                        mutex->waiting_threads, 0);
+        if(err != OS_NO_ERR)
 	    {
-	        /* TODO PANIC */
+	        kernel_error("Could not enqueue thread to mutex[%d]\n", err);
+            kernel_panic();
 	    }
 
 		spinlock_unlock(&mutex->lock);
 
-		lock_thread(MUTEX);
+		err = lock_thread(MUTEX);
+		if(err != OS_NO_ERR)
+        {
+        	kernel_error("Could not lock thread to mutex[%d]\n", err);
+            kernel_panic();
+        }
 
 		spinlock_lock(&mutex->lock);
 	}
@@ -156,22 +173,30 @@ OS_RETURN_E mutex_post(mutex_t *mutex)
 	/* Check if we can unlock a blocked thread on the mutex */
 	kernel_thread_t *thread;
 	OS_RETURN_E err;
-	if((thread = dequeue_thread(mutex->waiting_threads, &err)) != NULL)
+	if((thread = kernel_dequeue_thread(mutex->waiting_threads, &err)) != NULL)
     {
     	if(err != OS_NO_ERR)
 	    {
-	        /* TODO PANIC */
+	        kernel_error("Could not dequeue thread from mutex[%d]\n", err);
+            kernel_panic();
 	    }
 
     	spinlock_unlock(&mutex->lock);
 
-        unlock_thread(thread, MUTEX, 1);
+        err = unlock_thread(thread, MUTEX, 1);
+
+        if(err != OS_NO_ERR)
+	    {
+	        kernel_error("Could not unlock thread from mutex[%d]\n", err);
+            kernel_panic();
+	    }
 
        	return OS_NO_ERR;
     }
     if(err != OS_NO_ERR)
     {
-        /* TODO PANIC */
+        kernel_error("Could not dequeue thread from mutex[%d]\n", err);
+        kernel_panic();
     }
 
 	/* If here, we did not find any waiting process */

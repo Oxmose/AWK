@@ -30,7 +30,7 @@
 #define PIT_COMM_PORT      0x34
 #define PIT_DATA_PORT      0x40
 #define PIT_COMM_SET_FREQ  0x43
-#define PIT_FREQ           19
+#define PIT_FREQ           100
 #define PIT_IRQ            0
 #define PIT_INTERRUPT_LINE 32
 
@@ -43,6 +43,9 @@
  * @returns The error or success state.
  */
 OS_RETURN_E init_pit(void);
+
+/* Uptade tick count and uptime */
+void update_tick(void);
 
 /* Return current uptime
  *

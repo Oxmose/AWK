@@ -36,12 +36,12 @@ typedef struct thread_queue
 /************************************
  * FUNCTIONS 
  ***********************************/
-OS_RETURN_E enqueue_thread(kernel_thread_t *thread, thread_queue_t *queue[2],
+OS_RETURN_E kernel_enqueue_thread(kernel_thread_t *thread, thread_queue_t *queue[2],
                            const uint32_t priority_check);
 
-kernel_thread_t* dequeue_thread(thread_queue_t *queue[2],
+kernel_thread_t* kernel_dequeue_thread(thread_queue_t *queue[2],
                                 OS_RETURN_E *error);
 
-OS_RETURN_E remove_thread(thread_queue_t *queue[2], kernel_thread_t *thread);
+OS_RETURN_E kernel_remove_thread(thread_queue_t *queue[2], kernel_thread_t *thread);
 
 #endif /* __KERNEL_QUEUE_H_ */

@@ -6,9 +6,10 @@ CPU_DIR = $(wildcard cpu/*.c cpu/*.S)
 DRIVERS_DIR = $(wildcard drivers/*.c drivers/*.S)
 LIB_DIR = $(wildcard lib/*.c lib/*.S)
 SYNC_DIR = $(wildcard sync/*.c sync/*.S)
+TESTS_DIR = $(wildcard tests/*.c tests/*.S)
 
 # on compile tous les fichiers assembleur et c du repertoire
-SRCS = $(CORE_DIR) $(CPU_DIR) $(DRIVERS_DIR) $(LIB_DIR) $(SYNC_DIR)
+SRCS = $(CORE_DIR) $(CPU_DIR) $(DRIVERS_DIR) $(LIB_DIR) $(SYNC_DIR) $(TESTS_DIR)
 
 # crt0.o doit etre linke en premier
 OBJS = $(patsubst %.S,%.o,$(patsubst %.c,%.o,$(SRCS)))
@@ -26,7 +27,7 @@ QEMUOPTS = -cpu core2duo -rtc base=localtime -m 64M -gdb tcp::1234 -kernel
 
 # cible principale, on nettoie systematiquement le repertoire avant
 .PHONY: all
-all: kernel.bin
+all: clean kernel.bin
 
 # generation du noyau
 kernel.bin: linker.ld $(OBJS)

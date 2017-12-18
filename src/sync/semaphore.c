@@ -16,6 +16,8 @@
 #include "../lib/stddef.h"
 #include "../core/scheduler.h"
 #include "../core/kernel_queue.h"
+#include "../core/kernel_output.h" /* kernel_error */
+#include "../core/panic.h"         /* kernel_panic */
 #include "lock.h"
 
 /* Header include */
@@ -63,17 +65,24 @@ OS_RETURN_E sem_destroy(semaphore_t *sem)
 	/* Unlock all threead*/
 	kernel_thread_t *thread;
 	OS_RETURN_E err;
-	while((thread = dequeue_thread(sem->waiting_threads, &err)) != NULL)
+	while((thread = kernel_dequeue_thread(sem->waiting_threads, &err)) != NULL)
     {
     	if(err != OS_NO_ERR)
         {
-        	/* TODO PANIC */
+        	kernel_error("Could not dequeue thread from semaphore[%d]\n", err);
+            kernel_panic();
         }
-        unlock_thread(thread, SEM, 0);
+        err = unlock_thread(thread, SEM, 0);
+        if(err != OS_NO_ERR)
+	    {
+	        kernel_error("Could not unlock thread from semaphore[%d]\n", err);
+            kernel_panic();
+	    }
     }
     if(err != OS_NO_ERR)
     {
-    	/* TODO PANIC */
+    	kernel_error("Could not dequeue thread from semaphore[%d]\n", err);
+        kernel_panic();
     }
 
 	spinlock_unlock(&sem->lock);
@@ -105,15 +114,24 @@ OS_RETURN_E sem_pend(semaphore_t *sem)
 		  sem->init == 1 &&
 		  sem->sem_level < 1)
 	{	
-		if(enqueue_thread(get_active_thread(), sem->waiting_threads, 0)
-                != OS_NO_ERR)
+		OS_RETURN_E err;
+		err = kernel_enqueue_thread(get_active_thread(), 
+			                        sem->waiting_threads, 0);
+                
+		if(err != OS_NO_ERR)
 	    {
-	        /* TODO PANIC */
+	        kernel_error("Could not enqueue thread from semaphore[%d]\n", err);
+            kernel_panic();
 	    }
 		
 		spinlock_unlock(&sem->lock);
 
-		lock_thread(SEM);
+		err = lock_thread(SEM);
+		if(err != OS_NO_ERR)
+	    {
+	        kernel_error("Could not lock thread from semaphore[%d]\n", err);
+            kernel_panic();
+	    }
 		
 		spinlock_lock(&sem->lock);
 	}
@@ -158,23 +176,30 @@ OS_RETURN_E sem_post(semaphore_t *sem)
 	{
 		kernel_thread_t *thread;
 		OS_RETURN_E err;
-		if((thread = dequeue_thread(sem->waiting_threads, &err)) 
+		if((thread = kernel_dequeue_thread(sem->waiting_threads, &err)) 
 			!= NULL)
         {
         	if(err != OS_NO_ERR)
 		    {
-		        /* TODO PANIC */
+		        kernel_error("Could not dequeue thread from semaphore[%d]\n", err);
+                kernel_panic();
 		    }
 
         	spinlock_unlock(&sem->lock);
 
-            unlock_thread(thread, SEM, 1);
+            err = unlock_thread(thread, SEM, 1);
+            if(err != OS_NO_ERR)
+		    {
+		        kernel_error("Could not unlock thread from semaphore[%d]\n", err);
+                kernel_panic();
+		    }
 
            	return OS_NO_ERR;
         }
         if(err != OS_NO_ERR)
 	    {
-	        /* TODO PANIC */
+	       kernel_error("Could not dequeue thread from semaphore[%d]\n", err);
+           kernel_panic();
 	    }
 	}
 

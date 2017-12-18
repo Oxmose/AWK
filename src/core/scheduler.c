@@ -22,8 +22,10 @@
 #include "interrupts.h"     /* register_interrupt_handler */
 #include "kernel_output.h"  /* kernel_success, kernel_error */
 #include "kernel_thread.h"  /* kernel_thread_t */
-#include "kernel_queue.h"   /* thread_queue_t, enqueue_thread, dequeue_thread */
+#include "kernel_queue.h"   /* thread_queue_t,kernel_enqueue_thread,kernel_dequeue_thread */
 #include "panic.h"          /* kernel_panic */
+
+#include "../tests/tests.h"
 
  /* Header file */
  #include "scheduler.h"
@@ -61,35 +63,17 @@ static thread_queue_t *sleeping_threads_table[2];
 
 static thread_queue_t *global_threads_table[2];
 
-void *th_func(void*args)
-{
-    for(unsigned int i = 0; i < 1000000000; ++i)
-    {
-        if(i % 100000000 == 0)
-        {
-            kernel_printf("%d - ", (int)args);
-        }
-    }
-
-    return (void*)((int)args + 5);
-}
-
 static void *init_func(void *args)
 {
     (void)args;
     kernel_printf("INIT\n");
+    thread_t test_thread;
 
-    thread_t new_thread;
-    thread_t new_thread_2;
+    create_thread(&test_thread, launch_tests, 33, "tests\0", (void*)0);
 
-    create_thread(&new_thread, th_func, 31, "th\0", (void*)0);
-    create_thread(&new_thread_2, th_func, 33, "th2\0", (void*)1);
+    wait_thread(test_thread, NULL);
 
-    int retl;
-    wait_thread(new_thread, ((void**)&retl));
-    kernel_printf("RET: %d - \n", retl);
-    wait_thread(new_thread_2, ((void**)&retl));
-    kernel_printf("RET: %d - ", retl);
+    for(;;);
 
     return NULL;
 }
@@ -104,7 +88,7 @@ static void thread_exit(void)
     {
         active_thread->joining_thread->state = READY;
 
-        OS_RETURN_E err = enqueue_thread(active_thread->joining_thread,
+        OS_RETURN_E err = kernel_enqueue_thread(active_thread->joining_thread,
                                          active_threads_table,
                                          active_thread->priority);
         if(err != OS_NO_ERR)
@@ -114,7 +98,7 @@ static void thread_exit(void)
         }
     }
 
-    OS_RETURN_E err = enqueue_thread(active_thread,
+    OS_RETURN_E err = kernel_enqueue_thread(active_thread,
                                      zombie_threads_table,
                                      0);
     if(err != OS_NO_ERR)
@@ -155,7 +139,8 @@ static void select_thread(void)
     /* If the thread was not locked */
     if(old_thread->state == ELECTED)
     {
-        err = enqueue_thread(old_thread, active_threads_table, 
+
+        err = kernel_enqueue_thread(old_thread, active_threads_table, 
                              old_thread->priority);
         if(err != OS_NO_ERR)
         {
@@ -167,8 +152,8 @@ static void select_thread(void)
     }
     else if(active_thread->state == SLEEPING)
     {
-        err = enqueue_thread(old_thread, sleeping_threads_table, 
-                             old_thread->wakeup_time);
+        err = kernel_enqueue_thread(old_thread, sleeping_threads_table, 
+                                    old_thread->wakeup_time);
         if(err != OS_NO_ERR)
         {
             kernel_error("Could not enqueue old thread[%d]\n", err);
@@ -180,7 +165,7 @@ static void select_thread(void)
     kernel_thread_t *sleeping;
     do
     {       
-        sleeping = dequeue_thread(sleeping_threads_table, &err);
+        sleeping = kernel_dequeue_thread(sleeping_threads_table, &err);
         if(err != OS_NO_ERR)
         {
             kernel_error("Could not dequeue sleeping thread[%d]\n", err);
@@ -190,18 +175,20 @@ static void select_thread(void)
         /* If we should wakeup the thread */
         if(sleeping != NULL && sleeping->wakeup_time <= current_time)
         {
-            err = enqueue_thread(sleeping, active_threads_table, 
-                                 sleeping->priority);
+            err = kernel_enqueue_thread(sleeping, active_threads_table, 
+                                        sleeping->priority);
+
             if(err != OS_NO_ERR)
             {
                 kernel_error("Could not enqueue sleeping thread[%d]\n", err);
                 kernel_panic();
             }
+            sleeping->state = READY;
         }
         else if(sleeping != NULL)
         {
-            err = enqueue_thread(sleeping, sleeping_threads_table, 
-                                 sleeping->wakeup_time);
+            err = kernel_enqueue_thread(sleeping, sleeping_threads_table, 
+                                        sleeping->wakeup_time);
             if(err != OS_NO_ERR)
             {
                 kernel_error("Could not enqueue sleeping thread[%d]\n", err);
@@ -212,7 +199,7 @@ static void select_thread(void)
     } while(sleeping != NULL);
     
     /* Get the new thread */
-    active_thread = dequeue_thread(active_threads_table, &err);
+    active_thread = kernel_dequeue_thread(active_threads_table, &err);
     if(err != OS_NO_ERR)
     {
         kernel_error("Could not dequeue next thread[%d]\n", err);
@@ -320,7 +307,7 @@ OS_RETURN_E init_scheduler(void)
 
     OS_RETURN_E err;
 
-    err = enqueue_thread(idle_thread, global_threads_table, 
+    err = kernel_enqueue_thread(idle_thread, global_threads_table, 
                          idle_thread->priority);
     if(err != OS_NO_ERR)
     {
@@ -352,6 +339,8 @@ void schedule_int(cpu_state_t *cpu_state, uint32_t int_id,
                   stack_state_t *stack_state)
 {
     (void) stack_state;
+    /* Update PIT tick count */
+    update_tick();
 
     /* If not first schedule */
     if(first_schedule == 1)
@@ -360,7 +349,8 @@ void schedule_int(cpu_state_t *cpu_state, uint32_t int_id,
         active_thread->esp = cpu_state->esp - 4;
         /* Search for next thread */
         select_thread();
-        //kernel_printf("SCHED %s -> %s | %d\n", old_thread->name, active_thread->name, thread_count);
+        //if(old_thread != active_thread)
+        //    kernel_printf("SCHED %s -> %s | %d\n", old_thread->name, active_thread->name, thread_count);
     }
 
     first_schedule = 1;
@@ -500,14 +490,14 @@ OS_RETURN_E create_thread(thread_t *thread,
 
     strncpy(new_thread->name, name, THREAD_MAX_NAME_LENGTH);
 
-    OS_RETURN_E err = enqueue_thread(new_thread, active_threads_table, 
+    OS_RETURN_E err = kernel_enqueue_thread(new_thread, active_threads_table, 
                                      priority);
     if(err != OS_NO_ERR)
     {
         return err;
     }
 
-    err = enqueue_thread(new_thread, global_threads_table, 
+    err = kernel_enqueue_thread(new_thread, global_threads_table, 
                          new_thread->priority);
     if(err != OS_NO_ERR)
     {
@@ -546,8 +536,8 @@ OS_RETURN_E wait_thread(thread_t thread, void **ret_val)
             *ret_val = thread->ret_val;
         }
 
-        remove_thread(zombie_threads_table, thread);
-        remove_thread(global_threads_table, thread);
+       kernel_remove_thread(zombie_threads_table, thread);
+       kernel_remove_thread(global_threads_table, thread);
         free(thread);
 
         return OS_NO_ERR;
@@ -565,8 +555,8 @@ OS_RETURN_E wait_thread(thread_t thread, void **ret_val)
         *ret_val = thread->ret_val;
     }
      
-    remove_thread(zombie_threads_table, thread);
-    remove_thread(global_threads_table, thread);
+   kernel_remove_thread(zombie_threads_table, thread);
+   kernel_remove_thread(global_threads_table, thread);
     free(thread);
 
     --thread_count;
@@ -621,8 +611,8 @@ OS_RETURN_E unlock_thread(const thread_t thread,
     }
 
     OS_RETURN_E err;
-    err = enqueue_thread(thread, active_threads_table, thread->priority);
-    
+    err = kernel_enqueue_thread(thread, active_threads_table, thread->priority);
+
     if(err != OS_NO_ERR)
     {
         kernel_error("Could not enqueue thread in active table[%d]\n", err);
