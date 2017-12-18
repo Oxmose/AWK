@@ -123,21 +123,36 @@ OS_RETURN_E create_thread(thread_t *thread,
  */
 OS_RETURN_E wait_thread(thread_t thread, void **ret_val);
 
+/* Add a thread to the active threads table, the thread might be contained
+ * in an other structure such as a mutex
+ *
+ * @param thread The thread to unlock.
+ * @param block_type The type of block (mutex, sem, ...)
+ * @param do_schedule Set to 1 if you want an immediat schedule.
+ * @returns OS_NO_ERR on success, error code otherwise.
+ */
 OS_RETURN_E unlock_thread(const thread_t thread,
                           const BLOCK_TYPE_E block_type,
                           const uint8_t do_schedule);
-
+/* Remove the active thread from the active threads table, the thread might be 
+ * contained in an other structure such as a mutex
+ *
+ * @param block_type The type of block (mutex, sem, ...)
+ * @returns OS_NO_ERR on success, error code otherwise.
+ */
 OS_RETURN_E lock_thread(const BLOCK_TYPE_E block_type);
 
 /* Lock the current thread waiting for an IO.
  * @param block_type The type of IO that locks the thread.
+ * @returns OS_NO_ERR on success, error code otherwise.
  */
-void lock_io(const BLOCK_TYPE_E block_type);
+OS_RETURN_E lock_io(const BLOCK_TYPE_E block_type);
 
 /* Unlock a thread that was waiting for an IO.
  * Schedule if necessary.
  * @param block_type The type of IO that locks the thread.
+ * @returns OS_NO_ERR on success, error code otherwise.
  */
-void unlock_io(const BLOCK_TYPE_E block_type);
+OS_RETURN_E unlock_io(const BLOCK_TYPE_E block_type);
 
 #endif /* __SCHEDULER_H_ */

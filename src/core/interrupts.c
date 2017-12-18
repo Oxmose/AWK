@@ -17,9 +17,8 @@
 #include "../lib/stddef.h"       /* OS_RETURN_E */
 #include "../lib/string.h"       /* memset */
 #include "../cpu/cpu_settings.h" /* IDT_ENTRY_COUNT */
-#include "../sync/lock.h"          /* enable_interrupt, disable_interrupt */
-#include "kernel_output.h"       /* kernel_print_unsigned_hex, kernel_print, 
-                                    kernel_success */
+#include "../sync/lock.h"        /* enable_interrupt, disable_interrupt */
+#include "kernel_output.h"       /* kernel_success */
 #include "panic.h"               /* panic, interrupt */
 
 
@@ -52,21 +51,22 @@ void kernel_interrupt_handler(cpu_state_t cpu_state,
 
 void init_kernel_interrupt(void)
 {
+    uint32_t i;
+
 	/* Blank custo interrupt handlers */
 	memset(kernel_interrupt_handlers, 0, 
 		   sizeof(custom_handler_t) * IDT_ENTRY_COUNT);
 	
 	/* Attach Panic to the first 32 interrupt */
-	uint32_t i;
 	for(i = 0; i < 32; ++i)
 	{
 		kernel_interrupt_handlers[i].enabled = 1;
 		kernel_interrupt_handlers[i].handler = panic;
 	}
 
-  /* Attach the special PANIC interrupt for when we donMt know what to do */
-  kernel_interrupt_handlers[PANIC_INT_LINE].enabled = 1;
-  kernel_interrupt_handlers[PANIC_INT_LINE].handler = panic;
+    /* Attach the special PANIC interrupt for when we donMt know what to do */
+    kernel_interrupt_handlers[PANIC_INT_LINE].enabled = 1;
+    kernel_interrupt_handlers[PANIC_INT_LINE].handler = panic;
 
 	kernel_success("KIH Initialized\n");
 }

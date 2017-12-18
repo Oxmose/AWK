@@ -18,9 +18,6 @@
 #include "kernel_output.h"  /* kernel_succes, kernel_error, kernell_info */
 #include "scheduler.h"      /* init_scheduler */
 
-#include "kernel_queue.h"
-#include "../lib/stdio.h"
-
 void kernel_kickstart(void)
 {
 	OS_RETURN_E err;
@@ -46,46 +43,7 @@ void kernel_kickstart(void)
 	{
 		kernel_error("RTC Initialization error [%d]\n", err);
 	}
-#if 0
-	int val;
-	thread_queue_t *queue[2] = {NULL};
-	enqueue_thread((kernel_thread_t*)1, queue, 0);
-	enqueue_thread((kernel_thread_t*)2, queue, 0);
-	enqueue_thread((kernel_thread_t*)3, queue, 0);
-	enqueue_thread((kernel_thread_t*)4, queue, 4);
-	enqueue_thread((kernel_thread_t*)5, queue, 5);
-	enqueue_thread((kernel_thread_t*)6, queue, 6);
-	enqueue_thread((kernel_thread_t*)7, queue, 4);
-	enqueue_thread((kernel_thread_t*)8, queue, 4);
-	enqueue_thread((kernel_thread_t*)9, queue, 7);
-	enqueue_thread((kernel_thread_t*)10, queue, 10);
-	enqueue_thread((kernel_thread_t*)11, queue, 0);
 
-	val = (int)dequeue_thread(queue, NULL);
-	printf("VAL=%d\n", val);
-	val = (int)dequeue_thread(queue, NULL);
-	printf("VAL=%d\n", val);
-	val = (int)dequeue_thread(queue, NULL);
-	printf("VAL=%d\n", val);
-	val = (int)dequeue_thread(queue, NULL);
-	printf("VAL=%d\n", val);
-	val = (int)dequeue_thread(queue, NULL);
-	printf("VAL=%d\n", val);
-	val = (int)dequeue_thread(queue, NULL);
-	printf("VAL=%d\n", val);
-	val = (int)dequeue_thread(queue, NULL);
-	printf("VAL=%d\n", val);
-	val = (int)dequeue_thread(queue, NULL);
-	printf("VAL=%d\n", val);
-	val = (int)dequeue_thread(queue, NULL);
-	printf("VAL=%d\n", val);
-	val = (int)dequeue_thread(queue, NULL);
-	printf("VAL=%d\n", val);
-	val = (int)dequeue_thread(queue, NULL);
-	printf("VAL=%d\n", val);
-
-	while(1);
-#endif
 	/* Enable interrupts */
 	enable_interrupt();
 	kernel_info("INT unleached\n");

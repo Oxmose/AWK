@@ -1,6 +1,6 @@
 /*******************************************************************************
  *
- * File: kernel_queues.h
+ * File: kernel_queues.c
  *
  * Author: Alexy Torres Aurora Dugo
  *
@@ -8,7 +8,7 @@
  *
  * Version: 1.0
  *
- * Kernel queues used to manage threads.
+ * Kernel priority queues used to manage threads.
  ******************************************************************************/
 
 #include "kernel_thread.h" /* kernel_thread_t */
@@ -23,12 +23,15 @@ OS_RETURN_E kernel_enqueue_thread(kernel_thread_t *thread,
                                   thread_queue_t *queue[2],
                                   const uint32_t priority)
 {
+    thread_queue_t *node;
+    thread_queue_t *cursor;
+
     if(thread == NULL)
     {
         return OS_ERR_NULL_POINTER;
     }
 
-    thread_queue_t *node = malloc(sizeof(thread_queue_t));
+    node = malloc(sizeof(thread_queue_t));
     if(node == NULL)
     {
         return OS_ERR_MALLOC;
@@ -36,7 +39,6 @@ OS_RETURN_E kernel_enqueue_thread(kernel_thread_t *thread,
 
     node->priority = priority;
     node->thread   = thread;
-
 
     /* If this queue is empty */
     if(queue[0] == NULL)
@@ -49,7 +51,7 @@ OS_RETURN_E kernel_enqueue_thread(kernel_thread_t *thread,
     }
     else
     {
-        thread_queue_t *cursor = queue[0];
+        cursor = queue[0];
         while(cursor != NULL && cursor->priority > priority)
         {
             cursor = cursor->next;
@@ -84,6 +86,9 @@ OS_RETURN_E kernel_enqueue_thread(kernel_thread_t *thread,
 kernel_thread_t* kernel_dequeue_thread(thread_queue_t *queue[2],  
                                        OS_RETURN_E *error)
 {
+    thread_queue_t *node;
+    kernel_thread_t *thread;
+
     if(error != NULL)
     {
         *error = OS_NO_ERR;
@@ -95,7 +100,7 @@ kernel_thread_t* kernel_dequeue_thread(thread_queue_t *queue[2],
     }
 
     /* Dequeue the last item */
-    thread_queue_t *node = queue[1];
+    node = queue[1];
     if(node->prev != NULL)
     {
         node->prev->next = NULL;
@@ -107,7 +112,7 @@ kernel_thread_t* kernel_dequeue_thread(thread_queue_t *queue[2],
         queue[1] = NULL;
     }
 
-    kernel_thread_t *ret = node->thread;
+    thread = node->thread;
 
     free(node);
 
@@ -116,12 +121,14 @@ kernel_thread_t* kernel_dequeue_thread(thread_queue_t *queue[2],
         *error = OS_NO_ERR;
     }
 
-    return ret;
+    return thread;
 }
 
 OS_RETURN_E kernel_remove_thread(thread_queue_t *queue[2], 
                                  kernel_thread_t *thread)
 {
+    thread_queue_t *node;
+    
     /* If this priority queue is empty */
     if(queue[0] == NULL)
     {
@@ -129,7 +136,7 @@ OS_RETURN_E kernel_remove_thread(thread_queue_t *queue[2],
     }
 
     /* Search for the thread */
-    thread_queue_t *node = queue[0];
+    node = queue[0];
     while(node != NULL && node->thread != thread)
     {
         node = node->next;
