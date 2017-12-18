@@ -22,7 +22,8 @@
 #include "../core/kernel_output.h" /* kernel_error */
 #include "../core/panic.h"         /* kernel_panic */
 #include "../core/scheduler.h"     /* lock_thread, unlock_thread */
-#include "../sync/lock.h"                  /* lock_t */
+#include "../sync/lock.h"          /* lock_t */
+#include "../lib/malloc.h"		   /* malloc, free */
 
 /* Header include */
 #include "queue.h"
@@ -42,6 +43,11 @@ OS_RETURN_E queue_init(queue_t *queue, const uint32_t length)
 	queue->max_length = length;
 	queue->length     = 0;
 
+	queue->container = malloc(sizeof(void*) * length);
+	if(queue->container == NULL)
+	{
+		return OS_ERR_MALLOC;
+	}
 
 	queue->read_waiting_threads[0]  = NULL;
     queue->read_waiting_threads[1]  = NULL;
@@ -272,9 +278,11 @@ OS_RETURN_E queue_destroy(queue_t *queue)
 	queue->tail = 0;
 
 	queue->max_length = 0;
-	queue->length     = 0;
 
-	/* Check if we can wake up a thread */
+	queue->length     = 0;
+	free(queue->container);
+
+	/* Check if we can wake up threads */
 
 	kernel_thread_t *thread;
     OS_RETURN_E err;
