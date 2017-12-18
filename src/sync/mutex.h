@@ -15,6 +15,7 @@
 #define __MUTEX_H_
 
 #include "../lib/stddef.h"        /* OS_RETURN_E */
+#include "../lib/stdint.h"        /* Generic int types */
 #include "../core/kernel_queue.h" /* thread_queue_t */
 #include "lock.h"	              /* lock_t */
 

@@ -1,6 +1,6 @@
 /*******************************************************************************
  *
- * File: scheduler.h
+ * File: scheduler.c
  *
  * Author: Alexy Torres Aurora Dugo
  *
@@ -55,6 +55,7 @@ static uint32_t first_schedule = 0;
  * Global thread table used to browse the threads, even those
  * kept in a nutex / semaphore or other structure and that do
  * not appear in the three previous tables.
+ *
  * Index 0 is the head, 1 is the tail
  *******************************************************/
 static thread_queue_t *active_threads_table[2];
@@ -71,6 +72,8 @@ static void *init_func(void *args)
     create_thread(&test_thread, launch_tests, 33, "tests\0", (void*)0);
 
     wait_thread(test_thread, NULL);
+
+    /* If here, the system is halted */
     return NULL;
 }
 

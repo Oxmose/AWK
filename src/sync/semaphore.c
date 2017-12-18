@@ -12,13 +12,15 @@
  *
  * Semaphore synchronization primitive implemantation.
  */
-/* Sys includes */
-#include "../lib/stddef.h"
-#include "../core/scheduler.h"
-#include "../core/kernel_queue.h"
+
+#include "../lib/stddef.h"         /* OS_RETURN_E */
+#include "../lib/stdint.h"         /* Generic int types */
+#include "../core/kernel_queue.h"  /* thread_queue_t */
 #include "../core/kernel_output.h" /* kernel_error */
 #include "../core/panic.h"         /* kernel_panic */
-#include "lock.h"
+#include "../core/scheduler.h"     /* lock_thread, unlock_thread */
+#include "lock.h"                  /* lock_t */
+
 
 /* Header include */
 #include "semaphore.h"

@@ -6,10 +6,11 @@ CPU_DIR = $(wildcard cpu/*.c cpu/*.S)
 DRIVERS_DIR = $(wildcard drivers/*.c drivers/*.S)
 LIB_DIR = $(wildcard lib/*.c lib/*.S)
 SYNC_DIR = $(wildcard sync/*.c sync/*.S)
+COMM_DIR = $(wildcard comm/*.c comm/*.S)
 TESTS_DIR = $(wildcard tests/*.c tests/*.S)
 
 # on compile tous les fichiers assembleur et c du repertoire
-SRCS = $(CORE_DIR) $(CPU_DIR) $(DRIVERS_DIR) $(LIB_DIR) $(SYNC_DIR) $(TESTS_DIR)
+SRCS = $(CORE_DIR) $(CPU_DIR) $(DRIVERS_DIR) $(LIB_DIR) $(SYNC_DIR) $(COMM_DIR) $(TESTS_DIR)
 
 # crt0.o doit etre linke en premier
 OBJS = $(patsubst %.S,%.o,$(patsubst %.c,%.o,$(SRCS)))

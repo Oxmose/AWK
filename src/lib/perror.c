@@ -61,6 +61,12 @@ int perror(const int error)
 	    case OS_ERR_SEM_UNINITIALIZED:
 	    	printf("Semaphore not initialized");
 	    	break;
+	    case OS_ERR_MAILBOX_NON_INITIALIZED:
+	    	printf("Mailbox not initialized");
+	    	break;
+	    case OS_ERR_QUEUE_NON_INITIALIZED:
+	    	printf("Queue not initialized");
+	    	break;
 	    case OS_ERR_NO_SEM_BLOCKED:
 	    	printf("Thread is not blocked by semaphore");
 	    	break;
