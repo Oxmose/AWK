@@ -68,13 +68,9 @@ static void *init_func(void *args)
     (void)args;
     kernel_printf("INIT\n");
     thread_t test_thread;
-
     create_thread(&test_thread, launch_tests, 33, "tests\0", (void*)0);
 
     wait_thread(test_thread, NULL);
-
-    for(;;);
-
     return NULL;
 }
 
@@ -222,7 +218,7 @@ void* idle_sys(void* args)
 {
     /* We create the init thread */
     thread_t init;
-    create_thread(&init, init_func, 32, "init\0", args);
+    create_thread(&init, init_func, KERNEL_LOWEST_PRIORITY, "init\0", args);
 
     while(1)
     {

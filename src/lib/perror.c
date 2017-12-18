@@ -55,6 +55,27 @@ int perror(const int error)
 	    case OS_ERR_FORBIDEN_PRIORITY:
 	    	printf("Forbiden priority");
 	    	break;
+	    case OS_ERR_MUTEX_UNINITIALIZED:
+	    	printf("Mutex not initialized");
+	    	break;
+	    case OS_ERR_SEM_UNINITIALIZED:
+	    	printf("Semaphore not initialized");
+	    	break;
+	    case OS_ERR_NO_SEM_BLOCKED:
+	    	printf("Thread is not blocked by semaphore");
+	    	break;
+	    case OS_ERR_NO_MUTEX_BLOCKED:
+	    	printf("Thread is not blocked by mutex");
+	    	break;
+	    case OS_ERR_NO_QUEUE_BLOCKED:
+	    	printf("Thread is not blocked by queue");
+	    	break;
+	    case OS_MUTEX_LOCKED:
+	    	printf("Mutex locked");
+	    	break;
+	    case OS_SEM_LOCKED:
+	    	printf("Semaphore locked");
+	    	break;
 	    default:
 	    	printf("Unknown error");
 	}
