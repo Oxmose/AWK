@@ -36,11 +36,13 @@ typedef struct mailbox
 
 	void *value;    /* Mailbox value */
 	int8_t init;  	/* Mailbox initialization state */
-	int8_t state;   /* Mailbox current state (0 = empy, 1 = full) */
+	int8_t state;   /* Mailbox current state (0 = empty, 1 = full) */
 
-	/**************************
+	/***********************************
 	 * THREAD TABLE | 0: Head, 1: Tail
-	 *************************/
+	 *
+	 * FIFO fashioned
+	 **********************************/
 	thread_queue_t *read_waiting_threads[2];
 	thread_queue_t *write_waiting_threads[2];
 } mailbox_t;
@@ -79,10 +81,10 @@ OS_RETURN_E mailbox_init(mailbox_t *mailbox);
  * OS_ERR_NULL_POINTER: The mailbox pointer given as parameter is NULL.
  * OS_ERR_MAILBOX_NON_INITIALIZED: The mailbox has not been initialized before.
  *
- * @param mailbox A pointer to the mailbox to initialize. If NULL, the function
+ * @param mailbox A pointer to the mailbox to pend. If NULL, the function
  * will immediatly return and set error with the according error code.
  * @param error A pointer to the variable that contains the function success 
- * state. If NULL, the function will simply return NULL.
+ * state. May be NULL.
  *
  * @returns The function returns the content of the mailbox if error is set to
  * OS_NO_ERR, NULL otherwise.
@@ -101,7 +103,7 @@ void* mailbox_pend(mailbox_t *mailbox, OS_RETURN_E *error);
  * OS_ERR_NULL_POINTER: The mailbox pointer given as parameter is NULL.
  * OS_ERR_MAILBOX_NON_INITIALIZED: The mailbox has not been initialized before.
  *
- * @param mailbox A pointer to the mailbox to initialize. If NULL, the function
+ * @param mailbox A pointer to the mailbox to post. If NULL, the function
  * will immediatly return with the according error code.
  * @param element A pointer to the element to store in the mailbox. Only the 
  * pointer is stored in the mailbox, meaning the content of the pointed address
@@ -122,7 +124,7 @@ OS_RETURN_E mailbox_post(mailbox_t *mailbox, void *element);
  * OS_ERR_NULL_POINTER: The mailbox pointer given as parameter is NULL.
  * OS_ERR_MAILBOX_NON_INITIALIZED: The mailbox has not been initialized before.
  *
- * @param mailbox A pointer to the mailbox to initialize. If NULL, the function
+ * @param mailbox A pointer to the mailbox to destroy. If NULL, the function
  * will immediatly return with the according error code.
  *
  * @returns The function returns OS_NO_ERR on success, see system returns type 
@@ -143,10 +145,10 @@ OS_RETURN_E mailbox_destroy(mailbox_t *mailbox);
  * error parameter is NULL.
  * OS_ERR_MAILBOX_NON_INITIALIZED: The mailbox has not been initialized before.
  *
- * @param mailbox A pointer to the mailbox to initialize. If NULL, the function
+ * @param mailbox A pointer to the mailbox to test. If NULL, the function
  * will immediatly return and set error with the according error code.
  * @param error A pointer to the variable that contains the function success 
- * state. If NULL, the function will simply return NULL.
+ * state. May be NULL.
  *
  * @returns The function returns -1 on error, 1 if the mailbox is empty and 0
  * otherwise.
