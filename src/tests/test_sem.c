@@ -30,7 +30,7 @@ void *sem_thread_1(void *args)
 		}
 		printf("Thread 1\n");
 		++lock_res;
-		//sleep(1000);
+		sleep(1000);
 		if(sem_post(&sem2))
 		{
 			printf("Failed to post sem2\n");

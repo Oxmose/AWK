@@ -333,7 +333,7 @@ extern void interrupt_handler_254(void);
 extern void interrupt_handler_255(void);
 
 /**********************************
- * Kernel CPU structures 
+ * Kernel CPU functions 
  *********************************/
 
 /* Setup a flat GDT for the kernel. Fills the entries in the GDT table and load

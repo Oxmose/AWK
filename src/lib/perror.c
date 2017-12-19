@@ -82,6 +82,9 @@ int perror(const int error)
 	    case OS_SEM_LOCKED:
 	    	printf("Semaphore locked");
 	    	break;
+	    case OS_ERR_GRAPHIC_MODE_NOT_SUPPORTED:
+	    	printf("Graphic mode is not supported");
+	    	break;
 	    default:
 	    	printf("Unknown error");
 	}

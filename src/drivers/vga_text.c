@@ -61,14 +61,14 @@ OS_RETURN_E print_char(const uint8_t line, const uint8_t column,
 
 void clear_screen(void)
 {
-    uint8_t i, j;
-
+    uint32_t i, j;
+    uint16_t blank = ' ' | (screen_scheme << 8);
     /* Clear all screen cases */
     for(i = 0; i < SCREEN_LINE_SIZE; ++i)
     {
         for(j = 0; j < SCREEN_COL_SIZE; ++j)
         {
-            print_char(i, j, ' ');
+            *(get_memory_addr(i, j)) = blank;
         }
     }
 }
