@@ -172,7 +172,7 @@ static void select_thread(void)
         }
 
         /* If we should wakeup the thread */
-        if(sleeping != NULL && sleeping->wakeup_time <= current_time)
+        if(sleeping != NULL && sleeping->wakeup_time < current_time)
         {
             err = kernel_enqueue_thread(sleeping, active_threads_table, 
                                         sleeping->priority);
