@@ -63,13 +63,15 @@ __inline__ static uint16_t *get_framebuffer(uint8_t line, uint8_t column)
 static OS_RETURN_E print_char(const uint8_t line, const uint8_t column, 
                        const char character)
 {
+    uint16_t *screen_mem;
+
     if(line > SCREEN_LINE_SIZE - 1 || column > SCREEN_COL_SIZE - 1)
     {
         return OS_ERR_OUT_OF_BOUND;
     }
 
     /* Get address to inject */
-    uint16_t *screen_mem = get_framebuffer(line, column);
+    screen_mem = get_framebuffer(line, column);
 
     /* Inject the character with the current colorscheme */
     *screen_mem = character | (screen_scheme << 8);
@@ -209,12 +211,13 @@ void clear_screen(void)
 
 OS_RETURN_E put_cursor_at(uint8_t line, uint8_t column)
 {   
+    int16_t cursor_position;
     /* Set new cursor position */
     screen_cursor.x = column;
     screen_cursor.y = line;
 
     /* Display new position on screen */
-    int16_t cursor_position = column + line * SCREEN_COL_SIZE;
+    cursor_position = column + line * SCREEN_COL_SIZE;
     /* Send low part to the screen */
     outb(CURSOR_COMM_LOW, SCREEN_COMM_PORT);
     outb((int8_t)(cursor_position & 0x00FF), SCREEN_DATA_PORT);
@@ -255,6 +258,8 @@ OS_RETURN_E restore_cursor(const cursor_t buffer)
 void scroll(const SCROLL_DIRECTION_E direction, const uint8_t lines_count)
 {
     uint8_t to_scroll;
+    uint8_t i;
+    uint8_t j;
 
     if(SCREEN_LINE_SIZE < lines_count)
     {
@@ -269,10 +274,9 @@ void scroll(const SCROLL_DIRECTION_E direction, const uint8_t lines_count)
     if(direction == SCROLL_DOWN)
     {
         /* For each line scroll we want */
-        for(uint8_t j = 0; j < to_scroll; ++j)
+        for(j = 0; j < to_scroll; ++j)
         {
             /* Copy all the lines to the above one */
-            uint8_t i;
             for(i = 0; i < SCREEN_LINE_SIZE - 1; ++i)
             {
                 memmove(get_framebuffer(i, 0), get_framebuffer(i + 1, 0),  
@@ -280,12 +284,11 @@ void scroll(const SCROLL_DIRECTION_E direction, const uint8_t lines_count)
                 last_columns[i] = last_columns[i+1];
             }
             last_columns[SCREEN_LINE_SIZE - 1] = 0;
-
-            /* Clear last line */
-            for(i = 0; i < SCREEN_COL_SIZE; ++i)
-            {
-                print_char(SCREEN_LINE_SIZE - 1, i, ' ');
-            }
+        }
+        /* Clear last line */
+        for(i = 0; i < SCREEN_COL_SIZE; ++i)
+        {
+            print_char(SCREEN_LINE_SIZE - 1, i, ' ');
         }
     }
 
