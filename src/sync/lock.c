@@ -74,5 +74,10 @@ OS_RETURN_E spinlock_unlock(lock_t *lock)
 
 OS_RETURN_E spinlock_init(lock_t *lock)
 {
+#if KERNEL_MONOCORE
+    *lock = 0;
+#else
     return spinlock_unlock(lock);
+#endif
+    
 }
