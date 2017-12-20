@@ -76,6 +76,7 @@ OS_RETURN_E spinlock_init(lock_t *lock)
 {
 #if KERNEL_MONOCORE
     *lock = 0;
+    return OS_NO_ERR;
 #else
     return spinlock_unlock(lock);
 #endif
