@@ -74,9 +74,11 @@ void *mutex_thread_3(void *args)
 {
 	//printf("T3\n");
 	int8_t val;
-	if(mutex_try_pend(&mutex2, &val) != OS_MUTEX_LOCKED || val != 0)
+	OS_RETURN_E err;
+	if((err = mutex_try_pend(&mutex2, &val) != OS_MUTEX_LOCKED) || val != 0)
 	{
-		printf("Failed to trypend mutex2 3, val %d\n", val);
+		printf("Failed to trypend mutex2 3, val %d | %d\n", val, err);
+		perror(err);
 		return NULL;
 	}
 	if(mutex_pend(&mutex2) != OS_ERR_MUTEX_UNINITIALIZED)
@@ -119,7 +121,6 @@ int test_mutex(void)
 		printf("Failed to pend mutex2\n");
 		return -1;
 	}
-
 
 	lock_res = 0;
 

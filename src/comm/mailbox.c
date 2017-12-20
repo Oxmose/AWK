@@ -40,7 +40,7 @@ OS_RETURN_E mailbox_init(mailbox_t *mailbox)
     mailbox->write_waiting_threads[0] = NULL;
     mailbox->write_waiting_threads[1] = NULL; 
 
-    mailbox->init  = 1;
+    mailbox->init = 1;
 
     return OS_NO_ERR;
 }

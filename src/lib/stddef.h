@@ -19,38 +19,38 @@
 #define NULL ((void *)0)
 
 /* System return states */
-typedef enum OS_RETURN
+typedef enum __attribute__ ((packed, aligned(2))) OS_RETURN
 {
-    OS_NO_ERR,
+    OS_NO_ERR                              = 0,
 
-    OS_ERR_NULL_POINTER,
-    OS_ERR_OUT_OF_BOUND,
+    OS_ERR_NULL_POINTER                    = 1,
+    OS_ERR_OUT_OF_BOUND                    = 2,
     
-    OR_ERR_UNAUTHORIZED_INTERRUPT_LINE,
-    OS_ERR_INTERRUPT_ALREADY_REGISTERED,
-    OS_ERR_INTERRUPT_NOT_REGISTERED,
+    OR_ERR_UNAUTHORIZED_INTERRUPT_LINE     = 3,
+    OS_ERR_INTERRUPT_ALREADY_REGISTERED    = 4,
+    OS_ERR_INTERRUPT_NOT_REGISTERED        = 5,
     
-    OS_ERR_NO_SUCH_IRQ_LINE,
+    OS_ERR_NO_SUCH_IRQ_LINE                = 6,
     
-    OS_ERR_NO_MORE_FREE_EVENT,
-    OS_ERR_NO_SUCH_ID,
-    OS_ERR_MALLOC,
-    OS_ERR_UNAUTHORIZED_ACTION,
-    OS_ERR_FORBIDEN_PRIORITY,
+    OS_ERR_NO_MORE_FREE_EVENT              = 7,
+    OS_ERR_NO_SUCH_ID                      = 8,
+    OS_ERR_MALLOC                          = 9,
+    OS_ERR_UNAUTHORIZED_ACTION             = 10,
+    OS_ERR_FORBIDEN_PRIORITY               = 11,
 
-    OS_ERR_MUTEX_UNINITIALIZED,
-    OS_ERR_SEM_UNINITIALIZED,
-    OS_ERR_MAILBOX_NON_INITIALIZED,
-    OS_ERR_QUEUE_NON_INITIALIZED,
+    OS_ERR_MUTEX_UNINITIALIZED             = 12,
+    OS_ERR_SEM_UNINITIALIZED               = 13,
+    OS_ERR_MAILBOX_NON_INITIALIZED         = 14,                         
+    OS_ERR_QUEUE_NON_INITIALIZED           = 15, 
 
-    OS_ERR_NO_SEM_BLOCKED,
-    OS_ERR_NO_MUTEX_BLOCKED,
-    OS_ERR_NO_QUEUE_BLOCKED,
+    OS_ERR_NO_SEM_BLOCKED                  = 16,
+    OS_ERR_NO_MUTEX_BLOCKED                = 17,
+    OS_ERR_NO_QUEUE_BLOCKED                = 18,
 
-    OS_ERR_GRAPHIC_MODE_NOT_SUPPORTED,
+    OS_ERR_GRAPHIC_MODE_NOT_SUPPORTED      = 19,
 
-    OS_MUTEX_LOCKED,
-    OS_SEM_LOCKED,
+    OS_MUTEX_LOCKED                        = 20,
+    OS_SEM_LOCKED                          = 21
 } OS_RETURN_E;
 
 typedef int32_t OS_EVENT_ID;

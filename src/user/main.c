@@ -9,7 +9,6 @@ int main(int argc, char** argv)
 	{
 		printf("Arg %d: %s\n", i, argv[i]);
 	}
-	sleep(1000);
 	int32_t size = 50;
 	thread_info_t array[50];
 
@@ -29,7 +28,8 @@ int main(int argc, char** argv)
 			);
 	}
 
-	launch_tests(NULL);
-
+	thread_t tests;
+	create_thread(&tests, launch_tests, 63, "tests\0", NULL);
+	wait_thread(tests, NULL);
 	return 0;
 }

@@ -84,6 +84,8 @@ static void thread_exit(void)
 {
     OS_RETURN_E err;
 
+    spinlock_lock(&sched_lock);
+
     /* Set new thread state */
     active_thread->state = ZOMBIE;
 
@@ -92,7 +94,7 @@ static void thread_exit(void)
     {
         active_thread->joining_thread->state = READY;
 
-        err= kernel_enqueue_thread(active_thread->joining_thread,
+        err = kernel_enqueue_thread(active_thread->joining_thread,
                                          active_threads_table,
                                          active_thread->priority);
         if(err != OS_NO_ERR)
@@ -109,6 +111,7 @@ static void thread_exit(void)
         kernel_panic();
     }
     
+    spinlock_unlock(&sched_lock);
     /* Schedule thread */
     schedule();
 }
@@ -507,6 +510,7 @@ OS_RETURN_E create_thread(thread_t *thread,
 
     strncpy(new_thread->name, name, THREAD_MAX_NAME_LENGTH);
 
+    spinlock_lock(&sched_lock);
     err = kernel_enqueue_thread(new_thread, active_threads_table, 
                                 priority);
     if(err != OS_NO_ERR)
@@ -522,6 +526,8 @@ OS_RETURN_E create_thread(thread_t *thread,
     }
 
     ++thread_count;
+
+    spinlock_unlock(&sched_lock);
 
     /* If the priority of the new thread is higher than the curent one */
     if(first_schedule == 1 && priority < active_thread->priority)
@@ -553,9 +559,13 @@ OS_RETURN_E wait_thread(thread_t thread, void **ret_val)
             *ret_val = thread->ret_val;
         }
 
+        spinlock_lock(&sched_lock);
+
         kernel_remove_thread(zombie_threads_table, thread);
         kernel_remove_thread(global_threads_table, thread);
         free(thread);
+
+        spinlock_unlock(&sched_lock);
 
         return OS_NO_ERR;
     }
@@ -571,10 +581,14 @@ OS_RETURN_E wait_thread(thread_t thread, void **ret_val)
     {
         *ret_val = thread->ret_val;
     }
+
+    spinlock_lock(&sched_lock);
      
     kernel_remove_thread(zombie_threads_table, thread);
     kernel_remove_thread(global_threads_table, thread);
     free(thread);
+
+    spinlock_unlock(&sched_lock);
 
     --thread_count;
 
@@ -628,8 +642,9 @@ OS_RETURN_E unlock_thread(const thread_t thread,
         }
         
     }
-
+    spinlock_lock(&sched_lock);
     err = kernel_enqueue_thread(thread, active_threads_table, thread->priority);
+    spinlock_unlock(&sched_lock);
 
     if(err != OS_NO_ERR)
     {
@@ -665,9 +680,10 @@ OS_RETURN_E lock_io(const BLOCK_TYPE_E block_type)
         active_thread->block_type = block_type;
                 active_thread->state = BLOCKED;
 
+        spinlock_lock(&sched_lock);
         err = kernel_enqueue_thread(active_thread, io_waiting_threads_table,
                                     active_thread->io_req_time);
-
+        spinlock_unlock(&sched_lock);
         if(err != OS_NO_ERR)
         {
             kernel_error("Could not enqueue thread in kbd IO table[%d]\n", err);
@@ -690,6 +706,8 @@ OS_RETURN_E unlock_io(const BLOCK_TYPE_E block_type)
         return OS_ERR_UNAUTHORIZED_ACTION;
     }
 
+    spinlock_lock(&sched_lock);
+
     thread = kernel_dequeue_thread(io_waiting_threads_table, &err);
     if(thread != NULL && err == OS_NO_ERR)
     {
@@ -707,6 +725,8 @@ OS_RETURN_E unlock_io(const BLOCK_TYPE_E block_type)
         kernel_error("Could not dequee thread in kbd IO table[%d]\n", err);
         kernel_panic();
     }
+
+    spinlock_unlock(&sched_lock);
 
     return OS_NO_ERR;
 }

@@ -15,6 +15,9 @@
 
 static const int32_t tests_count = 3;
 
+/***************
+ TEST MUST BE EXECUTED ON THE LOWEST PRIORITY POSSIBLE 
+ ****************/
 
 void *launch_tests(void*args)
 {

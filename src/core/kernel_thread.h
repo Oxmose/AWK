@@ -19,7 +19,7 @@
 
 /* Thread settings */
 #define THREAD_MAX_NAME_LENGTH  64
-#define THREAD_STACK_SIZE       4096 /* 16 Kb */
+#define THREAD_STACK_SIZE       8192 /* 32 Kb */
 #define THREAD_MEMORY_SIZE      sizeof(scheduler_thread_t);
 #define THREAD_MAX_STATE_LENGTH 10
 
