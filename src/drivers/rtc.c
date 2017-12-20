@@ -12,7 +12,7 @@
  ******************************************************************************/
 
 #include "pic.h"                   /* set_IRQ_EOI, set_IRQ_mask */
-#include "../cpu/cpu.h"            /* outb */
+#include "../cpu/cpu.h"            /* outb inb */
 #include "../core/interrupts.h"    /* register_interrupt, cpu_state, 
                                     * stack_state */
 #include "../lib/stdint.h"         /* Generic int types */
@@ -34,8 +34,8 @@ static rtc_event_t clock_events[RTC_MAX_EVENT_COUNT];
 /* Tick count */
 uint32_t tick_count;
 
-void rtc_interrupt_handler(cpu_state_t *cpu_state, uint32_t int_id, 
-                           stack_state_t *stack_state)
+static void rtc_interrupt_handler(cpu_state_t *cpu_state, uint32_t int_id, 
+                                  stack_state_t *stack_state)
 {
     (void)cpu_state;
     (void)stack_state;
@@ -167,6 +167,12 @@ OS_RETURN_E init_rtc(void)
     outb((prev_rate & 0xF0) | RTC_RATE, CMOS_DATA_PORT);
 
     tick_count = 0;
+
+    uint32_t i;
+    for(i = 0; i < RTC_MAX_EVENT_COUNT; ++i)
+    {
+        clock_events[i].enabled = 0;
+    }
 
     /* Set handler and mask before setting IRQ */
     /* Set rtc clock interrupt handler */

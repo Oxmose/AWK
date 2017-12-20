@@ -14,8 +14,8 @@
 #ifndef __RTC_H_
 #define __RTC_H_
 
-#include "../lib/stdint.h" /* Generic int types */
-#include "../lib/stddef.h" /* OS_RETURN_E */
+#include "../lib/stdint.h"      /* Generic int types */
+#include "../lib/stddef.h"      /* OS_RETURN_E */
 
 /*****************************************
  * CONSTANTS
@@ -78,10 +78,6 @@ typedef struct rtc_event
 /************************************
  * FUNCTIONS 
  ***********************************/
-
-/* Clock tick handler, should only be called in an interrupt context */
-void rtc_interrupt_handler(cpu_state_t *cpu_state, uint32_t int_id, 
-                           stack_state_t *stack_state);
 
 /* Init system rtc time and date
  *
