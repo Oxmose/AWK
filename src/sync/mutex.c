@@ -21,6 +21,7 @@
 
 /* Header include */
 #include "mutex.h"
+
 OS_RETURN_E mutex_init(mutex_t *mutex)
 {
 	if(mutex == NULL)
@@ -43,6 +44,9 @@ OS_RETURN_E mutex_init(mutex_t *mutex)
 
 OS_RETURN_E mutex_destroy(mutex_t *mutex)
 {
+	kernel_thread_t *thread;
+	OS_RETURN_E err;
+
 	/* Check if mutex is initialized */
 	if(mutex == NULL)
 	{
@@ -59,8 +63,6 @@ OS_RETURN_E mutex_destroy(mutex_t *mutex)
 	}
 
 	/* Unlock all thread*/
-	kernel_thread_t *thread;
-	OS_RETURN_E err;
 	while((thread = kernel_dequeue_thread(mutex->waiting_threads, &err)) 
 		!= NULL)
     {
@@ -92,6 +94,8 @@ OS_RETURN_E mutex_destroy(mutex_t *mutex)
 
 OS_RETURN_E mutex_pend(mutex_t *mutex)
 {
+	OS_RETURN_E err;
+
 	/* Check if mutex is initialized */
 	if(mutex == NULL)
 	{
@@ -113,8 +117,7 @@ OS_RETURN_E mutex_pend(mutex_t *mutex)
 	while(mutex != NULL &&
 		  mutex->init == 1 &&
 		  mutex->state != 1)
-	{	
-		OS_RETURN_E err;
+	{
 		err = kernel_enqueue_thread(get_active_thread(), 
 			                        mutex->waiting_threads, 0);
         if(err != OS_NO_ERR)
@@ -152,6 +155,9 @@ OS_RETURN_E mutex_pend(mutex_t *mutex)
 
 OS_RETURN_E mutex_post(mutex_t *mutex)
 {
+	kernel_thread_t *thread;
+	OS_RETURN_E err;
+	
 	/* Check if mutex is initialized */
 	if(mutex == NULL)
 	{
@@ -171,8 +177,6 @@ OS_RETURN_E mutex_post(mutex_t *mutex)
 	mutex->state = 1;
 
 	/* Check if we can unlock a blocked thread on the mutex */
-	kernel_thread_t *thread;
-	OS_RETURN_E err;
 	if((thread = kernel_dequeue_thread(mutex->waiting_threads, &err)) != NULL)
     {
     	if(err != OS_NO_ERR)

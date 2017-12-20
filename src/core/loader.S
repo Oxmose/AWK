@@ -34,9 +34,10 @@ KERNEL_STACK_SIZE equ 32768
 ;-----------------------------
 ; MULTIBOOT SETTINGS
 ;-----------------------------
-MODULEALIGN equ 1<<0
-MEMINFO     equ 1<<1
-FLAGS       equ MODULEALIGN | MEMINFO
+MODULEALIGN    equ 1<<0
+MEMINFO        equ 1<<1
+MULTIBOOT_VESA equ 1<<2
+FLAGS       equ MODULEALIGN | MEMINFO | MULTIBOOT_VESA
 MAGIC       equ 0x1BADB002
 CHECKSUM    equ -(MAGIC + FLAGS)
 
