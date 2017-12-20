@@ -1,6 +1,6 @@
 /*******************************************************************************
  *
- * File: vga_graphic.h
+ * File: vga_graphic.c
  *
  * Author: Alexy Torres Aurora Dugo
  *
@@ -14,6 +14,7 @@
 #include "../cpu/cpu.h"    /* outb, inb */
 #include "../lib/stdint.h" /* Generic int types */
 #include "../lib/stddef.h" /* OS_RETURN_E */
+#include "../lib/string.h" /* memset */
 
 /* Header file */            
 #include "vga_graphic.h"
@@ -25,10 +26,17 @@ static uint8_t  screen_depth;
 
 static uint8_t *frame_buffer;
 
-static int8_t is_supported_mode(uint32_t width, uint32_t height, 
+static VGA_MODE_E get_supported_mode(uint32_t width, uint32_t height, 
                                 uint32_t colordepth)
 {
-    return width == 320 && height == 200 && colordepth == 8;
+    if(width == 320 && height == 200 && colordepth == 8)
+    {
+        return VGA_MODE_320_200_256;
+    }
+    else
+    {
+        return VGA_MODE_NOT_SUPPORTED;
+    }
 }
 
 static void write_registers(uint8_t *registers)
@@ -105,30 +113,8 @@ static uint8_t* get_frame_buffer(void)
 
 static uint8_t get_color_index(uint8_t r, uint8_t g, uint8_t b)
 {
-    if(r == 0x00 && g == 0x00 && b == 0x00) return 0x00; // black
-    if(r == 0x00 && g == 0x00 && b == 0xA8) return 0x01; // blue
-    if(r == 0x00 && g == 0xA8 && b == 0x00) return 0x02; // green
-    if(r == 0xA8 && g == 0x00 && b == 0x00) return 0x04; // red
-    if(r == 0xFF && g == 0xFF && b == 0xFF) return 0x3F; // white
-    return 0x00;
-}
-
-static OS_RETURN_E put_pixel(uint32_t x, uint32_t y, 
-                             uint8_t red, uint8_t green, uint8_t blue)
-{
-    /* Test bounds */
-    if(x >= screen_width || y >= screen_height)
-    {
-        return OS_ERR_OUT_OF_BOUND;
-    }
-
-    /* Compute pixel address in the buffer */
-    uint32_t offset = y * screen_width + x;
-
-    /* Set memory */
-    *(frame_buffer + offset) = get_color_index(red, green, blue);
-
-    return OS_NO_ERR;
+    /* R3G3B2 */
+    return (((r & 0x7) << 5) | ((g & 0x7) << 2) | (b & 0x3));
 }
 
 OS_RETURN_E init_vga(void)
@@ -140,7 +126,8 @@ OS_RETURN_E init_vga(void)
 
 OS_RETURN_E set_vga_mode(uint32_t width, uint32_t height, uint32_t colordepth)
 {
-    if(is_supported_mode(width, height, colordepth) == 0)
+    VGA_MODE_E vga_mode = get_supported_mode(width, height, colordepth);
+    if(vga_mode == VGA_MODE_NOT_SUPPORTED)
     {
         return OS_ERR_GRAPHIC_MODE_NOT_SUPPORTED;
     }
@@ -149,28 +136,49 @@ OS_RETURN_E set_vga_mode(uint32_t width, uint32_t height, uint32_t colordepth)
     screen_height = height;
     screen_depth  = colordepth;
     
+    /* Keep these array in the function to avoid taking useless memory space */
     unsigned char g_320x200x256[] =
     {
         /* MISC */
-            0x63,
+        0x63,
         /* SEQ */
-            0x03, 0x01, 0x0F, 0x00, 0x0E,
+        0x03, 0x01, 0x0F, 0x00, 0x0E,
         /* CRTC */
-            0x5F, 0x4F, 0x50, 0x82, 0x54, 0x80, 0xBF, 0x1F,
-            0x00, 0x41, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x9C, 0x0E, 0x8F, 0x28, 0x40, 0x96, 0xB9, 0xA3,
-            0xFF,
+        0x5F, 0x4F, 0x50, 0x82, 0x54, 0x80, 0xBF, 0x1F,
+        0x00, 0x41, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x9C, 0x0E, 0x8F, 0x28, 0x40, 0x96, 0xB9, 0xA3,
+        0xFF,
         /* GC */
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x05, 0x0F,
-            0xFF,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x40, 0x05, 0x0F,
+        0xFF,
         /* AC */
-            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-            0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
-            0x41, 0x00, 0x0F, 0x00, 0x00
+        0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+        0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
+        0x41, 0x00, 0x0F, 0x00, 0x00
     };
     
     /* Write registers */
-    write_registers(g_320x200x256);
+    if(vga_mode == VGA_MODE_320_200_256)
+    {
+        write_registers(g_320x200x256);
+
+        /* Set 256 color palette */
+        outb(0, VGA_DAC_WRITE_INDEX);
+        //int r = 0;
+        for(uint32_t r = 0; r < 8; ++r)
+        {
+            for(uint32_t g = 0; g < 8; ++g)
+            {
+                for(uint32_t b = 0; b < 4; ++b)
+                {
+
+                    outb(r * 9, VGA_DAC_DATA);
+                    outb(g * 9, VGA_DAC_DATA);
+                    outb(b * 21, VGA_DAC_DATA);
+                }
+            }
+        }
+    }
 
     /* Get the new frame buffer */
     frame_buffer = get_frame_buffer();
@@ -181,11 +189,40 @@ OS_RETURN_E draw_pixel(uint32_t x, uint32_t y,
                        uint8_t red, uint8_t green, uint8_t blue)
 {
     /* Test bounds */
-    if(x >= screen_width || y >= screen_height)
+    if(x > screen_width || y > screen_height)
     {
         return OS_ERR_OUT_OF_BOUND;
     }
 
-    /* Plot pixel */
-    return put_pixel(x, y, red, green, blue);
+    /* Compute pixel address in the buffer */
+    uint32_t offset = y * screen_width + x;
+
+    uint8_t color = get_color_index(red, green, blue);
+
+    /* Set memory */
+    *(frame_buffer + offset) = color;
+
+    return OS_NO_ERR;
+}
+
+OS_RETURN_E draw_rectangle(uint32_t x, uint32_t y, 
+                           uint32_t width, uint32_t height,
+                           uint8_t red, uint8_t green, uint8_t blue)
+{
+    /* Test bounds */
+    if(x + width > screen_width || y + height> screen_height)
+    {
+        return OS_ERR_OUT_OF_BOUND;
+    }
+    uint8_t color = get_color_index(red, green, blue);
+
+    /* Set memory */
+    for(uint32_t i = 0; i < height; ++i)
+    {
+        /* Compute pixel address in the buffer */
+        uint32_t offset = (y + i) * screen_width + x;
+        memset(frame_buffer + offset, color, width);
+    }
+
+    return OS_NO_ERR;
 }

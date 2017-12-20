@@ -14,6 +14,9 @@
 #ifndef __VGA_GRAPHIC_H_
 #define __VGA_GRAPHIC_H_
 
+#include "../lib/stdint.h" /* Generic int types */
+#include "../lib/stddef.h" /* OS_RETURN_E */
+
 /**********************************
  * VGA constants
  *********************************/
@@ -46,7 +49,11 @@
 /**********************************
  * STRUCTURES
  *********************************/
-
+typedef enum VGA_MODE_E
+{
+    VGA_MODE_320_200_256,
+    VGA_MODE_NOT_SUPPORTED
+} VGA_MODE_E;
 
 /**********************************
  * FUNCTIONS
@@ -58,5 +65,9 @@ OS_RETURN_E set_vga_mode(uint32_t width, uint32_t height, uint32_t colordepth);
 
 OS_RETURN_E draw_pixel(uint32_t x, uint32_t y, 
 	                   uint8_t red, uint8_t green, uint8_t blue);
+
+OS_RETURN_E draw_rectangle(uint32_t x, uint32_t y, 
+                           uint32_t width, uint32_t height,
+                           uint8_t red, uint8_t green, uint8_t blue);
 
 #endif /* __VGA_GRAPHIC_H_ */

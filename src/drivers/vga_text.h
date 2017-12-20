@@ -23,11 +23,11 @@
 #include "../lib/stddef.h" /* OS_RETURN_E, NULL */
 
 /* SCREEN SETTINGS */
-#define SCREEN_ADDR         0xB8000
-#define SCREEN_DATA_PORT    0x3D5
-#define SCREEN_COMM_PORT    0x3D4
-#define SCREEN_COL_SIZE     80
-#define SCREEN_LINE_SIZE    25
+#define VGA_TEXT_FRAMEBUFFER   0xB8000
+#define SCREEN_DATA_PORT       0x3D5
+#define SCREEN_COMM_PORT       0x3D4
+#define SCREEN_COL_SIZE        80
+#define SCREEN_LINE_SIZE       25
 
 /* CURSOR SETTINGS */
 #define CURSOR_COMM_LOW  0x0F
@@ -86,25 +86,6 @@ typedef enum SCROLL_DIRECTION
 /* Screen color scheme typedef */
 typedef uint8_t colorscheme_t;
 
-/* Return the memory address of the screen position at the coordinates
- * given as arguments.
- *
- * @returns The address at which the driver has to write the bytes to display.
- * @param line The line index of the coordinates.
- * @param column The column index of the coordinates.
- */
-uint16_t *get_memory_addr(const uint8_t line, const uint8_t column);
-
-/* Print character to the selected coordinates
- *
- * @param line The line index where to write the character.
- * @param column The colums index where to write the character.
- * @param character The character to display on the screem.
- * @returns The error or success state.
- */
-OS_RETURN_E print_char(const uint8_t line, const uint8_t column, 
-                       const char character);
-
 /* Clear the screen by printing space character on black background */
 void clear_screen(void);
 
@@ -129,12 +110,6 @@ OS_RETURN_E save_cursor(cursor_t *buffer);
  * cursor.
  */
 OS_RETURN_E restore_cursor(const cursor_t buffer);
-
-/* Process the character in parameters.
- *
- * @param character The character to process.
- */
-void process_char(const char character);
 
 /* Scroll in the desired direction of lines_count lines.
  * 

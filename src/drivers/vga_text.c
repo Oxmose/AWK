@@ -29,20 +29,35 @@ static colorscheme_t screen_scheme = BG_BLACK | FG_WHITE;
 static cursor_t      screen_cursor;
 static cursor_t      last_printed_cursor;
 
-uint16_t *get_memory_addr(uint8_t line, uint8_t column)
+/* Return the memory address of the screen framebuffer position at the 
+ * coordinates
+ * given as arguments.
+ *
+ * @returns The address at which the driver has to write the bytes to display.
+ * @param line The line index of the coordinates.
+ * @param column The column index of the coordinates.
+ */
+__inline__ static uint16_t *get_framebuffer(uint8_t line, uint8_t column)
 {
     /* Avoid overflow on text mode */
     if(line > SCREEN_LINE_SIZE - 1 || column > SCREEN_COL_SIZE -1)
     {
-        return (uint16_t *)(SCREEN_ADDR);
+        return (uint16_t *)(VGA_TEXT_FRAMEBUFFER);
     }
 
     /* Returns the mem adress of the coordinates */
-    return (uint16_t *)(SCREEN_ADDR + 2 * 
+    return (uint16_t *)(VGA_TEXT_FRAMEBUFFER + 2 * 
            (column + line * SCREEN_COL_SIZE));
 }
 
-OS_RETURN_E print_char(const uint8_t line, const uint8_t column, 
+/* Print character to the selected coordinates
+ *
+ * @param line The line index where to write the character.
+ * @param column The colums index where to write the character.
+ * @param character The character to display on the screem.
+ * @returns The error or success state.
+ */
+static OS_RETURN_E print_char(const uint8_t line, const uint8_t column, 
                        const char character)
 {
     if(line > SCREEN_LINE_SIZE - 1 || column > SCREEN_COL_SIZE - 1)
@@ -51,7 +66,7 @@ OS_RETURN_E print_char(const uint8_t line, const uint8_t column,
     }
 
     /* Get address to inject */
-    uint16_t *screen_mem = get_memory_addr(line, column);
+    uint16_t *screen_mem = get_framebuffer(line, column);
 
     /* Inject the character with the current colorscheme */
     *screen_mem = character | (screen_scheme << 8);
@@ -59,66 +74,11 @@ OS_RETURN_E print_char(const uint8_t line, const uint8_t column,
     return OS_NO_ERR;
 }
 
-void clear_screen(void)
-{
-    uint32_t i, j;
-    uint16_t blank = ' ' | (screen_scheme << 8);
-    /* Clear all screen cases */
-    for(i = 0; i < SCREEN_LINE_SIZE; ++i)
-    {
-        for(j = 0; j < SCREEN_COL_SIZE; ++j)
-        {
-            *(get_memory_addr(i, j)) = blank;
-        }
-    }
-}
-
-OS_RETURN_E put_cursor_at(uint8_t line, uint8_t column)
-{   
-    /* Set new cursor position */
-    screen_cursor.x = column;
-    screen_cursor.y = line;
-
-    /* Display new position on screen */
-    int16_t cursor_position = column + line * SCREEN_COL_SIZE;
-    /* Send low part to the screen */
-    outb(CURSOR_COMM_LOW, SCREEN_COMM_PORT);
-    outb((int8_t)(cursor_position & 0x00FF), SCREEN_DATA_PORT);
-
-    /* Send high part to the screen */
-    outb(CURSOR_COMM_HIGH, SCREEN_COMM_PORT);
-    outb((int8_t)((cursor_position & 0xFF00) >> 8), SCREEN_DATA_PORT); 
-
-    return OS_NO_ERR;
-}
-
-OS_RETURN_E save_cursor(cursor_t *buffer)
-{
-    if(buffer == NULL)
-    {
-        return OS_ERR_NULL_POINTER;
-    }
-
-    /* Save cursor attributes */
-    buffer->x = screen_cursor.x;
-    buffer->y = screen_cursor.y;
-
-    return OS_NO_ERR;
-}
-
-OS_RETURN_E restore_cursor(const cursor_t buffer)
-{
-    if(buffer.x >= SCREEN_COL_SIZE || buffer.y >= SCREEN_LINE_SIZE)
-    {
-        return OS_ERR_OUT_OF_BOUND;
-    }
-    /* Restore cursor attributes */
-    put_cursor_at(buffer.y, buffer.x);
-
-    return OS_NO_ERR;
-}
-
-void process_char(const char character)
+/* Process the character in parameters.
+ *
+ * @param character The character to process.
+ */
+static void process_char(const char character)
 {
     /* If character is a normal ASCII character */
     if(character > 31 && character < 127)
@@ -216,6 +176,65 @@ void process_char(const char character)
     }
 }
 
+void clear_screen(void)
+{
+    uint32_t i, j;
+    uint16_t blank = ' ' | (screen_scheme << 8);
+    /* Clear all screen cases */
+    for(i = 0; i < SCREEN_LINE_SIZE; ++i)
+    {
+        for(j = 0; j < SCREEN_COL_SIZE; ++j)
+        {
+            *(get_framebuffer(i, j)) = blank;
+        }
+    }
+}
+
+OS_RETURN_E put_cursor_at(uint8_t line, uint8_t column)
+{   
+    /* Set new cursor position */
+    screen_cursor.x = column;
+    screen_cursor.y = line;
+
+    /* Display new position on screen */
+    int16_t cursor_position = column + line * SCREEN_COL_SIZE;
+    /* Send low part to the screen */
+    outb(CURSOR_COMM_LOW, SCREEN_COMM_PORT);
+    outb((int8_t)(cursor_position & 0x00FF), SCREEN_DATA_PORT);
+
+    /* Send high part to the screen */
+    outb(CURSOR_COMM_HIGH, SCREEN_COMM_PORT);
+    outb((int8_t)((cursor_position & 0xFF00) >> 8), SCREEN_DATA_PORT); 
+
+    return OS_NO_ERR;
+}
+
+OS_RETURN_E save_cursor(cursor_t *buffer)
+{
+    if(buffer == NULL)
+    {
+        return OS_ERR_NULL_POINTER;
+    }
+
+    /* Save cursor attributes */
+    buffer->x = screen_cursor.x;
+    buffer->y = screen_cursor.y;
+
+    return OS_NO_ERR;
+}
+
+OS_RETURN_E restore_cursor(const cursor_t buffer)
+{
+    if(buffer.x >= SCREEN_COL_SIZE || buffer.y >= SCREEN_LINE_SIZE)
+    {
+        return OS_ERR_OUT_OF_BOUND;
+    }
+    /* Restore cursor attributes */
+    put_cursor_at(buffer.y, buffer.x);
+
+    return OS_NO_ERR;
+}
+
 void scroll(const SCROLL_DIRECTION_E direction, const uint8_t lines_count)
 {
     uint8_t to_scroll;
@@ -239,7 +258,7 @@ void scroll(const SCROLL_DIRECTION_E direction, const uint8_t lines_count)
             uint8_t i;
             for(i = 0; i < SCREEN_LINE_SIZE - 1; ++i)
             {
-                memmove(get_memory_addr(i, 0), get_memory_addr(i + 1, 0),  
+                memmove(get_framebuffer(i, 0), get_framebuffer(i + 1, 0),  
                         sizeof(uint16_t) * SCREEN_COL_SIZE);
             }
 
@@ -276,16 +295,6 @@ void console_putbytes(const char *string, const uint32_t size)
     last_printed_cursor = screen_cursor;
 }
 
-void console_write_keyboard(const char *string, const uint32_t size)
-{
-    /* Output each character of the string */
-    uint32_t i;
-    for(i = 0; i < size; ++i)
-    {
-        process_char(string[i]);
-    }
-}
-
 void set_color_scheme(const colorscheme_t color_scheme)
 {
     screen_scheme = color_scheme;
@@ -302,10 +311,4 @@ OS_RETURN_E save_color_scheme(colorscheme_t *buffer)
     *buffer = screen_scheme;
 
     return OS_NO_ERR;
-}
-
-void restore_color_scheme(const colorscheme_t buffer)
-{
-    /* Retore color scheme */
-    screen_scheme = buffer;
 }
