@@ -189,7 +189,8 @@ OS_RETURN_E sem_post(semaphore_t *sem)
 
         	spinlock_unlock(&sem->lock);
 
-            err = unlock_thread(thread, SEM, 1);
+        	/* Do not schedule, sem can be used in interrupt handlers */
+            err = unlock_thread(thread, SEM, 0);
             if(err != OS_NO_ERR)
 		    {
 		        kernel_error("Could not unlock thread from semaphore[%d]\n", err);
