@@ -40,6 +40,26 @@ typedef enum SYSTEM_STATE
     HALTED
 } SYSTEM_STATE_E;
 
+/* Thread information struct */
+typedef struct thread_info
+{
+    int32_t          pid;
+    int32_t          ppid;
+    char             name[THREAD_MAX_NAME_LENGTH];
+
+    uint32_t         priority;
+
+    THREAD_STATE_E   state;
+
+    uint32_t start_time;
+    uint32_t end_time;
+    uint32_t exec_time;
+} thread_info_t;
+
+/****************************
+ * FUNCTIONS 
+ ***************************/
+
 /* Idle thread routine */
 void* idle_sys(void* args);
 
@@ -154,5 +174,7 @@ OS_RETURN_E lock_io(const BLOCK_TYPE_E block_type);
  * @returns OS_NO_ERR on success, error code otherwise.
  */
 OS_RETURN_E unlock_io(const BLOCK_TYPE_E block_type);
+
+OS_RETURN_E get_threads_info(thread_info_t *threads, int32_t *size);
 
 #endif /* __SCHEDULER_H_ */
