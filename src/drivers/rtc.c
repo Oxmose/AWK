@@ -30,6 +30,7 @@ static date_t date;
 
 /* Events table */
 static rtc_event_t clock_events[RTC_MAX_EVENT_COUNT];
+static lock_t clock_events_lock;
 
 /* Tick count */
 uint32_t tick_count;
@@ -163,6 +164,8 @@ OS_RETURN_E init_rtc(void)
     date.day     = 0;
     date.month   = 0;
     date.year    = 0;
+
+    spinlock_init(&clock_events_lock);
     
     /* Init CMOS IRQ8 */
     outb((CMOS_NMI_DISABLE_BIT << 7) | CMOS_REG_B, CMOS_COMM_PORT);
@@ -232,7 +235,7 @@ OS_RETURN_E register_rtc_event(void (*function)(void),
         return OS_ERR_NULL_POINTER;
     }
 
-    disable_interrupt();
+    spinlock_lock(&clock_events_lock);
 
     /* Search for free event id */
     for(i = 0; i < RTC_MAX_EVENT_COUNT && clock_events[i].enabled == 1; ++i);
@@ -243,7 +246,7 @@ OS_RETURN_E register_rtc_event(void (*function)(void),
         {
             *event_id = -1;
         }
-        enable_interrupt();
+        spinlock_unlock(&clock_events_lock);
         return OS_ERR_NO_MORE_FREE_EVENT;
     }
 
@@ -258,7 +261,7 @@ OS_RETURN_E register_rtc_event(void (*function)(void),
         *event_id = i;
     }
     
-    enable_interrupt();
+    spinlock_unlock(&clock_events_lock);
 
     return OS_NO_ERR;
 }
@@ -270,11 +273,11 @@ OS_RETURN_E unregister_rtc_event(const OS_EVENT_ID event_id)
         return OS_ERR_NO_SUCH_ID;
     }
 
-    disable_interrupt();
+    spinlock_lock(&clock_events_lock);
 
     if(clock_events[event_id].enabled == 0)
     {
-        enable_interrupt();
+        spinlock_unlock(&clock_events_lock);
         return OS_ERR_NO_SUCH_ID;
     }
 
@@ -283,7 +286,7 @@ OS_RETURN_E unregister_rtc_event(const OS_EVENT_ID event_id)
     clock_events[event_id].period  = 0;
     clock_events[event_id].enabled = 0;
 
-    enable_interrupt();
+    spinlock_unlock(&clock_events_lock);
 
     return OS_NO_ERR;
 }

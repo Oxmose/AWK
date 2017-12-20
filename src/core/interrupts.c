@@ -27,6 +27,7 @@
 
 /* Handlers for each interrupt */
 static custom_handler_t kernel_interrupt_handlers[IDT_ENTRY_COUNT];
+static lock_t handler_table_lock;
 
 /*******************************************************************************
  * GLOBAL INTERRUPT HANDLER 
@@ -68,6 +69,8 @@ void init_kernel_interrupt(void)
     kernel_interrupt_handlers[PANIC_INT_LINE].enabled = 1;
     kernel_interrupt_handlers[PANIC_INT_LINE].handler = panic;
 
+    spinlock_init(&handler_table_lock);
+
     kernel_success("KIH Initialized\n");
 }
 
@@ -90,18 +93,18 @@ OS_RETURN_E register_interrupt_handler(const uint32_t interrupt_line,
         return OS_ERR_NULL_POINTER;
     }
 
-    disable_interrupt();
+    spinlock_lock(&handler_table_lock);
 
     if(kernel_interrupt_handlers[interrupt_line].handler != NULL)
     {
-        enable_interrupt();
+        spinlock_unlock(&handler_table_lock);
         return OS_ERR_INTERRUPT_ALREADY_REGISTERED;
     }
 
     kernel_interrupt_handlers[interrupt_line].handler = handler;
     kernel_interrupt_handlers[interrupt_line].enabled = 1;
 
-    enable_interrupt();
+    spinlock_unlock(&handler_table_lock);
 
     return OS_NO_ERR;
 }
@@ -114,18 +117,18 @@ OS_RETURN_E remove_interrupt_handler(const uint32_t interrupt_line)
         return OR_ERR_UNAUTHORIZED_INTERRUPT_LINE;
     }
     
-    disable_interrupt();
+    spinlock_lock(&handler_table_lock);
 
     if(kernel_interrupt_handlers[interrupt_line].handler == NULL)
     {
-        enable_interrupt();
+        spinlock_unlock(&handler_table_lock);
         return OS_ERR_INTERRUPT_NOT_REGISTERED;
     }
 
     kernel_interrupt_handlers[interrupt_line].handler = NULL;
     kernel_interrupt_handlers[interrupt_line].enabled = 0;
 
-    enable_interrupt();
+    spinlock_unlock(&handler_table_lock);
 
     return OS_NO_ERR;
 }

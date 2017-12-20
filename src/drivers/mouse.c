@@ -27,9 +27,12 @@
 static mouse_state_t mouse_state;
 
 /* Mouse state management */
-uint8_t mouse_cycle;
-int8_t  mouse_byte[3];
+static uint8_t mouse_cycle;
+static int8_t  mouse_byte[3];
 
+/* Mouse lock */
+static lock_t mouse_events_lock;
+static lock_t mouse_lock;
 /* Events table */
 static mouse_event_t mouse_events[MOUSE_MAX_EVENT_COUNT];
 
@@ -199,6 +202,9 @@ OS_RETURN_E init_mouse(void)
     mouse_cycle = 0;
     mouse_state.flags = 0;
 
+    spinlock_init(&mouse_events_lock);
+    spinlock_init(&mouse_lock);
+
     mouse_wait(1);
     outb(0xA8, MOUSE_COMM_PORT);
     mouse_wait(1);
@@ -247,7 +253,7 @@ OS_RETURN_E register_mouse_event(void (*function)(void),
         return OS_ERR_NULL_POINTER;
     }
 
-    disable_interrupt();
+    spinlock_lock(&mouse_events_lock);
 
     /* Search for free event id */
     for(i = 0; i < MOUSE_MAX_EVENT_COUNT && mouse_events[i].enabled == 1; ++i);
@@ -258,7 +264,7 @@ OS_RETURN_E register_mouse_event(void (*function)(void),
         {
             *event_id = -1;
         }
-        enable_interrupt();
+        spinlock_unlock(&mouse_events_lock);
         return OS_ERR_NO_MORE_FREE_EVENT;
     }
 
@@ -272,7 +278,7 @@ OS_RETURN_E register_mouse_event(void (*function)(void),
         *event_id = i;
     }
     
-    enable_interrupt();
+    spinlock_unlock(&mouse_events_lock);
 
     return OS_NO_ERR;
 }
@@ -284,11 +290,11 @@ OS_RETURN_E unregister_mouse_event(const OS_EVENT_ID event_id)
         return OS_ERR_NO_SUCH_ID;
     }
 
-    disable_interrupt();
+    spinlock_lock(&mouse_events_lock);
 
     if(mouse_events[event_id].enabled == 0)
     {
-        enable_interrupt();
+        spinlock_unlock(&mouse_events_lock);
         return OS_ERR_NO_SUCH_ID;
     }
 
@@ -296,7 +302,7 @@ OS_RETURN_E unregister_mouse_event(const OS_EVENT_ID event_id)
     mouse_events[event_id].execute = NULL;
     mouse_events[event_id].enabled = 0;
 
-    enable_interrupt();
+    spinlock_unlock(&mouse_events_lock);
 
     return OS_NO_ERR;
 }
@@ -307,8 +313,8 @@ OS_RETURN_E get_mouse_state(mouse_state_t *state)
     {
         return OS_ERR_NULL_POINTER;
     }
-
+    spinlock_lock(&mouse_lock);
     memcpy(state, &mouse_state, sizeof(mouse_state_t));
-
+    spinlock_unlock(&mouse_lock);
     return OS_NO_ERR;
 }

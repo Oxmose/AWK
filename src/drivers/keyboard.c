@@ -41,6 +41,7 @@ static uint32_t keyboard_flags;
 
 /* Keyboard buffer */
 static char keyboard_buffer;
+static lock_t buffer_lock;
 
 /* Keyboard map */
 static const key_mapper_t qwerty_map =
@@ -333,6 +334,8 @@ OS_RETURN_E init_keyboard(void)
     keyboard_flags   = 0;
     display_keyboard = 1;
 
+    spinlock_init(&buffer_lock);
+
     /* Init interuption settings */
     err = register_interrupt_handler(KEYBOARD_INTERRUPT_LINE, 
                                      keyboard_interrupt_handler);
@@ -403,7 +406,7 @@ uint32_t secure_read_keyboard(char *buffer, const uint32_t size)
 
 void getch(char *character)
 {
-    disable_interrupt();
+    spinlock_lock(&buffer_lock);
 
     /* Enable buffer */
     ++buffer_enabled;
@@ -414,9 +417,9 @@ void getch(char *character)
     /* If no character is in the buffer but the thread in IO waiting state */
     while(keyboard_buffer == 0)
     {
-        enable_interrupt();
+        spinlock_unlock(&buffer_lock);
         lock_io(IO_KEYBOARD);
-        disable_interrupt();
+        spinlock_lock(&buffer_lock);
     }
     
     *character = keyboard_buffer;
@@ -425,7 +428,7 @@ void getch(char *character)
     /* Disable buffer */
     --buffer_enabled;
 
-    enable_interrupt();    
+    spinlock_unlock(&buffer_lock);    
 }
 
 void keyboard_enable_secure(void)

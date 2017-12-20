@@ -1,6 +1,8 @@
 #include "../lib/stdio.h"
 #include "../core/scheduler.h"
 
+extern void* launch_tests(void*);
+
 int main(int argc, char** argv)
 {
 	for(int i = 0; i < argc; ++i)
@@ -26,6 +28,8 @@ int main(int argc, char** argv)
 			array[i].end_time
 			);
 	}
+
+	launch_tests(NULL);
 
 	return 0;
 }
