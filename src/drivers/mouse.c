@@ -217,7 +217,7 @@ OS_RETURN_E init_mouse(void)
 
     /* Set PS2 interrupt handler */
     err = register_interrupt_handler(MOUSE_INTERRUPT_LINE_PS2, 
-                                     &mouse_interrupt_handler);
+                                     mouse_interrupt_handler);
     if(err != OS_NO_ERR)
     {
         return err;

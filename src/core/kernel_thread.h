@@ -82,6 +82,7 @@ typedef struct kernel_thread
     uint32_t         wakeup_time;
 
     BLOCK_TYPE_E     block_type;
+    uint32_t         io_req_time;
 
     struct kernel_thread *joining_thread;
 

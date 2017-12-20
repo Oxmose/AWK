@@ -18,9 +18,9 @@ static const int32_t tests_count = 3;
 
 void *launch_tests(void*args)
 {
-    test_mouse(NULL);
+    //test_mouse(NULL);
 
-    while(1);
+    //while(1);
 
     (void)args;
 #ifdef TEST_SEM

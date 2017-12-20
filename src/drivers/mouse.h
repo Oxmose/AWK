@@ -16,7 +16,6 @@
 
 #include "../lib/stdint.h"      /* Generic int types */
 #include "../lib/stddef.h"      /* OS_RETURN_E */
-#include "../core/interrupts.h" /* cpu_state_t stack_state_t */
 
 /* Mouse settings */
 #define MOUSE_COMM_PORT      0x64

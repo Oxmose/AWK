@@ -62,6 +62,7 @@ static uint32_t first_schedule = 0;
 static thread_queue_t *active_threads_table[2];
 static thread_queue_t *zombie_threads_table[2];
 static thread_queue_t *sleeping_threads_table[2];
+static thread_queue_t *io_waiting_threads_table[2];
 
 static thread_queue_t *global_threads_table[2];
 
@@ -69,12 +70,13 @@ static void *init_func(void *args)
 {
     (void)args;
     kernel_info("INIT\n");
-    thread_t test_thread;
-    create_thread(&test_thread, launch_tests, 33, "init\0", (void*)0);
+   // thread_t test_thread;
+   // create_thread(&test_thread, launch_tests, 33, "init\0", (void*)0);
 
-    wait_thread(test_thread, NULL);
+   // wait_thread(test_thread, NULL);
 
     /* If here, the system is halted */
+    system_state = HALTED;
     return NULL;
 }
 
@@ -255,6 +257,8 @@ OS_RETURN_E init_scheduler(void)
     zombie_threads_table[1]   = NULL;
     sleeping_threads_table[0] = NULL;
     sleeping_threads_table[1] = NULL;
+    io_waiting_threads_table[0] = NULL;
+    io_waiting_threads_table[1] = NULL;
 
     /* Create idle thread */
     idle_thread = malloc(sizeof(kernel_thread_t));
@@ -630,6 +634,67 @@ OS_RETURN_E unlock_thread(const thread_t thread,
     if(do_schedule && active_thread->priority < thread->priority)
     {
         schedule();
+    }
+
+    return OS_NO_ERR;
+}
+
+OS_RETURN_E lock_io(const BLOCK_TYPE_E block_type)
+{
+    /* Cant lock kernel thread */
+    if(active_thread == idle_thread)
+    {
+        return OS_ERR_UNAUTHORIZED_ACTION;
+    }
+
+    if(block_type == IO_KEYBOARD)
+    {
+        /* Lock current tread */
+        active_thread->block_type = block_type;
+                active_thread->state = BLOCKED;
+
+        OS_RETURN_E err;
+        err = kernel_enqueue_thread(active_thread, io_waiting_threads_table,
+                                    active_thread->io_req_time);
+
+        if(err != OS_NO_ERR)
+        {
+            kernel_error("Could not enqueue thread in kbd IO table[%d]\n", err);
+            kernel_panic();
+        }
+
+        /* Schedule to let other thread execute */
+        schedule();
+    } 
+    return OS_NO_ERR;   
+}
+
+OS_RETURN_E unlock_io(const BLOCK_TYPE_E block_type)
+{
+    if(block_type != IO_KEYBOARD)
+    {
+        return OS_ERR_UNAUTHORIZED_ACTION;
+    }
+        
+    kernel_thread_t *thread;
+    OS_RETURN_E err;
+
+    thread = kernel_dequeue_thread(io_waiting_threads_table, &err);
+    if(thread != NULL && err == OS_NO_ERR)
+    {
+        err = kernel_enqueue_thread(thread, active_threads_table, 
+                                    thread->priority);
+        if(err != OS_NO_ERR)
+        {
+            kernel_error("Could not enqueue thread in active table[%d]\n", err);
+            kernel_panic();
+        }
+        thread->state = READY;
+    }
+    else
+    {
+        kernel_error("Could not dequee thread in kbd IO table UNLOCK[%d]\n", err);
+        kernel_panic();
     }
 
     return OS_NO_ERR;

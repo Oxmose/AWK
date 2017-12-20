@@ -151,7 +151,7 @@ void panic(cpu_state_t *cpu_state, uint32_t int_id, stack_state_t *stack_state)
 
 void kernel_panic(void)
 {
-	for(uint32_t i = 0; i < 300000000; ++i);
+	for(uint32_t i = 0; i < 3000000000; ++i);
    __asm__ __volatile__("int %0" :: "i" (PANIC_INT_LINE));
 }
 

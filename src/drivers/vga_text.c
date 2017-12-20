@@ -29,6 +29,9 @@ static colorscheme_t screen_scheme = BG_BLACK | FG_WHITE;
 static cursor_t      screen_cursor;
 static cursor_t      last_printed_cursor;
 
+/* Set the last column printed with a char */
+static uint8_t last_columns[SCREEN_LINE_SIZE] = {0};
+
 /* Return the memory address of the screen framebuffer position at the 
  * coordinates
  * given as arguments.
@@ -91,6 +94,7 @@ static void process_char(const char character)
         if(screen_cursor.x > SCREEN_COL_SIZE - 1)
         {
             put_cursor_at(screen_cursor.y + 1, 0);
+            last_columns[screen_cursor.y] = screen_cursor.x;
         }
 
         /* Manage end of screen cursor position */
@@ -103,6 +107,7 @@ static void process_char(const char character)
         {
             /* Move cursor */
             put_cursor_at(screen_cursor.y, screen_cursor.x);
+            last_columns[screen_cursor.y] = screen_cursor.x;
         }
     }
     else
@@ -117,6 +122,7 @@ static void process_char(const char character)
                     if(screen_cursor.x > last_printed_cursor.x)
                     {
                         put_cursor_at(screen_cursor.y, screen_cursor.x - 1);
+                        last_columns[screen_cursor.y] = screen_cursor.x;
                         print_char(screen_cursor.y, screen_cursor.x, ' '); 
                     }
                 }
@@ -125,12 +131,20 @@ static void process_char(const char character)
                     if(screen_cursor.x > 0)
                     {
                         put_cursor_at(screen_cursor.y, screen_cursor.x - 1);
+                        last_columns[screen_cursor.y] = screen_cursor.x;
                         print_char(screen_cursor.y, screen_cursor.x, ' '); 
                     }
                     else
                     {       
+                        if(last_columns[screen_cursor.y - 1] >= 
+                               SCREEN_COL_SIZE)
+                        {
+                            last_columns[screen_cursor.y - 1] =
+                                SCREEN_COL_SIZE - 1;
+                        }
+                                    
                         put_cursor_at(screen_cursor.y - 1, 
-                                      SCREEN_COL_SIZE - 1);
+                                      last_columns[screen_cursor.y - 1]);
                         print_char(screen_cursor.y, screen_cursor.x, ' ');
                     }
                 }
@@ -148,13 +162,14 @@ static void process_char(const char character)
                     put_cursor_at(screen_cursor.y,
                             SCREEN_COL_SIZE - 1);
                 }
-
+                last_columns[screen_cursor.y] = screen_cursor.x;
                 break;
             /* Line feed */
             case '\n':
                 if(screen_cursor.y < SCREEN_LINE_SIZE - 1)
                 {
                     put_cursor_at(screen_cursor.y + 1, 0);
+                    last_columns[screen_cursor.y] = screen_cursor.x;
                 }
                 else
                 {
@@ -168,6 +183,7 @@ static void process_char(const char character)
             /* Line return */
             case '\r':
                 put_cursor_at(screen_cursor.y, 0);
+                last_columns[screen_cursor.y] = screen_cursor.x;
                 break;
             /* Undefined */
             default:
@@ -187,6 +203,7 @@ void clear_screen(void)
         {
             *(get_framebuffer(i, j)) = blank;
         }
+        last_columns[i] = 0;
     }
 }
 
@@ -260,7 +277,9 @@ void scroll(const SCROLL_DIRECTION_E direction, const uint8_t lines_count)
             {
                 memmove(get_framebuffer(i, 0), get_framebuffer(i + 1, 0),  
                         sizeof(uint16_t) * SCREEN_COL_SIZE);
+                last_columns[i] = last_columns[i+1];
             }
+            last_columns[SCREEN_LINE_SIZE - 1] = 0;
 
             /* Clear last line */
             for(i = 0; i < SCREEN_COL_SIZE; ++i)
@@ -284,17 +303,6 @@ void scroll(const SCROLL_DIRECTION_E direction, const uint8_t lines_count)
     }
 }
 
-void console_putbytes(const char *string, const uint32_t size)
-{
-    /* Output each character of the string */
-    uint32_t i;
-    for(i = 0; i < size; ++i)
-    {
-        process_char(string[i]);
-    }
-    last_printed_cursor = screen_cursor;
-}
-
 void set_color_scheme(const colorscheme_t color_scheme)
 {
     screen_scheme = color_scheme;
@@ -311,4 +319,25 @@ OS_RETURN_E save_color_scheme(colorscheme_t *buffer)
     *buffer = screen_scheme;
 
     return OS_NO_ERR;
+}
+
+void console_putbytes(const char *string, const uint32_t size)
+{
+    /* Output each character of the string */
+    uint32_t i;
+    for(i = 0; i < size; ++i)
+    {
+        process_char(string[i]);
+    }
+    last_printed_cursor = screen_cursor;
+}
+
+void console_write_keyboard(const char *string, const uint32_t size)
+{
+    /* Output each character of the string */
+    uint32_t i;
+    for(i = 0; i < size; ++i)
+    {
+        process_char(string[i]);
+    }
 }
