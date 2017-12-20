@@ -222,10 +222,15 @@ static const key_mapper_t qwerty_map =
 
 static void manage_keycode(const int8_t keycode)
 {
+
+    int8_t mod = 0;
+    int8_t shifted;
+    char character;
+    int32_t new_keycode;
+
     /* Manage push of release */
     if(keycode > 0)
     {
-        int8_t mod = 0;
         /* Manage modifiers */
         switch(qwerty_map.regular[keycode])
         {
@@ -245,11 +250,11 @@ static void manage_keycode(const int8_t keycode)
            (qwerty_map.regular[keycode] || qwerty_map.shifted[keycode]))
         {       
             
-            int8_t shifted = (keyboard_flags & KBD_LSHIFT) |
-                             (keyboard_flags & KBD_RSHIFT);
-            char character = (shifted > 0) ? 
-                                      qwerty_map.shifted[keycode] :
-                                      qwerty_map.regular[keycode];
+            shifted = (keyboard_flags & KBD_LSHIFT) |
+                      (keyboard_flags & KBD_RSHIFT);
+            character = (shifted > 0) ? 
+                         qwerty_map.shifted[keycode] :
+                         qwerty_map.regular[keycode];
             /* Save key */ 
             if(buffer_enabled != 0)
             {
@@ -274,7 +279,7 @@ static void manage_keycode(const int8_t keycode)
     }
     else
     {
-        int32_t new_keycode = 128 + keycode;
+        new_keycode = 128 + keycode;
         /* Manage modifiers */
         switch(qwerty_map.regular[new_keycode])
         {
@@ -297,11 +302,13 @@ static void keyboard_interrupt_handler(cpu_state_t *cpu_state, uint32_t int_id,
     (void)int_id;
     (void)stack_state;
 
+    int8_t keycode;
+
     /* Read if not empty and not from auxiliary port */
     if((inb(KEYBOARD_COMM_PORT) & 0x100001) == 1)
     {
         /* Retrieve key code and test it */
-        int8_t keycode = inb(KEYBOARD_DATA_PORT);
+        keycode = inb(KEYBOARD_DATA_PORT);
 
         /* Manage keycode */
         manage_keycode(keycode);
@@ -343,6 +350,7 @@ uint32_t read_keyboard(char *buffer, const uint32_t size)
 {
     char read_char;
     uint32_t read = 0;
+
     do
     {
         getch(&read_char);
@@ -369,6 +377,8 @@ uint32_t read_keyboard(char *buffer, const uint32_t size)
         }
     }
     while(1);
+
+    get_active_thread()->io_req_time = 0;
 
     return read;
 }
@@ -414,8 +424,6 @@ void getch(char *character)
 
     /* Disable buffer */
     --buffer_enabled;
-
-    get_active_thread()->io_req_time = 0;
 
     enable_interrupt();    
 }
