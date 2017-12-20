@@ -3,6 +3,8 @@
 #include "test_sem.h"
 #include "test_mutex.h"
 #include "test_multithread.h"
+#include "test_vga.h"
+#include "test_mouse.h"
 
 #include "../lib/stdio.h"
 #include "../drivers/vga_text.h"
@@ -16,6 +18,10 @@ static const int32_t tests_count = 3;
 
 void *launch_tests(void*args)
 {
+    test_mouse(NULL);
+
+    while(1);
+
     (void)args;
 #ifdef TEST_SEM
     printf("1/%d\n", tests_count);

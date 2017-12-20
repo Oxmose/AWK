@@ -1,6 +1,9 @@
 #include "../drivers/vga_graphic.h"
 #include "../core/scheduler.h"
 
+#define TEST_PALETTE 1
+#define TEST_LIGNES  0
+
 typedef struct test_str
 {
     int j;
@@ -23,7 +26,7 @@ void *col_thread(void* args)
             {
                 draw_pixel(i, j, str->r[m], str->g[m], str->b[m]);
             }
-            sleep(8);
+            sleep(20);
         }
         
         m = (m+1) % 5;
@@ -53,7 +56,7 @@ void *pal(void *args)
                     {
                         draw_rectangle(x, y, 10, 10, r, g, b);
                         x += 10;
-                        sleep(10);
+                        sleep(20);
                     }
                 }
             }
@@ -87,7 +90,7 @@ void *pal(void *args)
                     {                        
                         draw_rectangle(x, y, 10, 10, 0, 0, 0);
                         x += 10;
-                        sleep(10);
+                        sleep(20);
                     }
                 }
             }
@@ -97,7 +100,7 @@ void *pal(void *args)
     }
 }
 
-void *vga_test(void*args)
+void *test_vga(void*args)
 {
     (void)args;
     init_vga();
@@ -110,12 +113,12 @@ void *vga_test(void*args)
         }
         
     }
-#if 1
+#if TEST_PALETTE
     thread_t palette;
     create_thread(&palette, pal, 60, "test\0", (void*)1);
 
     wait_thread(palette, NULL);
-#else
+#elif TEST_LIGNES
     test_str red   = {.j = 0, .jend=40,    .r={0x7, 0xFF, 0, 0, 0}, .g={0, 0xFF, 0, 0, 0x7}, .b={0, 0xFF, 0, 0x7, 0}};
 
     test_str green = {.j = 40, .jend=80,   .r={0, 0x7, 0xFF, 0, 0}, .g={0x7, 0, 0xFF, 0, 0}, .b={0, 0, 0xFF, 0, 0x7}};

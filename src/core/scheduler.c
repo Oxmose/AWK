@@ -19,6 +19,7 @@
 #include "../drivers/pit.h" /* PIT_INTERRUPT_LINE, get_current_uptime */
 #include "../drivers/pic.h" /* set_IRQ_EOI */
 #include "../cpu/cpu.h"     /* sti, hlt */
+#include "../sync/lock.h"   /* enable_interrupt */
 #include "interrupts.h"     /* register_interrupt_handler */
 #include "kernel_output.h"  /* kernel_success, kernel_error */
 #include "kernel_thread.h"  /* kernel_thread_t */
@@ -67,9 +68,9 @@ static thread_queue_t *global_threads_table[2];
 static void *init_func(void *args)
 {
     (void)args;
-    kernel_printf("INIT\n");
+    kernel_info("INIT\n");
     thread_t test_thread;
-    create_thread(&test_thread, launch_tests, 33, "tests\0", (void*)0);
+    create_thread(&test_thread, launch_tests, 33, "init\0", (void*)0);
 
     wait_thread(test_thread, NULL);
 
@@ -222,6 +223,10 @@ void* idle_sys(void* args)
     /* We create the init thread */
     thread_t init;
     create_thread(&init, init_func, KERNEL_LOWEST_PRIORITY, "init\0", args);
+
+    /* Enable interrupts */
+    enable_interrupt();
+    kernel_info("INT unleached\n");
 
     while(1)
     {

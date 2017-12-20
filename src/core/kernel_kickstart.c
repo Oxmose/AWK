@@ -12,11 +12,12 @@
  * AT THIS POINT INTERRUPT SHOULD BE DISABLED
  ******************************************************************************/
 
-#include "../drivers/pit.h" /* init_pit */
-#include "../drivers/rtc.h" /* init_rtc */
-#include "../sync/lock.h"   /* enable_interrupt */
-#include "kernel_output.h"  /* kernel_succes, kernel_error, kernell_info */
-#include "scheduler.h"      /* init_scheduler */
+#include "../drivers/pit.h"   /* init_pit */
+#include "../drivers/rtc.h"   /* init_rtc */
+#include "../drivers/mouse.h" /* init_mouse */
+#include "../sync/lock.h"     /* enable_interrupt */
+#include "kernel_output.h"    /* kernel_succes, kernel_error, kernell_info */
+#include "scheduler.h"        /* init_scheduler */
 
 void kernel_kickstart(void)
 {
@@ -44,11 +45,18 @@ void kernel_kickstart(void)
 		kernel_error("RTC Initialization error [%d]\n", err);
 	}
 
-	/* Enable interrupts */
-	enable_interrupt();
-	kernel_info("INT unleached\n");
+	/* Init mouse */
+	err = init_mouse();
+	if(err == OS_NO_ERR)
+	{
+		kernel_success("MOUSE Initialized\n");
+	}
+	else
+	{
+		kernel_error("MOUSE Initialization error [%d]\n", err);
+	}
 
-	/* Init scheduler */
+	/* Init scheduler, should never come back */
 	err = init_scheduler();
 
 	kernel_error("SCHED Initialization error [%d]\n", err);

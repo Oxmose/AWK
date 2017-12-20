@@ -19,7 +19,6 @@
 
 #include "../lib/stdint.h"      /* Generioc int types */
 #include "../lib/stddef.h"      /* OS_RETURN_E, OS_EVENT_ID*/
-#include "../core/interrupts.h" /* register_interrupt, cpu_state, stack_state */
 
 /*****************************************
  * CONSTANTS
