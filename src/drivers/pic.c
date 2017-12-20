@@ -48,6 +48,9 @@ void setup_pic()
 
 OS_RETURN_E set_IRQ_mask(const uint32_t IRQ_number, const uint8_t enabled)
 {
+    uint8_t init_mask;
+    uint32_t cascading_number;
+
     if(IRQ_number > MAX_IRQ_LINE)
     {
         return OS_ERR_NO_SUCH_IRQ_LINE;
@@ -57,7 +60,7 @@ OS_RETURN_E set_IRQ_mask(const uint32_t IRQ_number, const uint8_t enabled)
     if(IRQ_number < 8)
     {
         /* Retrieve initial mask */
-        uint8_t init_mask = inb(PIC_MASTER_DATA_PORT); 
+        init_mask = inb(PIC_MASTER_DATA_PORT); 
 
         /* Set new mask value */
         if(!enabled)
@@ -77,10 +80,10 @@ OS_RETURN_E set_IRQ_mask(const uint32_t IRQ_number, const uint8_t enabled)
     if(IRQ_number > 7)
     {
         /* Set new IRQ number */
-         uint32_t cascading_number = IRQ_number - 8;
+        cascading_number = IRQ_number - 8;
 
         /* Retrieve initial mask */
-        uint8_t init_mask = inb(PIC_SLAVE_DATA_PORT); 
+        init_mask = inb(PIC_SLAVE_DATA_PORT); 
 
         /* Set new mask value */
         if(!enabled)

@@ -33,6 +33,8 @@ static uint32_t tick_count;
 
 OS_RETURN_E init_pit(void)
 {
+    OS_RETURN_E err;
+    
     /* Init system times */
     uptime = 0;
     tick_count = 0;
@@ -44,8 +46,8 @@ OS_RETURN_E init_pit(void)
     outb(tick_freq >> 8, PIT_DATA_PORT);
 
     /* Set clock interrupt handler */
-    OS_RETURN_E err = register_interrupt_handler(PIT_INTERRUPT_LINE, 
-                                                 schedule_int);
+    err = register_interrupt_handler(PIT_INTERRUPT_LINE, 
+                                     schedule_int);
 
     if(err == OS_NO_ERR)
     {

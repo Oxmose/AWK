@@ -35,40 +35,40 @@ void kernel_interrupt_handler(cpu_state_t cpu_state,
                               uint32_t int_id,
                               stack_state_t stack_state)
 {
-	/* Execute custom handlers */
-	if(int_id < IDT_ENTRY_COUNT && 
-	   kernel_interrupt_handlers[int_id].enabled == 1 &&
-	   kernel_interrupt_handlers[int_id].handler != NULL)
-	{
-		kernel_interrupt_handlers[int_id]
-			.handler(&cpu_state, int_id, &stack_state);
-	}
-	else
-	{
-		panic(&cpu_state, int_id, &stack_state);
-	}
+   /* Execute custom handlers */
+    if(int_id < IDT_ENTRY_COUNT && 
+     kernel_interrupt_handlers[int_id].enabled == 1 &&
+     kernel_interrupt_handlers[int_id].handler != NULL)
+    {
+        kernel_interrupt_handlers[int_id]
+        .handler(&cpu_state, int_id, &stack_state);
+    }
+    else
+    {
+        panic(&cpu_state, int_id, &stack_state);
+    }
 }
 
 void init_kernel_interrupt(void)
 {
     uint32_t i;
 
-	/* Blank custo interrupt handlers */
-	memset(kernel_interrupt_handlers, 0, 
-		   sizeof(custom_handler_t) * IDT_ENTRY_COUNT);
-	
-	/* Attach Panic to the first 32 interrupt */
-	for(i = 0; i < 32; ++i)
-	{
-		kernel_interrupt_handlers[i].enabled = 1;
-		kernel_interrupt_handlers[i].handler = panic;
-	}
+    /* Blank custo interrupt handlers */
+    memset(kernel_interrupt_handlers, 0, 
+           sizeof(custom_handler_t) * IDT_ENTRY_COUNT);
+  
+    /* Attach Panic to the first 32 interrupt */
+    for(i = 0; i < 32; ++i)
+    {
+        kernel_interrupt_handlers[i].enabled = 1;
+        kernel_interrupt_handlers[i].handler = panic;
+    }
 
     /* Attach the special PANIC interrupt for when we donMt know what to do */
     kernel_interrupt_handlers[PANIC_INT_LINE].enabled = 1;
     kernel_interrupt_handlers[PANIC_INT_LINE].handler = panic;
 
-	kernel_success("KIH Initialized\n");
+    kernel_success("KIH Initialized\n");
 }
 
 OS_RETURN_E register_interrupt_handler(const uint32_t interrupt_line, 
@@ -95,7 +95,7 @@ OS_RETURN_E register_interrupt_handler(const uint32_t interrupt_line,
     if(kernel_interrupt_handlers[interrupt_line].handler != NULL)
     {
         enable_interrupt();
-    	return OS_ERR_INTERRUPT_ALREADY_REGISTERED;
+        return OS_ERR_INTERRUPT_ALREADY_REGISTERED;
     }
 
     kernel_interrupt_handlers[interrupt_line].handler = handler;
@@ -108,7 +108,7 @@ OS_RETURN_E register_interrupt_handler(const uint32_t interrupt_line,
 
 OS_RETURN_E remove_interrupt_handler(const uint32_t interrupt_line)
 {
-	if(interrupt_line < MIN_INTERRUPT_LINE || 
+    if(interrupt_line < MIN_INTERRUPT_LINE || 
        interrupt_line >= MAX_INTERRUPT_LINE)
     {
         return OR_ERR_UNAUTHORIZED_INTERRUPT_LINE;
@@ -116,7 +116,7 @@ OS_RETURN_E remove_interrupt_handler(const uint32_t interrupt_line)
     
     disable_interrupt();
 
-	if(kernel_interrupt_handlers[interrupt_line].handler == NULL)
+    if(kernel_interrupt_handlers[interrupt_line].handler == NULL)
     {
         enable_interrupt();
         return OS_ERR_INTERRUPT_NOT_REGISTERED;

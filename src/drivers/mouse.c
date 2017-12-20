@@ -70,8 +70,9 @@ __inline__ static void mouse_write(const uint8_t write)
 
 __inline__ static uint8_t mouse_read(void) 
 {
+    char t;
     mouse_wait(0);
-    char t = inb(MOUSE_DATA_PORT);
+    t = inb(MOUSE_DATA_PORT);
     return t;
 }
 
@@ -81,10 +82,14 @@ static void mouse_interrupt_handler(cpu_state_t *cpu_state, uint32_t int_id,
     (void)cpu_state;
     (void)stack_state;
 
-    uint8_t status = inb(MOUSE_COMM_PORT);
+    int8_t mouse_in;
+    uint8_t status;
+    uint32_t i;
+
+    status = inb(MOUSE_COMM_PORT);
     while (status & MOUSE_BBIT) 
     {
-        int8_t mouse_in = inb(MOUSE_DATA_PORT);
+        mouse_in = inb(MOUSE_DATA_PORT);
         if (status & MOUSE_F_BIT) 
         {
             switch (mouse_cycle) 
@@ -110,7 +115,7 @@ static void mouse_interrupt_handler(cpu_state_t *cpu_state, uint32_t int_id,
                         break;
                     }
 
-                    /* SENSIBILITY */  
+                    /* SENSIVITY */  
                     #if 0
                     if(mouse_byte[1] < -11)
                     {
@@ -169,7 +174,6 @@ static void mouse_interrupt_handler(cpu_state_t *cpu_state, uint32_t int_id,
     }
 
     /* Execute events */
-    uint32_t i;
     for(i = 0; i < MOUSE_MAX_EVENT_COUNT; ++i)
     {
         if(mouse_events[i].enabled  == 1)
@@ -187,6 +191,7 @@ static void mouse_interrupt_handler(cpu_state_t *cpu_state, uint32_t int_id,
 OS_RETURN_E init_mouse(void)
 {
     OS_RETURN_E err;
+    uint32_t i;
 
     /* Init mouse setings */
     mouse_state.pos_x = 0;
@@ -209,7 +214,6 @@ OS_RETURN_E init_mouse(void)
     mouse_write(0xF4);
     mouse_read();
 
-    uint32_t i;
     for(i = 0; i < MOUSE_MAX_EVENT_COUNT; ++i)
     {
         mouse_events[i].enabled = 0;
@@ -232,6 +236,8 @@ OS_RETURN_E init_mouse(void)
 OS_RETURN_E register_mouse_event(void (*function)(void),
                                  OS_EVENT_ID *event_id)
 {
+    uint32_t i;
+
     if(function == NULL)
     {
         if(event_id != NULL)
@@ -244,7 +250,6 @@ OS_RETURN_E register_mouse_event(void (*function)(void),
     disable_interrupt();
 
     /* Search for free event id */
-    uint32_t i;
     for(i = 0; i < MOUSE_MAX_EVENT_COUNT && mouse_events[i].enabled == 1; ++i);
 
     if(i == MOUSE_MAX_EVENT_COUNT)

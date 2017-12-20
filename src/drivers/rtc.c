@@ -41,21 +41,29 @@ static void rtc_interrupt_handler(cpu_state_t *cpu_state, uint32_t int_id,
     (void)stack_state;
     (void)int_id;
 
+    int8_t nmi_info;
+    uint8_t seconds;
+    uint8_t minutes;
+    uint32_t hours;
+    uint8_t century;
+    uint8_t reg_b;
+    uint32_t i;
+
     /* Set NMI info bit */
-    int8_t nmi_info = CMOS_NMI_DISABLE_BIT << 7;
+    nmi_info = CMOS_NMI_DISABLE_BIT << 7;
     
     /* Set time */
     /* Select CMOS seconds register and read */
     outb(nmi_info | CMOS_SECONDS_REGISTER, CMOS_COMM_PORT);
-    uint8_t seconds = inb(CMOS_DATA_PORT);
+    seconds = inb(CMOS_DATA_PORT);
 
     /* Select CMOS minutes register and read */
     outb(nmi_info | CMOS_MINUTES_REGISTER, CMOS_COMM_PORT);
-    uint8_t minutes = inb(CMOS_DATA_PORT);
+    minutes = inb(CMOS_DATA_PORT);
 
     /* Select CMOS hours register and read */ 
     outb(nmi_info | CMOS_HOURS_REGISTER, CMOS_COMM_PORT);
-    uint32_t hours = inb(CMOS_DATA_PORT);
+    hours = inb(CMOS_DATA_PORT);
 
     /* Set date */ 
 
@@ -72,7 +80,7 @@ static void rtc_interrupt_handler(cpu_state_t *cpu_state, uint32_t int_id,
     date.year = inb(CMOS_DATA_PORT);
 
     /* Select CMOS century register and read */
-    uint8_t century;
+    
     if(CMOS_CENTURY_REGISTER != 0)
     {
         outb(nmi_info | CMOS_CENTURY_REGISTER, CMOS_COMM_PORT);
@@ -81,7 +89,7 @@ static void rtc_interrupt_handler(cpu_state_t *cpu_state, uint32_t int_id,
 
     /* Convert BCD to binary if necessary */
     outb(CMOS_REG_B, CMOS_COMM_PORT);
-    uint8_t reg_b = inb(CMOS_DATA_PORT);
+    reg_b = inb(CMOS_DATA_PORT);
 
     if((reg_b & 0x04) == 0)
     {
@@ -125,7 +133,6 @@ static void rtc_interrupt_handler(cpu_state_t *cpu_state, uint32_t int_id,
     inb(CMOS_DATA_PORT);
 
     /* Execute events */
-    uint32_t i;
     for(i = 0; i < RTC_MAX_EVENT_COUNT; ++i)
     {
         /* Check update frequency */
@@ -145,7 +152,10 @@ static void rtc_interrupt_handler(cpu_state_t *cpu_state, uint32_t int_id,
 OS_RETURN_E init_rtc(void)
 {
 
-    OS_RETURN_E err = OS_NO_ERR;
+    OS_RETURN_E err;
+    int8_t prev_ored;
+    int8_t prev_rate;
+    uint32_t i;
 
     /* Init real times */
     day_time     = 0;
@@ -156,19 +166,18 @@ OS_RETURN_E init_rtc(void)
     
     /* Init CMOS IRQ8 */
     outb((CMOS_NMI_DISABLE_BIT << 7) | CMOS_REG_B, CMOS_COMM_PORT);
-    int8_t prev_ored = inb(CMOS_DATA_PORT);
+    prev_ored = inb(CMOS_DATA_PORT);
     outb((CMOS_NMI_DISABLE_BIT << 7) | CMOS_REG_B, CMOS_COMM_PORT);
     outb(prev_ored | CMOS_ENABLE_RTC, CMOS_DATA_PORT);    
     
     /* Init CMOS IRQ8 rate */
     outb((CMOS_NMI_DISABLE_BIT << 7) | CMOS_REG_A, CMOS_COMM_PORT);
-    int8_t prev_rate = inb(CMOS_DATA_PORT); 
+    prev_rate = inb(CMOS_DATA_PORT); 
     outb((CMOS_NMI_DISABLE_BIT << 7) | CMOS_REG_A, CMOS_COMM_PORT);
     outb((prev_rate & 0xF0) | RTC_RATE, CMOS_DATA_PORT);
 
     tick_count = 0;
-
-    uint32_t i;
+    
     for(i = 0; i < RTC_MAX_EVENT_COUNT; ++i)
     {
         clock_events[i].enabled = 0;
@@ -177,7 +186,7 @@ OS_RETURN_E init_rtc(void)
     /* Set handler and mask before setting IRQ */
     /* Set rtc clock interrupt handler */
     err = register_interrupt_handler(RTC_INTERRUPT_LINE, 
-                                     &rtc_interrupt_handler);
+                                     rtc_interrupt_handler);
     if(err != OS_NO_ERR)
     {
         return err;
@@ -213,6 +222,7 @@ OS_RETURN_E register_rtc_event(void (*function)(void),
                                const uint32_t period,
                                OS_EVENT_ID *event_id)
 { 
+    uint32_t i;
     if(function == NULL)
     {
         if(event_id != NULL)
@@ -225,7 +235,6 @@ OS_RETURN_E register_rtc_event(void (*function)(void),
     disable_interrupt();
 
     /* Search for free event id */
-    uint32_t i;
     for(i = 0; i < RTC_MAX_EVENT_COUNT && clock_events[i].enabled == 1; ++i);
 
     if(i == RTC_MAX_EVENT_COUNT)

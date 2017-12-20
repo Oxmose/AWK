@@ -9,6 +9,7 @@
  * Version: 1.0
  *
  * Kernel priority queues used to manage threads.
+ * WARNING These queues are not thread safe!
  ******************************************************************************/
 
 #ifndef __KERNEL_QUEUE_H_

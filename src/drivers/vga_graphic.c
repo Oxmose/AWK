@@ -24,6 +24,7 @@ static uint32_t screen_width;
 static uint32_t screen_height;
 static uint8_t  screen_depth;
 
+/* VGA framebuffer */
 static uint8_t *frame_buffer;
 
 static VGA_MODE_E get_supported_mode(uint32_t width, uint32_t height, 
@@ -164,7 +165,6 @@ OS_RETURN_E set_vga_mode(uint32_t width, uint32_t height, uint32_t colordepth)
 
         /* Set 256 color palette */
         outb(0, VGA_DAC_WRITE_INDEX);
-        //int r = 0;
         for(uint32_t r = 0; r < 8; ++r)
         {
             for(uint32_t g = 0; g < 8; ++g)
@@ -188,6 +188,9 @@ OS_RETURN_E set_vga_mode(uint32_t width, uint32_t height, uint32_t colordepth)
 OS_RETURN_E draw_pixel(uint32_t x, uint32_t y, 
                        uint8_t red, uint8_t green, uint8_t blue)
 {
+    uint32_t offset;
+    uint8_t color;
+
     /* Test bounds */
     if(x > screen_width || y > screen_height)
     {
@@ -195,9 +198,10 @@ OS_RETURN_E draw_pixel(uint32_t x, uint32_t y,
     }
 
     /* Compute pixel address in the buffer */
-    uint32_t offset = y * screen_width + x;
+    offset = y * screen_width + x;
 
-    uint8_t color = get_color_index(red, green, blue);
+    /* Get pixel color */
+    color = get_color_index(red, green, blue);
 
     /* Set memory */
     *(frame_buffer + offset) = color;

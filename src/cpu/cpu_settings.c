@@ -640,9 +640,6 @@ static void format_idt_entry(uint64_t *entry,
 
 void setup_gdt(void)
 {
-    /* Blank the GDT, set the NULL descriptor */
-    memset(cpu_gdt, 0, sizeof(uint64_t) * GDT_ENTRY_COUNT);
-
     /* Set the kernel code descriptor */
     uint32_t kernel_code_seg_flags = GDT_FLAG_GRANULARITY_4K | 
                                      GDT_FLAG_32_BIT_SEGMENT |
@@ -654,12 +651,6 @@ void setup_gdt(void)
                                      GDT_TYPE_READABLE | 
                                      GDT_TYPE_PROTECTED;
 
-    format_gdt_entry(&cpu_gdt[KERNEL_CS / 8], 
-                     KERNEL_CODE_SEGMENT_BASE, KERNEL_CODE_SEGMENT_LIMIT,
-                     kernel_code_seg_type, kernel_code_seg_flags);
-
-    
-
     /* Set the kernel data descriptor */
     uint32_t kernel_data_seg_flags = GDT_FLAG_GRANULARITY_4K | 
                                      GDT_FLAG_32_BIT_SEGMENT |
@@ -669,6 +660,13 @@ void setup_gdt(void)
 
     uint32_t kernel_data_seg_type =  GDT_TYPE_WRITABLE | 
                                      GDT_TYPE_GROW_DOWN;
+
+    /* Blank the GDT, set the NULL descriptor */
+    memset(cpu_gdt, 0, sizeof(uint64_t) * GDT_ENTRY_COUNT);
+
+    format_gdt_entry(&cpu_gdt[KERNEL_CS / 8], 
+                     KERNEL_CODE_SEGMENT_BASE, KERNEL_CODE_SEGMENT_LIMIT,
+                     kernel_code_seg_type, kernel_code_seg_flags);   
 
     format_gdt_entry(&cpu_gdt[KERNEL_DS / 8], 
                      KERNEL_DATA_SEGMENT_BASE, KERNEL_DATA_SEGMENT_LIMIT,
@@ -694,13 +692,14 @@ void setup_gdt(void)
 
 void setup_idt(void)
 {
+    uint32_t i;
+
     /* Blank the IDT */
     memset(cpu_idt, 0, sizeof(uint64_t) * IDT_ENTRY_COUNT);
 
     /* Set interrupt handlers for each interrupt
      * This allows to redirect all interrupts to a global handler in C
-     */
-    uint32_t i;
+     */    
     for(i = 0; i < IDT_ENTRY_COUNT; ++i)
     {
         format_idt_entry(&cpu_idt[i],

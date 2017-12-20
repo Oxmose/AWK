@@ -20,11 +20,12 @@
 
 void kernel_printf(const char *fmt, ...)
 {
+    __builtin_va_list    args;
+
     /* Print tag */
     printf("[SYS] ");
 
     /* Prtinf format string */
-    __builtin_va_list    args;
     __builtin_va_start(args, fmt);
     vprintf(fmt, args);
     __builtin_va_end(args);
@@ -34,6 +35,7 @@ void kernel_error(const char *fmt, ...)
 {
     colorscheme_t buffer;
     colorscheme_t new_scheme = FG_RED | BG_BLACK;
+    __builtin_va_list    args;
 
     /* No need to test return value */
     save_color_scheme(&buffer);
@@ -48,7 +50,6 @@ void kernel_error(const char *fmt, ...)
     set_color_scheme(buffer);
 
     /* Printf format string */
-    __builtin_va_list    args;
     __builtin_va_start(args, fmt);
     vprintf(fmt, args);
     __builtin_va_end(args);
@@ -58,6 +59,7 @@ void kernel_success(const char *fmt, ...)
 {
     colorscheme_t buffer;
     colorscheme_t new_scheme = FG_GREEN | BG_BLACK;
+    __builtin_va_list    args;
 
     /* No need to test return value */
     save_color_scheme(&buffer);
@@ -72,7 +74,6 @@ void kernel_success(const char *fmt, ...)
     set_color_scheme(buffer);
 
     /* Printf format string */
-    __builtin_va_list    args;
     __builtin_va_start(args, fmt);
     vprintf(fmt, args);
     __builtin_va_end(args);
@@ -82,6 +83,7 @@ void kernel_info(const char *fmt, ...)
 {
     colorscheme_t buffer;
     colorscheme_t new_scheme = FG_CYAN | BG_BLACK;
+    __builtin_va_list    args;
 
     /* No need to test return value */
     save_color_scheme(&buffer);
@@ -96,7 +98,6 @@ void kernel_info(const char *fmt, ...)
     set_color_scheme(buffer);
 
     /* Printf format string */
-    __builtin_va_list    args;
     __builtin_va_start(args, fmt);
     vprintf(fmt, args);
     __builtin_va_end(args);
