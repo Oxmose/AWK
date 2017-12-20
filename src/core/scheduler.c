@@ -456,7 +456,7 @@ OS_RETURN_E create_thread(thread_t *thread,
         return OS_ERR_FORBIDEN_PRIORITY;
     }
 
-    knew_thread = malloc(sizeof(kernel_thread_t));
+    new_thread = malloc(sizeof(kernel_thread_t));
     if(thread != NULL)
     {
         *thread = new_thread;
