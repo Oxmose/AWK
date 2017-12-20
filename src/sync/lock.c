@@ -46,7 +46,7 @@ OS_RETURN_E spinlock_lock(lock_t *lock)
     }
 
 #if KERNEL_MONOCORE
-    enable_interrupt();
+    disable_interrupt();
     *lock = 1;
 #else
     while(cpu_test_and_set(lock) == 1);
@@ -64,7 +64,7 @@ OS_RETURN_E spinlock_unlock(lock_t *lock)
 
 #if KERNEL_MONOCORE
     *lock = 0;
-    disable_interrupt();
+    enable_interrupt();
 #else
     *lock = 0;
 #endif
