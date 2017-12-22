@@ -36,7 +36,6 @@ int main(int argc, char** argv)
 	get_threads_info(array, &size);
 
 
-
 	for(int i = 0; i < size; ++i)
 	{
 		/*printf("%s | PID: %d | PPID: %d | PRIO: %d | STATE: %d\n\tStart time: %d | Execution time: %d | End time: %d\n", 

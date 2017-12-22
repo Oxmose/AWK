@@ -22,6 +22,8 @@
 #include "kernel_output.h"       /* kernel_succes, kernel_error, kernell_info */
 #include "scheduler.h"           /* init_scheduler */
 #include "panic.h"				 /* kernel_panic */
+#include "driver_manager.h"      /* load_drivers, register_driver, 
+                                  * init_driver_manager*/
 
 void kernel_kickstart(void)
 {
@@ -68,63 +70,66 @@ void kernel_kickstart(void)
 		kernel_panic();
 	}	
 
-	/* Init PIC */
-	err = init_pic();
+	/* Init driver manager */
+	err = init_driver_manager();
 	if(err == OS_NO_ERR)
 	{
-		kernel_success("PIC Initialized\n");
+		kernel_success("Driver Manager Initialized\n");
 	}
 	else
 	{
-		kernel_error("PIC Initialization error [%d]\n", err);
+		kernel_error("Driver Manager  Initialization error [%d]\n", err);
 		kernel_panic();
 	}
 
-	/* Init PIT */
-	err = init_pit();
-	if(err == OS_NO_ERR)
+	/* Register drivers */
+
+
+	/* Register PIC */
+	err = register_driver(init_pic, "PIC");
+	if(err != OS_NO_ERR)
 	{
-		kernel_success("PIT Initialized\n");
-	}
-	else
-	{
-		kernel_error("PIT Initialization error [%d]\n", err);
+		kernel_error("PIC driver registration error [%d]\n", err);
 		kernel_panic();
 	}
 
-	/* Init RTC */
-	err = init_rtc();
-	if(err == OS_NO_ERR)
+	/* Register PIT */
+	err = register_driver(init_pit, "PIT");
+	if(err != OS_NO_ERR)
 	{
-		kernel_success("RTC Initialized\n");
-	}
-	else
-	{
-		kernel_error("RTC Initialization error [%d]\n", err);
+		kernel_error("PIT driver registration error [%d]\n", err);
 		kernel_panic();
 	}
 
-	/* Init mouse */
-	err = init_mouse();
-	if(err == OS_NO_ERR)
+	/* Register RTC */
+	err = register_driver(init_rtc, "RTC");
+	if(err != OS_NO_ERR)
 	{
-		kernel_success("MOUSE Initialized\n");
-	}
-	else
-	{
-		kernel_error("MOUSE Initialization error [%d]\n", err);
+		kernel_error("RTC driver registration error [%d]\n", err);
 		kernel_panic();
 	}
 
-	/* Init keyboard */
-	err = init_keyboard();
-	if(err == OS_NO_ERR)
+	/* Register mouse */
+	err = register_driver(init_mouse, "MOUSE");
+	if(err != OS_NO_ERR)
 	{
-		kernel_success("KEYBOARD Initialized\n");
+		kernel_error("MOUSE driver registration error [%d]\n", err);
+		kernel_panic();
 	}
-	else
+
+	/* Register keyboard */
+	err = register_driver(init_keyboard, "KEYBOARD");
+	if(err != OS_NO_ERR)
 	{
-		kernel_error("KEYBOARD Initialization error [%d]\n", err);
+		kernel_error("KEYBOARD driver registration error [%d]\n", err);
+		kernel_panic();
+	}
+
+	/* Load drivers */
+	err = load_drivers();
+	if(err != OS_NO_ERR)
+	{
+		kernel_error("Drivers loading failed [%d]\n", err);
 		kernel_panic();
 	}
 

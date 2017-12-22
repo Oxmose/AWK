@@ -21,7 +21,7 @@
 /* Header file */
 #include "pic.h"
 
-OS_RETURN_E init_pic()
+OS_RETURN_E init_pic(void)
 {
 	/* Initialize the master. */
 	outb(PIC_ICW1_ICW4 | PIC_ICW1_INIT, PIC_MASTER_COMM_PORT);
