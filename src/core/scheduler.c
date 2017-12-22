@@ -33,7 +33,8 @@
 static lock_t sched_lock;
 
 /* Kernel thread */
-static kernel_thread_t *idle_thread;
+static kernel_thread_t idle_thread;
+static kernel_thread_t *init_thread;
 
 /* Active thread */
 static kernel_thread_t *active_thread;
@@ -83,11 +84,20 @@ static void *init_func(void *args)
 static void thread_exit(void)
 {
     OS_RETURN_E err;
-
+    kernel_thread_t *thread;
     spinlock_lock(&sched_lock);
 
     /* Set new thread state */
     active_thread->state = ZOMBIE;
+
+    if(active_thread == init_thread)
+    {
+        /* TODO WAIT FOR ALL CHILDRENS */
+        spinlock_unlock(&sched_lock);
+        schedule();
+        return;
+    }
+
 
     if(active_thread->joining_thread != NULL &&
        active_thread->joining_thread->state == JOINING)
@@ -110,6 +120,34 @@ static void thread_exit(void)
         kernel_error("Could not enqueue zombie thread[%d]\n", err);
         kernel_panic();
     }
+
+    /* All the children of the thread are inherited by init */
+    thread = kernel_dequeue_thread(active_thread->children, &err);
+    while(thread != NULL && err == OS_NO_ERR)
+    {
+        printf("OK %d ", get_pid());
+        thread->ppid = init_thread->pid;
+
+        if(thread->joining_thread == active_thread)
+        {
+            thread->joining_thread = NULL;
+        }
+
+        printf("ENQ %d\n", thread->pid);
+        err = kernel_enqueue_thread(thread, init_thread->children, 0);
+        if(err != OS_NO_ERR)
+        {
+            kernel_error("Could not enqueue thread to init[%d]\n", err);
+            kernel_panic();
+        }
+        thread = kernel_dequeue_thread(active_thread->children, &err);
+    }
+    if(err != OS_NO_ERR)
+    {
+        kernel_error("Could not dequeue thread from children[%d]\n", err);
+        kernel_panic();
+    }
+
     
     spinlock_unlock(&sched_lock);
     /* Schedule thread */
@@ -223,16 +261,16 @@ SYSTEM_STATE_E get_system_state(void)
 
 void* idle_sys(void* args)
 {
-    thread_t init;
+    
     int8_t notify = 0;
 
     /* Enable interrupts */
     enable_interrupt();
     kernel_info("INT unleached\n");
     printf("=================================== Welcome! ===================================\n\n");
-   
+
     /* We create the init thread */
-    create_thread(&init, init_func, KERNEL_HIGHEST_PRIORITY, "init\0", args);
+    create_thread(&init_thread, init_func, KERNEL_HIGHEST_PRIORITY, "init\0", args);
 
     while(1)
     {
@@ -274,60 +312,57 @@ OS_RETURN_E init_scheduler(void)
     io_waiting_threads_table[1] = NULL;
 
     /* Create idle thread */
-    idle_thread = malloc(sizeof(kernel_thread_t));
-    if(idle_thread == NULL)
-    {
-        return OS_ERR_MALLOC;
-    }
-    memset(idle_thread, 0, sizeof(kernel_thread_t));
+    memset(&idle_thread, 0, sizeof(kernel_thread_t));
 
     /* Init thread settings */
-    idle_thread->pid            = last_given_pid;
-    idle_thread->ppid           = last_given_pid;
-    idle_thread->priority       = IDLE_THREAD_PRIORITY;
-    idle_thread->args           = 0;
-    idle_thread->function       = idle_sys;
-    idle_thread->joining_thread = NULL;
-    idle_thread->state          = ELECTED;
+    idle_thread.pid            = last_given_pid;
+    idle_thread.ppid           = last_given_pid;
+    idle_thread.priority       = IDLE_THREAD_PRIORITY;
+    idle_thread.args           = 0;
+    idle_thread.function       = idle_sys;
+    idle_thread.joining_thread = NULL;
+    idle_thread.state          = ELECTED;
+    idle_thread.children[0]    = NULL;
+    idle_thread.children[1]    = NULL;
 
     /* Init thread context */
-    idle_thread->eip = (uint32_t) thread_wrapper;
-    idle_thread->esp = 
-        (uint32_t) &idle_thread->stack[THREAD_STACK_SIZE - 18];
-    idle_thread->ebp = 
-        (uint32_t) &idle_thread->stack[THREAD_STACK_SIZE - 1];
+    idle_thread.eip = (uint32_t) thread_wrapper;
+    idle_thread.esp = 
+        (uint32_t) &idle_thread.stack[THREAD_STACK_SIZE - 18];
+    idle_thread.ebp = 
+        (uint32_t) &idle_thread.stack[THREAD_STACK_SIZE - 1];
     
     /* Init thread stack */
-    idle_thread->stack[THREAD_STACK_SIZE - 1] = THREAD_INIT_EFLAGS;
-    idle_thread->stack[THREAD_STACK_SIZE - 2] = THREAD_INIT_CS;
-    idle_thread->stack[THREAD_STACK_SIZE - 3] = idle_thread->eip;
-    idle_thread->stack[THREAD_STACK_SIZE - 4] = 0; /* UNUSED (error core) */
-    idle_thread->stack[THREAD_STACK_SIZE - 5] = 0; /* UNUSED (int id) */
-    idle_thread->stack[THREAD_STACK_SIZE - 6] = THREAD_INIT_DS;
-    idle_thread->stack[THREAD_STACK_SIZE - 7] = THREAD_INIT_ES;
-    idle_thread->stack[THREAD_STACK_SIZE - 8] = THREAD_INIT_FS;
-    idle_thread->stack[THREAD_STACK_SIZE - 9] = THREAD_INIT_GS;
-    idle_thread->stack[THREAD_STACK_SIZE - 10] = THREAD_INIT_SS;
-    idle_thread->stack[THREAD_STACK_SIZE - 11] = THREAD_INIT_EAX;
-    idle_thread->stack[THREAD_STACK_SIZE - 12] = THREAD_INIT_EBX;
-    idle_thread->stack[THREAD_STACK_SIZE - 13] = THREAD_INIT_ECX;
-    idle_thread->stack[THREAD_STACK_SIZE - 14] = THREAD_INIT_EDX;
-    idle_thread->stack[THREAD_STACK_SIZE - 15] = THREAD_INIT_ESI;
-    idle_thread->stack[THREAD_STACK_SIZE - 16] = THREAD_INIT_EDI;
-    idle_thread->stack[THREAD_STACK_SIZE - 17] = idle_thread->ebp;
-    idle_thread->stack[THREAD_STACK_SIZE - 18] = 
-        (uint32_t)&idle_thread->stack[THREAD_STACK_SIZE - 17];
+    idle_thread.stack[THREAD_STACK_SIZE - 1] = THREAD_INIT_EFLAGS;
+    idle_thread.stack[THREAD_STACK_SIZE - 2] = THREAD_INIT_CS;
+    idle_thread.stack[THREAD_STACK_SIZE - 3] = idle_thread.eip;
+    idle_thread.stack[THREAD_STACK_SIZE - 4] = 0; /* UNUSED (error core) */
+    idle_thread.stack[THREAD_STACK_SIZE - 5] = 0; /* UNUSED (int id) */
+    idle_thread.stack[THREAD_STACK_SIZE - 6] = THREAD_INIT_DS;
+    idle_thread.stack[THREAD_STACK_SIZE - 7] = THREAD_INIT_ES;
+    idle_thread.stack[THREAD_STACK_SIZE - 8] = THREAD_INIT_FS;
+    idle_thread.stack[THREAD_STACK_SIZE - 9] = THREAD_INIT_GS;
+    idle_thread.stack[THREAD_STACK_SIZE - 10] = THREAD_INIT_SS;
+    idle_thread.stack[THREAD_STACK_SIZE - 11] = THREAD_INIT_EAX;
+    idle_thread.stack[THREAD_STACK_SIZE - 12] = THREAD_INIT_EBX;
+    idle_thread.stack[THREAD_STACK_SIZE - 13] = THREAD_INIT_ECX;
+    idle_thread.stack[THREAD_STACK_SIZE - 14] = THREAD_INIT_EDX;
+    idle_thread.stack[THREAD_STACK_SIZE - 15] = THREAD_INIT_ESI;
+    idle_thread.stack[THREAD_STACK_SIZE - 16] = THREAD_INIT_EDI;
+    idle_thread.stack[THREAD_STACK_SIZE - 17] = idle_thread.ebp;
+    idle_thread.stack[THREAD_STACK_SIZE - 18] = 
+        (uint32_t)&idle_thread.stack[THREAD_STACK_SIZE - 17];
 
-    strncpy(idle_thread->name, "idle\0", 5);
+    strncpy(idle_thread.name, "idle\0", 5);
 
-    active_thread = idle_thread;
+    active_thread = &idle_thread;
     old_thread = active_thread;
 
     system_state = RUNNING;  
     ++thread_count;
 
-    err = kernel_enqueue_thread(idle_thread, global_threads_table, 
-                         idle_thread->priority);
+    err = kernel_enqueue_thread(&idle_thread, global_threads_table, 
+                         idle_thread.priority);
     if(err != OS_NO_ERR)
     {
         kernel_error("Could not enqueue thread in global table[%d]\n", err);
@@ -401,7 +436,7 @@ void schedule_int(cpu_state_t *cpu_state, uint32_t int_id,
 OS_RETURN_E sleep(const unsigned int time_ms)
 {
     /* We cannot sleep in idle */
-    if(active_thread == idle_thread)
+    if(active_thread == &idle_thread)
     {
         return OS_ERR_UNAUTHORIZED_ACTION;
     }
@@ -478,7 +513,9 @@ OS_RETURN_E create_thread(thread_t *thread,
     new_thread->args           = args;
     new_thread->function       = function;
     new_thread->joining_thread = NULL;
-    new_thread->state          = READY;   
+    new_thread->state          = READY;
+    new_thread->children[0]    = NULL;
+    new_thread->children[1]    = NULL;
 
      /* Init thread context */
     new_thread->eip = (uint32_t) thread_wrapper;
@@ -525,6 +562,12 @@ OS_RETURN_E create_thread(thread_t *thread,
         return err;
     }
 
+    err = kernel_enqueue_thread(new_thread, active_thread->children, 0);
+    if(err != OS_NO_ERR)
+    {
+        return err;
+    }
+
     ++thread_count;
 
     spinlock_unlock(&sched_lock);
@@ -550,6 +593,8 @@ OS_RETURN_E wait_thread(thread_t thread, void **ret_val)
         return OS_ERR_NO_SUCH_ID;
     }
 
+    --thread_count;
+
     /* If thread already done then remove it from the thread table */
     if(thread->state == ZOMBIE)
     {
@@ -561,6 +606,7 @@ OS_RETURN_E wait_thread(thread_t thread, void **ret_val)
 
         spinlock_lock(&sched_lock);
 
+        kernel_remove_thread(active_thread->children, thread);
         kernel_remove_thread(zombie_threads_table, thread);
         kernel_remove_thread(global_threads_table, thread);
         free(thread);
@@ -583,14 +629,13 @@ OS_RETURN_E wait_thread(thread_t thread, void **ret_val)
     }
 
     spinlock_lock(&sched_lock);
-     
+    
+    kernel_remove_thread(active_thread->children, thread);
     kernel_remove_thread(zombie_threads_table, thread);
     kernel_remove_thread(global_threads_table, thread);
     free(thread);
 
     spinlock_unlock(&sched_lock);
-
-    --thread_count;
 
     return OS_NO_ERR;
 }
@@ -598,7 +643,7 @@ OS_RETURN_E wait_thread(thread_t thread, void **ret_val)
 OS_RETURN_E lock_thread(const BLOCK_TYPE_E block_type)
 {
     /* Cant lock kernel thread */
-    if(active_thread == idle_thread)
+    if(active_thread == &idle_thread)
     {
         return OS_ERR_UNAUTHORIZED_ACTION;
     }
@@ -620,7 +665,7 @@ OS_RETURN_E unlock_thread(const thread_t thread,
     OS_RETURN_E err;
 
     /* Check thread value */
-    if(thread == NULL || thread  == idle_thread)
+    if(thread == NULL || thread  == &idle_thread)
     {
         return OS_ERR_NO_SUCH_ID;
     }
@@ -669,7 +714,7 @@ OS_RETURN_E lock_io(const BLOCK_TYPE_E block_type)
     OS_RETURN_E err;
 
     /* Cant lock kernel thread */
-    if(active_thread == idle_thread)
+    if(active_thread == &idle_thread)
     {
         return OS_ERR_UNAUTHORIZED_ACTION;
     }
@@ -762,6 +807,7 @@ OS_RETURN_E get_threads_info(thread_info_t *threads, int32_t *size)
         current->priority = cursor_thread->priority;
         current->state = cursor_thread->state;
         current->start_time = cursor_thread->start_time;
+        current->children = cursor_thread->children[0];
         if(current->state != ZOMBIE)
         {
             current->end_time = 0;

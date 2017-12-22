@@ -17,6 +17,9 @@
 #include "../lib/stdint.h"       /* Generic int types */
 #include "../cpu/cpu_settings.h" /* KERNEL_CS KERNEL_DS */
 
+/* Forward declaration */
+struct thread_queue;
+
 /* Thread settings */
 #define THREAD_MAX_NAME_LENGTH  64
 #define THREAD_STACK_SIZE       8192 /* 32 Kb */
@@ -85,6 +88,8 @@ typedef struct kernel_thread
     uint32_t         io_req_time;
 
     struct kernel_thread *joining_thread;
+
+    struct thread_queue *children[2]; 
 
     /* Stats  TODO GETTERS */
     uint32_t start_time;

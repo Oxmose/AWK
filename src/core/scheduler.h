@@ -19,6 +19,7 @@
 #include "../lib/stddef.h"  /* OS_RETURN_E */
 #include "interrupts.h"     /* cpu_state_t, stack_state_t */
 #include "kernel_thread.h"  /* thread_t */
+#include "kernel_queue.h"   /* kernel_queue_t */
 
 /****************************
  * CONSTANTS
@@ -50,6 +51,8 @@ typedef struct thread_info
     uint32_t         priority;
 
     THREAD_STATE_E   state;
+
+    thread_queue_t *children;
 
     uint32_t start_time;
     uint32_t end_time;
