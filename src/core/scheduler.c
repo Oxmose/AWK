@@ -125,15 +125,13 @@ static void thread_exit(void)
     thread = kernel_dequeue_thread(active_thread->children, &err);
     while(thread != NULL && err == OS_NO_ERR)
     {
-        printf("OK %d ", get_pid());
         thread->ppid = init_thread->pid;
 
         if(thread->joining_thread == active_thread)
         {
             thread->joining_thread = NULL;
         }
-
-        printf("ENQ %d\n", thread->pid);
+        
         err = kernel_enqueue_thread(thread, init_thread->children, 0);
         if(err != OS_NO_ERR)
         {
