@@ -120,7 +120,7 @@ void panic(cpu_state_t *cpu_state, uint32_t int_id, stack_state_t *stack_state)
 	}
 	printf("INT ID: 0x%02x                 |", int_id);
 	printf("|                                                                              |");
-	printf("| Instruction: 0x%08x                                                      |", stack_state->eip);
+	printf("| Instruction [EIP]: 0x%08x                                                |", stack_state->eip);
 	printf("|                                                                              |");
 	printf("|================================= CPU STATE ==================================|");
 	printf("|                                                                              |");
@@ -138,7 +138,6 @@ void panic(cpu_state_t *cpu_state, uint32_t int_id, stack_state_t *stack_state)
     printf("| OF: %d  |  NT: %d  |  RF: %d  |  VM: %d  |  AC: %d  |  ID: %d                      |", of_f, nt_f, rf_f, vm_f, ac_f, id_f);
 	printf("| IOPL: %d  |  VIF: %d  |  VIP: %d                                                |", (iopl0_f | iopl1_f << 1), vif_f, vip_f);
     printf("|                                                                              |");
-    printf("|                                                                              |");
 	printf("|                         LET'S HOPE IT WON'T EXPLODE                          |");
 	printf("#==============================================================================");
 
@@ -151,7 +150,6 @@ void panic(cpu_state_t *cpu_state, uint32_t int_id, stack_state_t *stack_state)
 
 void kernel_panic(void)
 {
-	for(uint32_t i = 0; i < 3000000000; ++i);
    __asm__ __volatile__("int %0" :: "i" (PANIC_INT_LINE));
 }
 

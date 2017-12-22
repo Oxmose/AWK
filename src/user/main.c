@@ -28,8 +28,8 @@ int main(int argc, char** argv)
 			);
 	}
 
-	thread_t tests;
-	create_thread(&tests, launch_tests, 63, "tests\0", NULL);
-	wait_thread(tests, NULL);
+	//thread_t tests;
+	//create_thread(&tests, launch_tests, 63, "tests\0", NULL);
+	//wait_thread(tests, NULL);
 	return 0;
 }

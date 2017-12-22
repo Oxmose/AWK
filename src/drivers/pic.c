@@ -21,7 +21,7 @@
 /* Header file */
 #include "pic.h"
 
-void setup_pic()
+OS_RETURN_E init_pic()
 {
 	/* Initialize the master. */
 	outb(PIC_ICW1_ICW4 | PIC_ICW1_INIT, PIC_MASTER_COMM_PORT);
@@ -36,14 +36,14 @@ void setup_pic()
 	outb(0x1,  PIC_SLAVE_DATA_PORT);
 	
 	/* Set EOI for both PICs. */
-	outb(0x20, PIC_MASTER_COMM_PORT);
-	outb(0x20, PIC_SLAVE_COMM_PORT);
+	outb(PIC_EOI, PIC_MASTER_COMM_PORT);
+	outb(PIC_EOI, PIC_SLAVE_COMM_PORT);
 	
 	/* Disable all IRQs */
 	outb(0xFF, PIC_MASTER_DATA_PORT);
 	outb(0xFF, PIC_SLAVE_DATA_PORT);
 
-	kernel_success("PIC Initialized\n");
+    return OS_NO_ERR;
 }
 
 OS_RETURN_E set_IRQ_mask(const uint32_t IRQ_number, const uint8_t enabled)

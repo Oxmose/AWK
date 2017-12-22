@@ -24,6 +24,8 @@ extern kernel_kickstart
 extern _edata
 extern mem_heap_end
 
+extern cpu_info                 ; CPU INFO structure
+
 global loader                   ; Kernel entry point
 
 ;-----------------------------
@@ -37,7 +39,7 @@ KERNEL_STACK_SIZE equ 32768
 MODULEALIGN    equ 1<<0
 MEMINFO        equ 1<<1
 MULTIBOOT_VESA equ 1<<2
-FLAGS       equ MODULEALIGN | MEMINFO | MULTIBOOT_VESA
+FLAGS       equ MODULEALIGN | MEMINFO
 MAGIC       equ 0x1BADB002
 CHECKSUM    equ -(MAGIC + FLAGS)
 
@@ -50,7 +52,7 @@ section .multiboot
 
 section .text:
   align 4
-  loader:                        
+  loader:
     ; Make sure interrupts are disabled and clear flags
     push  dword 0
     popfd
@@ -70,6 +72,19 @@ section .text:
         cmp  edi, mem_heap_end
         jl  blank_mem
 
+    ; Init CPU info structure
+    mov  edi, cpu_info
+    mov  esi, cpu_info ; Compute the 
+    add  esi, 4        ; end address of the structure
+    xor  eax, eax
+    clear_cpu_info:  
+        mov  [edi], eax
+        add  edi, 4
+        cmp  edi, esi
+        jl   clear_cpu_info
+
+    call get_cpuid_flag ; Get CPUID instruction availability
+
     ; Cleat screen
     call clear_screen
 
@@ -82,9 +97,6 @@ section .text:
     ; Setup kernel interrupt handlers
     call init_kernel_interrupt
 
-    ; Setup PIC
-    call setup_pic
-
     ; Kickstrat kernel
     call kernel_kickstart
     
@@ -93,6 +105,20 @@ section .text:
     sti
     hlt
     jmp .loop                   ; loop forever
+
+  get_cpuid_flag:
+    pushfd                               ;Save EFLAGS
+    pushfd                               ;Store EFLAGS
+    xor dword [esp],0x00200000           ;Invert the ID bit in stored EFLAGS
+    popfd                                ;Load stored EFLAGS
+    pushfd                               ;Store EFLAGS again
+    pop eax                              ;eax = modified EFLAGS
+    xor eax,[esp]                        ;eax = whichever bits were changed
+    popfd                                ;Restore original EFLAGS
+    and eax,0x00200000                   ;eax = 0 means CPUID is not available
+    mov edi, cpu_info
+    or  [edi], eax                       ; Store the information in the structure
+    ret
 
 ;-----------------------
 ; INIT THE STACK SPACE

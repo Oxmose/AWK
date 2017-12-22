@@ -45,8 +45,9 @@
 
 /* Init the PIC by remapping the IRQ interrupts.
  * Disable al IRQ by reseting the IRQs mask.
+ * @return The state or error code.
  */
-void setup_pic(void);
+OS_RETURN_E init_pic(void);
 
 /* Set the IRQ mask for the IRQ number given as parameter.
  * @param irq_number The irq number to enable/disable.
