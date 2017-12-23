@@ -32,6 +32,8 @@
 #define KERNEL_HIGHEST_PRIORITY 0
 #define IDLE_THREAD_PRIORITY    KERNEL_LOWEST_PRIORITY
 
+#define SCHEDULE_DYN_PRIORITY   1
+
 /****************************
  * STRUCTURES 
  ***************************/

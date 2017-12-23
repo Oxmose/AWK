@@ -14,15 +14,7 @@
 #ifndef __LOCK_H_
 #define __LOCK_H_
 
-#define KERNEL_MONOCORE 1
-
 typedef volatile uint32_t lock_t;
-
-/* Enable CPU interrupt */
-void enable_interrupt(void);
-
-/* Disable CPU interrupt */
-void disable_interrupt(void);
 
 /* Lock the lock given as parameter
  *

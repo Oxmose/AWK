@@ -17,6 +17,7 @@
 #include "../lib/stddef.h"       /* OS_RETURN_E */
 #include "../lib/string.h"       /* memset */
 #include "../cpu/cpu_settings.h" /* IDT_ENTRY_COUNT */
+#include "../cpu/cpu.h"          /* sti cli */
 #include "../sync/lock.h"        /* enable_interrupt, disable_interrupt */
 #include "kernel_output.h"       /* kernel_success */
 #include "panic.h"               /* panic, interrupt */
@@ -24,6 +25,9 @@
 
 /* Header file */
 #include "interrupts.h"
+
+/* Keep track on the nexting level, kernel start with interrupt disabled */
+static uint32_t int_lock_nesting = 1;
 
 /* Handlers for each interrupt */
 static custom_handler_t kernel_interrupt_handlers[IDT_ENTRY_COUNT];
@@ -131,4 +135,22 @@ OS_RETURN_E remove_interrupt_handler(const uint32_t interrupt_line)
     spinlock_unlock(&handler_table_lock);
 
     return OS_NO_ERR;
+}
+
+void enable_interrupt(void)
+{
+    if(int_lock_nesting > 0)
+    {
+        --int_lock_nesting;
+    }
+    if(int_lock_nesting == 0)
+    {
+        sti();
+    }
+}
+
+void disable_interrupt(void)
+{
+    cli();
+    ++int_lock_nesting;
 }

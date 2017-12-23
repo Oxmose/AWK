@@ -112,4 +112,10 @@ OS_RETURN_E register_interrupt_handler(const uint32_t interrupt_line,
  */
 OS_RETURN_E remove_interrupt_handler(const uint32_t interrupt_line);
 
+/* Enable CPU interrupt */
+void enable_interrupt(void);
+
+/* Disable CPU interrupt */
+void disable_interrupt(void);
+
 #endif /* __INTERRUPTS_H_ */

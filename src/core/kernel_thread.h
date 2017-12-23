@@ -91,6 +91,9 @@ typedef struct kernel_thread
 
     struct thread_queue *children[2]; 
 
+    uint32_t         last_sched;
+    uint32_t         full_consume;
+
     /* Stats  TODO GETTERS */
     uint32_t start_time;
     uint32_t end_time;

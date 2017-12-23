@@ -394,6 +394,63 @@ void schedule_int(cpu_state_t *cpu_state, uint32_t int_id,
     /* Update PIT tick count */
     update_tick();
 
+#if SCHEDULE_DYN_PRIORITY
+
+    if(active_thread != &idle_thread && active_thread != init_thread)
+    {
+        if(int_id == PIT_INTERRUPT_LINE)
+        {
+
+            /* Here the thread consumed all its time slice four times in a row
+             * then we decay its priority by one. 
+             */
+            ++(active_thread->full_consume);
+            if(active_thread->full_consume >= 50)
+            {
+                active_thread->full_consume = 0;
+                if(active_thread->priority < KERNEL_LOWEST_PRIORITY)
+                {
+                    ++(active_thread->priority);
+                }
+            }
+
+        }
+        else
+        {
+            /* Here the thread did not consumed all its time slice */
+            active_thread->full_consume = 0;
+        }
+         /* Upgrade process priority by 1 if the thread has not been executed since
+          * the last 100 ticks. Note that the actual change will be seen when more
+          * prioritary threads will be puck bakc in the queue later.
+          */
+        thread_queue_t *cursor = active_threads_table[0];
+        while(cursor != NULL)
+        {
+            if(cursor->thread == &idle_thread || cursor->thread == init_thread)
+            {
+                cursor = cursor->next;
+                continue;
+            }
+
+            ++cursor->thread->last_sched;
+            if(cursor->thread->last_sched >= 25)
+            {
+                if(cursor->thread->priority > KERNEL_HIGHEST_PRIORITY)
+                {
+                    --(cursor->thread->priority);
+                    --(cursor->priority);
+                }
+                cursor->thread->last_sched = 0;
+            }
+
+            cursor = cursor->next;
+        }
+
+        active_thread->last_sched = 0;
+    }
+#endif
+
     /* If not first schedule */
     if(first_schedule == 1)
     {
@@ -514,6 +571,9 @@ OS_RETURN_E create_thread(thread_t *thread,
     new_thread->state          = READY;
     new_thread->children[0]    = NULL;
     new_thread->children[1]    = NULL;
+    new_thread->full_consume   = 0;
+    new_thread->last_sched     = 0;
+
 
      /* Init thread context */
     new_thread->eip = (uint32_t) thread_wrapper;
@@ -569,12 +629,6 @@ OS_RETURN_E create_thread(thread_t *thread,
     ++thread_count;
 
     spinlock_unlock(&sched_lock);
-
-    /* If the priority of the new thread is higher than the curent one */
-    if(first_schedule == 1 && priority < active_thread->priority)
-    {
-        schedule();
-    }
 
     return OS_NO_ERR;
 }
