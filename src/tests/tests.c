@@ -5,6 +5,7 @@
 #include "test_multithread.h"
 #include "test_vga.h"
 #include "test_mouse.h"
+#include "test_dyn_sched.h"
 
 #include "../lib/stdio.h"
 #include "../drivers/vga_text.h"
@@ -13,7 +14,7 @@
 #include "../sync/lock.h"
 #include "../core/scheduler.h"
 
-static const int32_t tests_count = 3;
+static const int32_t tests_count = 4;
 
 /***************
  TEST MUST BE EXECUTED ON THE LOWEST PRIORITY POSSIBLE 
@@ -43,6 +44,7 @@ void *launch_tests(void*args)
         printf(" Test semaphores passed\n");
     }
 #endif
+    printf("\n");
 #ifdef TEST_MUTEX
     printf("2/%d\n", tests_count);
     if(test_mutex())
@@ -60,6 +62,7 @@ void *launch_tests(void*args)
         printf(" Test mutex passed\n");
     }
 #endif
+    printf("\n");
 #ifdef TEST_MULTITHREAD
     printf("3/%d\n", tests_count);
     if(test_multithread())
@@ -75,6 +78,24 @@ void *launch_tests(void*args)
         printf("[SUCCESS]");
         set_color_scheme(FG_WHITE | BG_BLACK);
         printf(" Test multithread passed\n");
+    }
+#endif
+    printf("\n");
+#ifdef TEST_DYN_SCHED
+    printf("4/%d\n", tests_count);
+    if(test_dyn_sched())
+    {
+        set_color_scheme(FG_RED | BG_BLACK);
+        printf("[ERROR]");
+        set_color_scheme(FG_WHITE | BG_BLACK);
+        printf(" Test dyn sched failed\n");
+    }
+    else
+    {
+        set_color_scheme(FG_GREEN | BG_BLACK);
+        printf("[SUCCESS]");
+        set_color_scheme(FG_WHITE | BG_BLACK);
+        printf(" Test dyn sched passed\n");
     }
 #endif
 

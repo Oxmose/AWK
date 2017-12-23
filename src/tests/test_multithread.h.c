@@ -28,7 +28,7 @@ void *test_func(void *arg)
 	printf("%d - ", argv);
 	for(unsigned int i = 0; i < 100000000; ++i);
 
-	printf("\n%d - END\n", argv);
+	printf(" (%d - END) ", argv);
 
 return NULL;
 }
@@ -124,6 +124,7 @@ void *launch_func(void*args)
         printf("Error while waiting thread! [%d]\n", err);
         perror(err);
     }
+    printf("\n");
     return NULL;
 }
 

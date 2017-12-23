@@ -76,8 +76,25 @@ static void *init_func(void *args)
     (void)args;
     char *argv[2] = {"main", NULL};
     main(1, argv);
+
+    
+
+    spinlock_lock(&sched_lock);
+
+     /* Wait all children */
+    while(thread_count > 2)
+    {
+        spinlock_unlock(&sched_lock);
+        if(active_thread->children[1] != NULL)
+        {
+            wait_thread(active_thread->children[1]->thread, NULL);
+        }
+        spinlock_lock(&sched_lock);
+    } 
+    spinlock_unlock(&sched_lock); 
+
     /* If here, the system is halted */
-    system_state = HALTED;
+    system_state = HALTED;      
     return NULL;
 }
 
@@ -92,9 +109,7 @@ static void thread_exit(void)
 
     if(active_thread == init_thread)
     {
-        /* TODO WAIT FOR ALL CHILDRENS */
-        spinlock_unlock(&sched_lock);
-        schedule();
+        spinlock_unlock(&sched_lock); 
         return;
     }
 
