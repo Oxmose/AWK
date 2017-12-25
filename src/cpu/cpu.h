@@ -236,7 +236,7 @@ int8_t cpuid_capable(void);
    is not supported or whatever cpuid returns in eax register.  If sig
    pointer is non-null, then first four bytes of the SIG
    (as found in ebx register) are returned in location pointed by sig.  */
-static __inline__ uint32_t get_cpuid_max (uint32_t ext)
+__inline__ static uint32_t get_cpuid_max (uint32_t ext)
 {
     uint32_t regs[4];
     if(cpuid_capable() == 0)
@@ -256,7 +256,7 @@ static __inline__ uint32_t get_cpuid_max (uint32_t ext)
    supported and returns 1 for valid cpuid information or 0 for
    unsupported cpuid leaf.  All pointers are required to be non-null.  */
 
-static __inline__ int32_t cpuid (uint32_t code,
+__inline__ static int32_t cpuid (uint32_t code,
                                  uint32_t regs[4])
 {
     if(cpuid_capable() == 0)
@@ -429,6 +429,66 @@ __inline__ static uint64_t rdtsc()
     uint64_t ret;
     __asm__ __volatile__ ( "rdtsc" : "=A"(ret) );
     return ret;
+}
+
+__inline__ static void mapped_io_write_8(void *addr, const uint8_t value)
+{
+  *(volatile uint8_t*)(addr) = value;
+}
+
+__inline__ static void mapped_io_write_16(void *addr, const uint16_t value)
+{
+  *(volatile uint16_t*)(addr) = value;
+}
+
+__inline__ static void mapped_io_write_32(void *addr, const uint32_t value)
+{
+  *(volatile uint32_t*)(addr) = value;
+}
+
+__inline__ static void mapped_io_write_64(void *addr, const uint64_t value)
+{
+  *(volatile uint64_t*)(addr) = value;
+}
+
+
+__inline__ static uint8_t mapped_io_read_8(const void *addr)
+{
+  return *(volatile uint8_t*)(addr);
+}
+
+__inline__ static uint16_t mapped_io_read_16(const void *addr)
+{
+  return *(volatile uint16_t*)(addr);
+}
+
+__inline__ static uint32_t mapped_io_read_32(const void *addr)
+{
+  return *(volatile uint32_t*)(addr);
+}
+
+__inline__ static uint64_t mapped_io_read_64(const void *addr)
+{
+  return *(volatile uint64_t*)(addr);
+}
+
+
+
+__inline__ static void mapped_io_read_sized(const volatile void *addr, 
+                                          void *value, 
+                                          uint32_t size)
+{
+  volatile uint8_t *base = (volatile uint8_t*)addr;
+    uint8_t *dest = (uint8_t*)value;
+    
+    /* Tranfert memory until size limit is reached */
+    while (size > 0)
+    {
+        *dest =  *base;
+        ++base;
+        ++dest;
+        --size;
+    }
 }
 
 #endif /* __CPU_H_ */
