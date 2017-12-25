@@ -85,6 +85,12 @@ int perror(const int error)
 	    case OS_ERR_GRAPHIC_MODE_NOT_SUPPORTED:
 	    	printf("Graphic mode is not supported");
 	    	break;
+	    case OS_ERR_CHECKSUM_FAILED:
+	    	printf("Checksum failed");
+	    	break;
+	    case OS_ERR_ACPI_UNSUPPORTED:
+	    	printf("ACPI unsuported");
+	    	break;
 	    default:
 	    	printf("Unknown error");
 	}

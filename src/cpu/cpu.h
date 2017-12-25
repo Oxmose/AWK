@@ -41,7 +41,7 @@ typedef enum cpuid_requests {
 /******************************
  * CONSTANTS
  *****************************/
-#define MAX_CPU_COUNT 2048
+#define MAX_CPU_COUNT 16
 
 #define CPU_FLAG_CPUID_CAPABLE 0x00200000
 

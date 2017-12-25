@@ -50,7 +50,10 @@ typedef enum __attribute__ ((packed, aligned(2))) OS_RETURN
     OS_ERR_GRAPHIC_MODE_NOT_SUPPORTED      = 19,
 
     OS_MUTEX_LOCKED                        = 20,
-    OS_SEM_LOCKED                          = 21
+    OS_SEM_LOCKED                          = 21,
+
+    OS_ERR_CHECKSUM_FAILED                 = 22,
+    OS_ERR_ACPI_UNSUPPORTED                = 23,
 } OS_RETURN_E;
 
 typedef int32_t OS_EVENT_ID;

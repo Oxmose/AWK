@@ -22,6 +22,7 @@
 #include "kernel_output.h"       /* kernel_succes, kernel_error, kernell_info */
 #include "scheduler.h"           /* init_scheduler */
 #include "panic.h"				 /* kernel_panic */
+#include "acpi.h"                /* init_acpi */
 #include "driver_manager.h"      /* load_drivers, register_driver, 
                                   * init_driver_manager*/
 
@@ -69,6 +70,18 @@ void kernel_kickstart(void)
 		kernel_error("CPU probe error [%d]\n", err);
 		kernel_panic();
 	}	
+
+	/* Init ACPI */
+	err = init_acpi();
+	if(err == OS_NO_ERR)
+	{
+		kernel_success("ACPI Initialized\n");
+	}
+	else
+	{
+		kernel_error("ACPI Initialization error [%d]\n", err);
+		//kernel_panic();
+	}
 
 	/* Init driver manager */
 	err = init_driver_manager();
