@@ -12,13 +12,11 @@
  *
  * Keyboard management for the kernel and the threads.
  */
-
-#include "pic.h"                   /* set_IRQ_EOI, set_IRQ_mask */
 #include "pit.h"                   /* get_current_time */
 #include "vga_text.h"              /* console_write_keyboard */
 #include "../cpu/cpu.h"            /* outb inb */
 #include "../core/interrupts.h"    /* register_interrupt, cpu_state, 
-                                    * stack_state */
+                                    * stack_state, set_IRQ_mask, set_IRQ_EOI */
 #include "../core/scheduler.h"     /* lock_io, unlock_io */
 #include "../lib/stdint.h"         /* Generic int types */
 #include "../lib/stddef.h"         /* OS_RETURN_E, OS_EVENT_ID */

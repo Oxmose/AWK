@@ -17,10 +17,9 @@
 #include "../lib/string.h"  /* strncpy */
 #include "../lib/malloc.h"  /* malloc, free */
 #include "../drivers/pit.h" /* PIT_INTERRUPT_LINE, get_current_uptime */
-#include "../drivers/pic.h" /* set_IRQ_EOI */
 #include "../cpu/cpu.h"     /* sti, hlt */
 #include "../sync/lock.h"   /* enable_interrupt */
-#include "interrupts.h"     /* register_interrupt_handler */
+#include "interrupts.h"     /* register_interrupt_handler, set_IRQ_EOI */
 #include "kernel_output.h"  /* kernel_success, kernel_error */
 #include "kernel_thread.h"  /* kernel_thread_t */
 #include "kernel_queue.h"   /* thread_queue_t,kernel_enqueue_thread,kernel_dequeue_thread */

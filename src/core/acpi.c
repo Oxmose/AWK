@@ -599,3 +599,8 @@ OS_RETURN_E init_acpi(void)
 
     return err;
 }
+
+uint8_t acpi_get_io_apic_available(void)
+{
+    return io_apic_count > 0;
+}

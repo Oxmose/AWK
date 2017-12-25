@@ -16,12 +16,13 @@
 #include "../lib/stdint.h"       /* Generic int types */
 #include "../lib/stddef.h"       /* OS_RETURN_E */
 #include "../lib/string.h"       /* memset */
+#include "../drivers/pic.h"      /* set_IRQ_PIC_EOI, set_IRQ_PIC_mask */
 #include "../cpu/cpu_settings.h" /* IDT_ENTRY_COUNT */
 #include "../cpu/cpu.h"          /* sti cli */
 #include "../sync/lock.h"        /* enable_interrupt, disable_interrupt */
 #include "kernel_output.h"       /* kernel_success */
 #include "panic.h"               /* panic, interrupt */
-
+#include "acpi.h"                /* acpi_get_io_apic_available */
 
 /* Header file */
 #include "interrupts.h"
@@ -32,6 +33,9 @@ static uint32_t int_lock_nesting = 1;
 /* Handlers for each interrupt */
 static custom_handler_t kernel_interrupt_handlers[IDT_ENTRY_COUNT];
 static lock_t handler_table_lock;
+
+/* Tells the kernel if we use PIC or IO-APIC to manage IRQs */
+static uint8_t io_apic_capable;
 
 /*******************************************************************************
  * GLOBAL INTERRUPT HANDLER 
@@ -74,6 +78,9 @@ void init_kernel_interrupt(void)
     kernel_interrupt_handlers[PANIC_INT_LINE].handler = panic;
 
     spinlock_init(&handler_table_lock);
+
+    /* Get IO-APIC availability */
+    io_apic_capable = acpi_get_io_apic_available();
 
     kernel_success("KIH Initialized\n");
 }
@@ -153,4 +160,39 @@ void disable_interrupt(void)
 {
     cli();
     ++int_lock_nesting;
+}
+
+OS_RETURN_E set_IRQ_mask(const uint32_t irq_number, const uint8_t enabled)
+{
+    OS_RETURN_E err;
+    
+    if(io_apic_capable == 1)
+    {
+        return OS_ERR_UNAUTHORIZED_ACTION;
+    }
+    else
+    {
+        if(irq_number > 7 && enabled == 1)
+        {
+            err = set_IRQ_mask(CASCADING_IRQ, 1);
+        }
+        if(err != OS_NO_ERR)
+        {
+            return err;
+        }
+
+        return set_IRQ_PIC_mask(irq_number, enabled);
+    }
+}
+
+OS_RETURN_E set_IRQ_EOI(const uint32_t irq_number)
+{
+    if(io_apic_capable == 1)
+    {
+        return OS_ERR_UNAUTHORIZED_ACTION;
+    }
+    else
+    {
+        return set_IRQ_PIC_EOI(irq_number);
+    }
 }

@@ -263,4 +263,6 @@ typedef struct local_apic_nmi
 
 OS_RETURN_E init_acpi(void);
 
+uint8_t acpi_get_io_apic_available(void);
+
 #endif /* __ACPI_H_ */

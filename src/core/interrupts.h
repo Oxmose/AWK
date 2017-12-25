@@ -118,4 +118,17 @@ void enable_interrupt(void);
 /* Disable CPU interrupt */
 void disable_interrupt(void);
 
+/* Set the IRQ mask for the IRQ number given as parameter.
+ * @param irq_number The irq number to enable/disable.
+ * @param enabled Must be set to 1 to enable the IRQ or 0 to disable the IRQ.
+ * @return The state or error code.
+ */
+OS_RETURN_E set_IRQ_mask(const uint32_t irq_number, const uint8_t enabled);
+
+/* Acknomledge the IRQ.
+ * @param irq_number The irq number to acknowledge.
+ * @return The state or error code.
+ */
+OS_RETURN_E set_IRQ_EOI(const uint32_t irq_number);
+
 #endif /* __INTERRUPTS_H_ */

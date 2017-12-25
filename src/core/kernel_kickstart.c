@@ -83,6 +83,11 @@ void kernel_kickstart(void)
 		//kernel_panic();
 	}
 
+	if(acpi_get_io_apic_available())
+	{
+		kernel_info("IO-APIC detected, PIC will be initialized but disabled.\n");
+	}
+
 	/* Init driver manager */
 	err = init_driver_manager();
 	if(err == OS_NO_ERR)

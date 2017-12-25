@@ -11,10 +11,9 @@
  * Mouse driver (PS2) for the kernel.
  ******************************************************************************/
 
-#include "pic.h"                   /* set_IRQ_EOI, set_IRQ_mask */
 #include "../cpu/cpu.h"            /* outb inb */
 #include "../core/interrupts.h"    /* register_interrupt, cpu_state, 
-                                    * stack_state */
+                                    * stack_state, set_IRQ_EOI, set_IRQ_mask */
 #include "../lib/stdint.h"         /* Generic int types */
 #include "../lib/stddef.h"         /* OS_RETURN_E, OS_EVENT_ID */
 #include "../lib/string.h"         /* memcpy */

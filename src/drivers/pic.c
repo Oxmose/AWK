@@ -23,13 +23,13 @@
 
 OS_RETURN_E init_pic(void)
 {
-	/* Initialize the master. */
+	/* Initialize the master, remap IRQs */
 	outb(PIC_ICW1_ICW4 | PIC_ICW1_INIT, PIC_MASTER_COMM_PORT);
 	outb(PIC0_BASE_INTERRUPT_LINE, PIC_MASTER_DATA_PORT);
 	outb(0x4,  PIC_MASTER_DATA_PORT);
 	outb(0x1,  PIC_MASTER_DATA_PORT);
 	
-	/* Initialize the slave. */
+	/* Initialize the slave, remap IRQs */
 	outb(PIC_ICW1_ICW4 | PIC_ICW1_INIT, PIC_SLAVE_COMM_PORT);
 	outb(PIC1_BASE_INTERRUPT_LINE, PIC_SLAVE_DATA_PORT);
 	outb(0x2,  PIC_SLAVE_DATA_PORT);
@@ -46,7 +46,7 @@ OS_RETURN_E init_pic(void)
     return OS_NO_ERR;
 }
 
-OS_RETURN_E set_IRQ_mask(const uint32_t IRQ_number, const uint8_t enabled)
+OS_RETURN_E set_IRQ_PIC_mask(const uint32_t IRQ_number, const uint8_t enabled)
 {
     uint8_t init_mask;
     uint32_t cascading_number;
@@ -102,7 +102,7 @@ OS_RETURN_E set_IRQ_mask(const uint32_t IRQ_number, const uint8_t enabled)
     return OS_NO_ERR;
 }
 
-OS_RETURN_E set_IRQ_EOI(const uint32_t IRQ_number)
+OS_RETURN_E set_IRQ_PIC_EOI(const uint32_t IRQ_number)
 { 
     if(IRQ_number > MAX_IRQ_LINE)
     {

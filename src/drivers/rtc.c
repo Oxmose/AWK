@@ -11,10 +11,9 @@
  * System RTC (Real Time Clock) driver.
  ******************************************************************************/
 
-#include "pic.h"                   /* set_IRQ_EOI, set_IRQ_mask */
 #include "../cpu/cpu.h"            /* outb inb */
 #include "../core/interrupts.h"    /* register_interrupt, cpu_state, 
-                                    * stack_state */
+                                    * stack_state, set_IRQ_EOI, set_IRQ_mask */
 #include "../lib/stdint.h"         /* Generic int types */
 #include "../lib/stddef.h"         /* OS_RETURN_E, OS_EVENT_ID */
 #include "../sync/lock.h"          /* enable_interrupt, disable_interrupt */
@@ -190,13 +189,6 @@ OS_RETURN_E init_rtc(void)
     /* Set rtc clock interrupt handler */
     err = register_interrupt_handler(RTC_INTERRUPT_LINE, 
                                      rtc_interrupt_handler);
-    if(err != OS_NO_ERR)
-    {
-        return err;
-    }
-
-    /* Set IRQ mask for RTC and enable cascasing */
-    err = set_IRQ_mask(CASCADING_IRQ, 1);
     if(err != OS_NO_ERR)
     {
         return err;

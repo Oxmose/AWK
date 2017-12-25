@@ -14,10 +14,9 @@
  *
  ******************************************************************************/
 
-#include "pic.h"                   /* set_IRQ_mask */
 #include "../cpu/cpu.h"            /* outb */
 #include "../core/interrupts.h"    /* register_interrupt, cpu_state, 
-                                    * stack_state */
+                                    * stack_state, set_IRQ_mask */
 #include "../lib/stdint.h"         /* Generioc int types */
 #include "../lib/stddef.h"         /* OS_RETURN_E */
 #include "../core/scheduler.h"     /* schedule_int */

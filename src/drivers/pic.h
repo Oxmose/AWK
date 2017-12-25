@@ -54,12 +54,12 @@ OS_RETURN_E init_pic(void);
  * @param enabled Must be set to 1 to enable the IRQ or 0 to disable the IRQ.
  * @return The state or error code.
  */
-OS_RETURN_E set_IRQ_mask(const uint32_t irq_number, const uint8_t enabled);
+OS_RETURN_E set_IRQ_PIC_mask(const uint32_t irq_number, const uint8_t enabled);
 
 /* Acknomledge the IRQ.
  * @param irq_number The irq number to acknowledge.
  * @return The state or error code.
  */
-OS_RETURN_E set_IRQ_EOI(const uint32_t irq_number);
+OS_RETURN_E set_IRQ_PIC_EOI(const uint32_t irq_number);
 
 #endif /* __PIC_H_ */
