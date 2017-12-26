@@ -16,8 +16,9 @@
 #ifndef __PIC_H_
 #define __PIC_H_
 
-#include "../lib/stdint.h" /* Generic int types */
-#include "../lib/stddef.h" /* OS_RETURN_E, NULL */
+#include "../lib/stdint.h"      /* Generic int types */
+#include "../lib/stddef.h"      /* OS_RETURN_E, NULL */
+#include "../core/interrupts.h" /* MIN_INTERRUPT_LINE */
 
 /**********************************
  * PIC constants
@@ -34,14 +35,14 @@
 #define PIC_ICW1_LEVEL	    0x08
 #define PIC_ICW1_INIT	    0x10
 
-#define PIC0_BASE_INTERRUPT_LINE 0x20
-#define PIC1_BASE_INTERRUPT_LINE 0x28
+#define PIC0_BASE_INTERRUPT_LINE MIN_INTERRUPT_LINE
+#define PIC1_BASE_INTERRUPT_LINE (MIN_INTERRUPT_LINE + 8)
 
 
-#define MIN_IRQ_LINE 0
-#define MAX_IRQ_LINE 15
+#define PIC_MIN_IRQ_LINE 0
+#define PIC_MAX_IRQ_LINE 15
 
-#define CASCADING_IRQ 2
+#define PIC_CASCADING_IRQ 2
 
 /* Init the PIC by remapping the IRQ interrupts.
  * Disable al IRQ by reseting the IRQs mask.

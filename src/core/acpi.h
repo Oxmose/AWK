@@ -265,4 +265,14 @@ OS_RETURN_E init_acpi(void);
 
 uint8_t acpi_get_io_apic_available(void);
 
+uint8_t acpi_get_lapic_available(void);
+
+uint8_t acpi_get_remmaped_irq(uint8_t irq_number);
+
+uint8_t* get_lapic_addr(void);
+
+uint8_t* acpi_get_io_apic_address(void);
+
+OS_RETURN_E acpi_check_lapic_id(const uint32_t lapic_id);
+
 #endif /* __ACPI_H_ */

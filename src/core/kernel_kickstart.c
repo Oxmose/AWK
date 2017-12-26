@@ -12,12 +12,14 @@
  * AT THIS POINT INTERRUPT SHOULD BE DISABLED
  ******************************************************************************/
 
+#include "../drivers/io_apic.h"  /* init_io_apic */
 #include "../drivers/pic.h"      /* init_pic */
 #include "../drivers/pit.h"      /* init_pit */
 #include "../drivers/rtc.h"      /* init_rtc */
 #include "../drivers/mouse.h"    /* init_mouse */
 #include "../drivers/keyboard.h" /* init_keyboard */
 #include "../cpu/cpu.h"          /* get_cpu_info */
+#include "../cpu/lapic.h"        /* init_lapic */
 #include "../lib/stdio.h"        /* printf */
 #include "kernel_output.h"       /* kernel_succes, kernel_error, kernell_info */
 #include "scheduler.h"           /* init_scheduler */
@@ -83,9 +85,16 @@ void kernel_kickstart(void)
 		//kernel_panic();
 	}
 
-	if(acpi_get_io_apic_available())
+	/* Init kernel interrupt handlers */
+	err = init_kernel_interrupt();
+	if(err == OS_NO_ERR)
 	{
-		kernel_info("IO-APIC detected, PIC will be initialized but disabled.\n");
+		kernel_success("KIH Initialized\n");
+	}
+	else
+	{
+		kernel_error("KIH Initialization error [%d]\n", err);
+		kernel_panic();
 	}
 
 	/* Init driver manager */
@@ -100,15 +109,36 @@ void kernel_kickstart(void)
 		kernel_panic();
 	}
 
-	/* Register drivers */
-
-
 	/* Register PIC */
 	err = register_driver(init_pic, "PIC");
 	if(err != OS_NO_ERR)
 	{
 		kernel_error("PIC driver registration error [%d]\n", err);
 		kernel_panic();
+	}
+
+	if(acpi_get_lapic_available() == 1)
+	{
+		/* Init Local APIC */
+		err = register_driver(init_lapic, "LAPIC");
+		if(err != OS_NO_ERR)
+		{
+			kernel_error("LAPIC driver registration error [%d]\n", err);
+			kernel_panic();
+		}
+	}
+
+	if(acpi_get_io_apic_available() == 1)
+	{
+		kernel_info("IO-APIC present, PIC will be initialized but not used\n");
+
+		/* Register IO APIC */
+		err = register_driver(init_io_apic, "IO-APIC");
+		if(err != OS_NO_ERR)
+		{
+			kernel_error("IO-APIC registration error [%d]\n", err);
+			kernel_panic();
+		}
 	}
 
 	/* Register PIT */

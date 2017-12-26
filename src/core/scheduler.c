@@ -16,7 +16,7 @@
 #include "../lib/stddef.h"  /* OS_RETURN_E, OS_EVENT_ID */
 #include "../lib/string.h"  /* strncpy */
 #include "../lib/malloc.h"  /* malloc, free */
-#include "../drivers/pit.h" /* PIT_INTERRUPT_LINE, get_current_uptime */
+#include "../drivers/pit.h" /* get_current_uptime */
 #include "../cpu/cpu.h"     /* sti, hlt */
 #include "../sync/lock.h"   /* enable_interrupt */
 #include "interrupts.h"     /* register_interrupt_handler, set_IRQ_EOI */
@@ -27,6 +27,10 @@
 
  /* Header file */
  #include "scheduler.h"
+
+/* INT management */
+static uint32_t sched_irq;
+static uint32_t sched_hw_int_line;
 
 /* Scheduler lock */
 static lock_t sched_lock;
@@ -94,6 +98,32 @@ static void *init_func(void *args)
 
     /* If here, the system is halted */
     system_state = HALTED;      
+    return NULL;
+}
+
+static void* idle_sys(void* args)
+{
+    
+    int8_t notify = 0;
+
+    /* Enable interrupts */
+    enable_interrupt();
+    kernel_info("Interrupts unleached\n");
+    printf("=================================== Welcome! ===================================\n\n");
+
+    /* We create the init thread */
+    create_thread(&init_thread, init_func, KERNEL_HIGHEST_PRIORITY, "init\0", args);
+
+    while(1)
+    {
+        sti();
+        if(system_state == HALTED && notify == 0)
+        {
+            notify = 1;
+            kernel_info("System HALTED");
+        }
+        hlt();
+    }
     return NULL;
 }
 
@@ -266,35 +296,116 @@ static void select_thread(void)
     active_thread->state = ELECTED;
 }
 
+static void schedule_int(cpu_state_t *cpu_state, uint32_t int_id, 
+                         stack_state_t *stack_state)
+{
+    OS_RETURN_E err;
+    (void) stack_state;
+    /* Update PIT tick count */
+    update_tick();
+
+#if SCHEDULE_DYN_PRIORITY
+
+    if(active_thread != &idle_thread && active_thread != init_thread)
+    {
+        if(int_id == PIT_INTERRUPT_LINE)
+        {
+
+            /* Here the thread consumed all its time slice four times in a row
+             * then we decay its priority by one. 
+             */
+            ++(active_thread->full_consume);
+            if(active_thread->full_consume >= 50)
+            {
+                active_thread->full_consume = 0;
+                if(active_thread->priority < KERNEL_LOWEST_PRIORITY)
+                {
+                    ++(active_thread->priority);
+                }
+            }
+
+        }
+        else
+        {
+            /* Here the thread did not consumed all its time slice */
+            active_thread->full_consume = 0;
+        }
+         /* Upgrade process priority by 1 if the thread has not been executed since
+          * the last 100 ticks. Note that the actual change will be seen when more
+          * prioritary threads will be puck bakc in the queue later.
+          */
+        thread_queue_t *cursor = active_threads_table[0];
+        while(cursor != NULL)
+        {
+            if(cursor->thread == &idle_thread || cursor->thread == init_thread)
+            {
+                cursor = cursor->next;
+                continue;
+            }
+
+            ++cursor->thread->last_sched;
+            if(cursor->thread->last_sched >= 25)
+            {
+                if(cursor->thread->priority > KERNEL_HIGHEST_PRIORITY)
+                {
+                    --(cursor->thread->priority);
+                    --(cursor->priority);
+                }
+                cursor->thread->last_sched = 0;
+            }
+
+            cursor = cursor->next;
+        }
+
+        active_thread->last_sched = 0;
+    }
+#endif
+
+    /* If not first schedule */
+    if(first_schedule == 1)
+    {
+        /* Save the actual ESP */
+        active_thread->esp = cpu_state->esp - 4;
+        /* Search for next thread */
+        select_thread();
+    }
+
+    first_schedule = 1;
+
+    if(int_id == sched_hw_int_line)
+    {
+        /* Send EOI signal */
+        err = set_IRQ_EOI(sched_irq);
+        if(err != OS_NO_ERR)
+        {
+            kernel_error("Could not EIO scheduler timer[%d]\n", err);
+            kernel_panic();
+        }
+    }
+
+    /* Restore thread esp */
+    __asm__ __volatile__("mov %%eax, %%esp": :"a"(active_thread->esp));
+    __asm__ __volatile__("pop %esp");
+    __asm__ __volatile__("pop %ebp");
+    __asm__ __volatile__("pop %edi");
+    __asm__ __volatile__("pop %esi");
+    __asm__ __volatile__("pop %edx");
+    __asm__ __volatile__("pop %ecx");
+    __asm__ __volatile__("pop %ebx");
+    __asm__ __volatile__("pop %eax");
+
+    __asm__ __volatile__("pop %ss");
+    __asm__ __volatile__("pop %gs");
+    __asm__ __volatile__("pop %fs");
+    __asm__ __volatile__("pop %es");
+    __asm__ __volatile__("pop %ds");
+    __asm__ __volatile__("add $8, %esp");
+    __asm__ __volatile__("iret");
+}
+
 SYSTEM_STATE_E get_system_state(void)
 {
     return system_state;
-}
-
-void* idle_sys(void* args)
-{
-    
-    int8_t notify = 0;
-
-    /* Enable interrupts */
-    enable_interrupt();
-    kernel_info("INT unleached\n");
-    printf("=================================== Welcome! ===================================\n\n");
-
-    /* We create the init thread */
-    create_thread(&init_thread, init_func, KERNEL_HIGHEST_PRIORITY, "init\0", args);
-
-    while(1)
-    {
-        sti();
-        if(system_state == HALTED && notify == 0)
-        {
-            notify = 1;
-            kernel_info("System HALTED");
-        }
-        hlt();
-    }
-    return NULL;
 }
 
 OS_RETURN_E init_scheduler(void)
@@ -374,12 +485,15 @@ OS_RETURN_E init_scheduler(void)
     ++thread_count;
 
     err = kernel_enqueue_thread(&idle_thread, global_threads_table, 
-                         idle_thread.priority);
+                               idle_thread.priority);
     if(err != OS_NO_ERR)
     {
         kernel_error("Could not enqueue thread in global table[%d]\n", err);
         kernel_panic();
     }
+
+    sched_irq = (uint32_t)get_IRQ_SCHED_TIMER();
+    sched_hw_int_line = (uint32_t)get_line_SCHED_HW();
 
     /* Register SW interrupt scheduling */
     err = register_interrupt_handler(SCHEDULER_SW_INT_LINE, schedule_int);
@@ -387,7 +501,24 @@ OS_RETURN_E init_scheduler(void)
     {
         return err;
     }
+
+    /* Register HW interrupt scheduling, unregister interrupt since all driver
+     * should register at least a dunny handler at init.
+     */
+    err = remove_interrupt_handler(sched_hw_int_line);
+    if(err != OS_NO_ERR)
+    {
+        return err;
+    }
+
+    err = register_interrupt_handler(sched_hw_int_line, schedule_int);
+    if(err != OS_NO_ERR)
+    {
+        return err;
+    }
+
     kernel_success("SCHED Initialized\n");
+
 
     /* First schedule */
     schedule();
@@ -399,107 +530,6 @@ void schedule(void)
 {
     /* Raise scheduling interrupt */
     __asm__ __volatile__("int %0" :: "i" (SCHEDULER_SW_INT_LINE));
-}
-
-void schedule_int(cpu_state_t *cpu_state, uint32_t int_id, 
-                  stack_state_t *stack_state)
-{
-    (void) stack_state;
-    /* Update PIT tick count */
-    update_tick();
-
-#if SCHEDULE_DYN_PRIORITY
-
-    if(active_thread != &idle_thread && active_thread != init_thread)
-    {
-        if(int_id == PIT_INTERRUPT_LINE)
-        {
-
-            /* Here the thread consumed all its time slice four times in a row
-             * then we decay its priority by one. 
-             */
-            ++(active_thread->full_consume);
-            if(active_thread->full_consume >= 50)
-            {
-                active_thread->full_consume = 0;
-                if(active_thread->priority < KERNEL_LOWEST_PRIORITY)
-                {
-                    ++(active_thread->priority);
-                }
-            }
-
-        }
-        else
-        {
-            /* Here the thread did not consumed all its time slice */
-            active_thread->full_consume = 0;
-        }
-         /* Upgrade process priority by 1 if the thread has not been executed since
-          * the last 100 ticks. Note that the actual change will be seen when more
-          * prioritary threads will be puck bakc in the queue later.
-          */
-        thread_queue_t *cursor = active_threads_table[0];
-        while(cursor != NULL)
-        {
-            if(cursor->thread == &idle_thread || cursor->thread == init_thread)
-            {
-                cursor = cursor->next;
-                continue;
-            }
-
-            ++cursor->thread->last_sched;
-            if(cursor->thread->last_sched >= 25)
-            {
-                if(cursor->thread->priority > KERNEL_HIGHEST_PRIORITY)
-                {
-                    --(cursor->thread->priority);
-                    --(cursor->priority);
-                }
-                cursor->thread->last_sched = 0;
-            }
-
-            cursor = cursor->next;
-        }
-
-        active_thread->last_sched = 0;
-    }
-#endif
-
-    /* If not first schedule */
-    if(first_schedule == 1)
-    {
-        /* Save the actual ESP */
-        active_thread->esp = cpu_state->esp - 4;
-        /* Search for next thread */
-        select_thread();
-    }
-
-    first_schedule = 1;
-
-    if(int_id == PIT_INTERRUPT_LINE)
-    {
-        /* Send EOI signal */
-        set_IRQ_EOI(PIT_IRQ);
-    }
-
-    /* Restore thread esp */
-    __asm__ __volatile__("mov %%eax, %%esp": :"a"(active_thread->esp));
-    __asm__ __volatile__("pop %esp");
-    __asm__ __volatile__("pop %ebp");
-    __asm__ __volatile__("pop %edi");
-    __asm__ __volatile__("pop %esi");
-    __asm__ __volatile__("pop %edx");
-    __asm__ __volatile__("pop %ecx");
-    __asm__ __volatile__("pop %ebx");
-    __asm__ __volatile__("pop %eax");
-
-    __asm__ __volatile__("pop %ss");
-    __asm__ __volatile__("pop %gs");
-    __asm__ __volatile__("pop %fs");
-    __asm__ __volatile__("pop %es");
-    __asm__ __volatile__("pop %ds");
-    __asm__ __volatile__("add $8, %esp");
-    __asm__ __volatile__("iret");
 }
 
 OS_RETURN_E sleep(const unsigned int time_ms)

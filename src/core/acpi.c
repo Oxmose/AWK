@@ -25,7 +25,6 @@ static uint32_t cpu_count;
 static uint32_t cpu_ids[MAX_CPU_COUNT];
 
 /* CPU LAPIC */
-static uint8_t cpu_lapic_parse_success[MAX_CPU_COUNT];
 static local_apic_t *cpu_lapic[MAX_CPU_COUNT];
 
 /* IO APIC */
@@ -111,7 +110,6 @@ static OS_RETURN_E acpi_parse_apic(acpi_madt_t *madt_ptr)
             else
             {
                 kernel_info("Exceeded CPU max count, ignoring.\n");
-                /* TODO IDLE CPU */
             }
         }
         else if(type == APIC_TYPE_IO_APIC)
@@ -128,25 +126,6 @@ static OS_RETURN_E acpi_parse_apic(acpi_madt_t *madt_ptr)
             }
             
         }
-        else if(type == APIC_TYPE_INTERRUPT_OVERRIDE)
-        {
-            //apic_interrupt_override_t *s = (apic_interrupt_override_t *)madt_entry;
-
-            //kernel_printf("Found Interrupt Override: %d %d %d 0x%04x\n", s->bus, s->source, s->interrupt, s->flags);
-
-            /* TODO */
-        }
-        else if(type == APIC_TYPE_NMI)
-        {
-            //local_apic_nmi_t *s = (local_apic_nmi_t *)madt_entry;
-
-            //kernel_printf("Found NMI: 0x%2d 0x%4x %d\n", s->processors, s->flags, s->lint_id);
-             /* TODO */
-        }
-        else
-        {
-            kernel_printf("Unknown APIC structure %d\n", type);
-        }
 
         madt_entry += header->length;
     }
@@ -156,14 +135,15 @@ static OS_RETURN_E acpi_parse_apic(acpi_madt_t *madt_ptr)
 
 static OS_RETURN_E acpi_parse_facs(acpi_facs_t *facs_ptr)
 {
-    int32_t sum;
-    uint32_t i;
+    //int32_t sum;
+    //uint32_t i;
 
     if(facs_ptr == NULL)
     {
         return OS_ERR_NULL_POINTER;
     }
-
+#if 0
+/* TODO CHECKSUM NOT OK */
     /* Verify checksum */
     sum = 0;
 
@@ -174,9 +154,10 @@ static OS_RETURN_E acpi_parse_facs(acpi_facs_t *facs_ptr)
 
     if((sum & 0xFF) != 0)
     {
-        kernel_error("FACS Checksum failed\n");
+        kernel_error("FACS Checksum failed: %d\n", sum & 0xFF);
         return OS_ERR_CHECKSUM_FAILED;
     }
+    #endif
 
     if(*((uint32_t*)facs_ptr->header.signature) != ACPI_FACS_SIG)
     {
@@ -440,7 +421,6 @@ static OS_RETURN_E acpi_parse_rsdp(rsdp_descriptor_t *rsdp_desc)
 {
     uint8_t sum;
     uint8_t i;
-    char oem[7];
     OS_RETURN_E err;
     uint64_t xsdt_addr;
 
@@ -464,11 +444,6 @@ static OS_RETURN_E acpi_parse_rsdp(rsdp_descriptor_t *rsdp_desc)
         kernel_printf("RSDP Checksum failed\n");
         return OS_ERR_CHECKSUM_FAILED;
     }
-
-    /* Print OEM */
-    memcpy(oem, rsdp_desc->oemid, 6);
-    oem[6] = '\0';
-    kernel_info("ACPI OEMID: %s\n", oem);
 
     /* ACPI version check */
     if(rsdp_desc->revision == 0)
@@ -559,7 +534,6 @@ OS_RETURN_E init_acpi(void)
 
     for(i = 0; i < MAX_CPU_COUNT; ++i)
     {
-        cpu_lapic_parse_success[i] = 0;
         cpu_lapic[i] = NULL;
         cpu_ids[i] = 0;
     }
@@ -602,5 +576,79 @@ OS_RETURN_E init_acpi(void)
 
 uint8_t acpi_get_io_apic_available(void)
 {
-    return io_apic_count > 0;
+    return ((acpi_get_lapic_available()) && io_apic_count > 0);
+}
+
+uint8_t acpi_get_lapic_available(void)
+{
+    return cpu_count > 0;
+}
+
+uint8_t acpi_get_remmaped_irq(uint8_t irq_number)
+{
+    uint8_t *base;
+    uint8_t *limit ;
+
+    if(madt_parse_success == 0)
+    {
+        return irq_number;
+    }
+
+    base = (uint8_t*) (madt + 1);
+    limit = ((uint8_t*) madt) + madt->header.length;
+
+    /* Walk the table */
+    while (base < limit)
+    {
+        apic_header_t *header = (apic_header_t *)base;
+
+        /* Check for type */
+        if (header->type == APIC_TYPE_INTERRUPT_OVERRIDE)
+        {
+            apic_interrupt_override_t *s = (apic_interrupt_override_t *)base;
+
+            /* Return remaped IRQ number */
+            if (s->source == irq_number)
+            {
+                return s->interrupt;
+            }
+        }
+
+        base += header->length;
+    }
+
+    return irq_number;
+}
+
+uint8_t* acpi_get_io_apic_address(void)
+{
+    if(madt_parse_success == 0) 
+    {
+        return 0;
+    }
+    return (uint8_t*)io_apic_tables[0]->io_apic_addr;
+}
+
+uint8_t* get_lapic_addr(void)
+{
+    if(madt_parse_success == 0) 
+    {
+        return 0;
+    }
+    return (uint8_t*)madt->local_apic_addr;
+}
+
+OS_RETURN_E acpi_check_lapic_id(const uint32_t lapic_id)
+{
+    uint32_t i;
+
+    for(i = 0; i < cpu_count; ++i)
+    {
+        if(cpu_lapic[i]->apic_id == lapic_id)
+        {
+            return OS_NO_ERR;
+        }
+    }
+
+    return OS_ERR_NO_SUCH_LAPIC_ID;
 }

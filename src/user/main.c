@@ -233,6 +233,7 @@ int main(int argc, char** argv)
 		printf("Arg %d: %s\n", i, argv[i]);
 	}
 
+	//sleep(5000);
 	//init_vga();
 	//draw_logo();
 

@@ -16,10 +16,9 @@
 
 #include "../cpu/cpu.h"            /* outb */
 #include "../core/interrupts.h"    /* register_interrupt, cpu_state, 
-                                    * stack_state, set_IRQ_mask */
+                                    * stack_state, set_IRQ_mask, set_IRQ_EOI */
 #include "../lib/stdint.h"         /* Generioc int types */
 #include "../lib/stddef.h"         /* OS_RETURN_E */
-#include "../core/scheduler.h"     /* schedule_int */
 
 /* Header include */
 #include "pit.h"
@@ -29,6 +28,16 @@ static uint32_t uptime;
 
 /* Tick counter, circular when reaching overflow */
 static uint32_t tick_count;
+
+static void dummy_handler(cpu_state_t *cpu_state, uint32_t int_id, 
+                          stack_state_t *stack_state)
+{
+    (void)cpu_state;
+    (void)int_id;
+    (void)stack_state;
+    /* DUMMY */
+    set_IRQ_EOI(PIT_IRQ);
+}
 
 OS_RETURN_E init_pit(void)
 {
@@ -46,7 +55,7 @@ OS_RETURN_E init_pit(void)
 
     /* Set clock interrupt handler */
     err = register_interrupt_handler(PIT_INTERRUPT_LINE, 
-                                     schedule_int);
+                                     dummy_handler);
 
     if(err == OS_NO_ERR)
     {

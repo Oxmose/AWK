@@ -91,6 +91,9 @@ int perror(const int error)
 	    case OS_ERR_ACPI_UNSUPPORTED:
 	    	printf("ACPI unsuported");
 	    	break;
+	    case OS_ERR_NO_SUCH_LAPIC_ID:
+	    	printf("No such LAPIC id");
+	    	break;
 	    default:
 	    	printf("Unknown error");
 	}

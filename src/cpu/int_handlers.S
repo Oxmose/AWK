@@ -80,14 +80,14 @@ section .text:
         iret
 
     ; Now create handlers for each interrupt
-    noerr_code_interrupt_handler 8
-    noerr_code_interrupt_handler 10
-    noerr_code_interrupt_handler 11
-    noerr_code_interrupt_handler 12
-    noerr_code_interrupt_handler 13
-    noerr_code_interrupt_handler 14
-    noerr_code_interrupt_handler 17
-    noerr_code_interrupt_handler 30
+    err_code_interrupt_handler 8
+    err_code_interrupt_handler 10
+    err_code_interrupt_handler 11
+    err_code_interrupt_handler 12
+    err_code_interrupt_handler 13
+    err_code_interrupt_handler 14
+    err_code_interrupt_handler 17
+    err_code_interrupt_handler 30
 
     noerr_code_interrupt_handler 0
     noerr_code_interrupt_handler 1

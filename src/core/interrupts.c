@@ -17,8 +17,10 @@
 #include "../lib/stddef.h"       /* OS_RETURN_E */
 #include "../lib/string.h"       /* memset */
 #include "../drivers/pic.h"      /* set_IRQ_PIC_EOI, set_IRQ_PIC_mask */
+#include "../drivers/io_apic.h"  /* set_IRQ_IO_APIC_mask */
 #include "../cpu/cpu_settings.h" /* IDT_ENTRY_COUNT */
 #include "../cpu/cpu.h"          /* sti cli */
+#include "../cpu/lapic.h"        /* set_INT_LAPIC_EOI */
 #include "../sync/lock.h"        /* enable_interrupt, disable_interrupt */
 #include "kernel_output.h"       /* kernel_success */
 #include "panic.h"               /* panic, interrupt */
@@ -36,6 +38,20 @@ static lock_t handler_table_lock;
 
 /* Tells the kernel if we use PIC or IO-APIC to manage IRQs */
 static uint8_t io_apic_capable;
+
+/* Tells the kernel if the LAPIC is available */
+static uint8_t lapic_capable;
+
+static void spurious_handler(cpu_state_t* cpu, uint32_t id, 
+                             stack_state_t* stack)
+{
+    (void)cpu;
+    (void)id;
+    (void)stack;
+
+    set_IRQ_EOI(id);
+    return;
+}
 
 /*******************************************************************************
  * GLOBAL INTERRUPT HANDLER 
@@ -58,7 +74,7 @@ void kernel_interrupt_handler(cpu_state_t cpu_state,
     }
 }
 
-void init_kernel_interrupt(void)
+OS_RETURN_E init_kernel_interrupt(void)
 {
     uint32_t i;
 
@@ -77,12 +93,21 @@ void init_kernel_interrupt(void)
     kernel_interrupt_handlers[PANIC_INT_LINE].enabled = 1;
     kernel_interrupt_handlers[PANIC_INT_LINE].handler = panic;
 
+    /* Attach spurious event handler */
+    kernel_interrupt_handlers[SPURIOUS_INTERRUPT_LINE].enabled = 1;
+    kernel_interrupt_handlers[SPURIOUS_INTERRUPT_LINE].handler = 
+                                                               spurious_handler;
+
     spinlock_init(&handler_table_lock);
 
     /* Get IO-APIC availability */
     io_apic_capable = acpi_get_io_apic_available();
 
-    kernel_success("KIH Initialized\n");
+    /* Get LAPIC availability */
+    /* TODO */
+    lapic_capable = 0;
+
+    return OS_NO_ERR;
 }
 
 OS_RETURN_E register_interrupt_handler(const uint32_t interrupt_line, 
@@ -94,7 +119,7 @@ OS_RETURN_E register_interrupt_handler(const uint32_t interrupt_line,
                                        )
 {
     if(interrupt_line < MIN_INTERRUPT_LINE || 
-       interrupt_line >= MAX_INTERRUPT_LINE)
+       interrupt_line > MAX_INTERRUPT_LINE)
     {
         return OR_ERR_UNAUTHORIZED_INTERRUPT_LINE;
     }
@@ -123,7 +148,7 @@ OS_RETURN_E register_interrupt_handler(const uint32_t interrupt_line,
 OS_RETURN_E remove_interrupt_handler(const uint32_t interrupt_line)
 {
     if(interrupt_line < MIN_INTERRUPT_LINE || 
-       interrupt_line >= MAX_INTERRUPT_LINE)
+       interrupt_line > MAX_INTERRUPT_LINE)
     {
         return OR_ERR_UNAUTHORIZED_INTERRUPT_LINE;
     }
@@ -165,16 +190,16 @@ void disable_interrupt(void)
 OS_RETURN_E set_IRQ_mask(const uint32_t irq_number, const uint8_t enabled)
 {
     OS_RETURN_E err;
-    
+
     if(io_apic_capable == 1)
     {
-        return OS_ERR_UNAUTHORIZED_ACTION;
+        return set_IRQ_IO_APIC_mask(irq_number, enabled);
     }
     else
     {
         if(irq_number > 7 && enabled == 1)
         {
-            err = set_IRQ_mask(CASCADING_IRQ, 1);
+            err = set_IRQ_mask(PIC_CASCADING_IRQ, 1);
         }
         if(err != OS_NO_ERR)
         {
@@ -189,10 +214,36 @@ OS_RETURN_E set_IRQ_EOI(const uint32_t irq_number)
 {
     if(io_apic_capable == 1)
     {
-        return OS_ERR_UNAUTHORIZED_ACTION;
+        return set_INT_LAPIC_EOI(irq_number + MIN_INTERRUPT_LINE);
     }
     else
     {
         return set_IRQ_PIC_EOI(irq_number);
+    }
+}
+
+int32_t get_IRQ_SCHED_TIMER(void)
+{
+    if(lapic_capable == 1)
+    {
+        /* TODO */
+        return PIT_IRQ_LINE;
+    }
+    else
+    {
+        return PIT_IRQ_LINE;
+    }
+}
+
+int32_t get_line_SCHED_HW(void)
+{
+    if(lapic_capable == 1)
+    {
+        /* TODO */
+        return PIT_INTERRUPT_LINE;
+    }
+    else
+    {
+        return PIT_INTERRUPT_LINE;
     }
 }

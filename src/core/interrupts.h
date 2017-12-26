@@ -21,7 +21,14 @@
 #include "../cpu/cpu_settings.h" /* IDT_ENTRY_COUNT */
 
 #define MIN_INTERRUPT_LINE 32
-#define MAX_INTERRUPT_LINE IDT_ENTRY_COUNT
+#define MAX_INTERRUPT_LINE (IDT_ENTRY_COUNT - 2)
+
+#define SPURIOUS_INTERRUPT_LINE (IDT_ENTRY_COUNT - 1)
+
+#define PIT_IRQ_LINE       0
+#define PIT_INTERRUPT_LINE MIN_INTERRUPT_LINE
+#define RTC_IRQ_LINE       8
+#define RTC_INTERRUPT_LINE (MIN_INTERRUPT_LINE + RTC_IRQ_LINE)
 
 /*****************************************
  * STRUCTURES
@@ -84,8 +91,10 @@ void kernel_interrupt_handler(cpu_state_t cpu_state,
 
 /* Blanck the handlers memory and initialize the first 32 interrupt to catch 
  * intel exceptions. 
+ * @return The function returns OS_NO_ERR in case of succes, otherwise, please
+ * refer to the error codes.
  */
-void init_kernel_interrupt(void);
+OS_RETURN_E init_kernel_interrupt(void);
 
 /* Register a custom interrupt handler to be executed. The interrupt line must
  * be greater or equal to the minimal authorized custom interrupt line and less
@@ -130,5 +139,9 @@ OS_RETURN_E set_IRQ_mask(const uint32_t irq_number, const uint8_t enabled);
  * @return The state or error code.
  */
 OS_RETURN_E set_IRQ_EOI(const uint32_t irq_number);
+
+int32_t get_IRQ_SCHED_TIMER(void);
+
+int32_t get_line_SCHED_HW(void);
 
 #endif /* __INTERRUPTS_H_ */

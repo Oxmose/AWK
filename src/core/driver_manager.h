@@ -29,7 +29,8 @@
 typedef struct driver_info
 {
     char             name[DRIVER_MAX_NAME_LENGTH];
-    OS_RETURN_E      (*init_driver)(void);
+    OS_RETURN_E      (*init_driver)(void); /* Enable interrupt and set at least  
+                                            * a dummy interrupt handler */
 
     struct driver_info *next;
 } driver_info_t;

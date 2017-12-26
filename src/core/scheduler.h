@@ -26,13 +26,14 @@
  * CONSTANTS
  ***************************/
 #define SCHEDULE_PERIOD         1
-#define SCHEDULER_SW_INT_LINE   0x30
 
 #define KERNEL_LOWEST_PRIORITY  64
 #define KERNEL_HIGHEST_PRIORITY 0
 #define IDLE_THREAD_PRIORITY    KERNEL_LOWEST_PRIORITY
 
 #define SCHEDULE_DYN_PRIORITY   1
+
+#define SCHEDULER_SW_INT_LINE   0x30
 
 /****************************
  * STRUCTURES 
@@ -66,9 +67,6 @@ typedef struct thread_info
  * FUNCTIONS 
  ***************************/
 
-/* Idle thread routine */
-void* idle_sys(void* args);
-
 /* Return system state 
  * @returns The system state.
  */
@@ -85,11 +83,6 @@ OS_RETURN_E init_scheduler(void);
 /* Schedule current thread, raise an interrupt.
  */
 void schedule(void);
-
-/* Schedule current thread in interrupt
- */
-void schedule_int(cpu_state_t *cpu_state, uint32_t int_id, 
-                  stack_state_t *stack_state);
 
 /* Put the calling thread to sleep.
  * @param time_ms The number of milliseconds to wait.

@@ -54,6 +54,8 @@ typedef enum __attribute__ ((packed, aligned(2))) OS_RETURN
 
     OS_ERR_CHECKSUM_FAILED                 = 22,
     OS_ERR_ACPI_UNSUPPORTED                = 23,
+
+    OS_ERR_NO_SUCH_LAPIC_ID                = 24,
 } OS_RETURN_E;
 
 typedef int32_t OS_EVENT_ID;

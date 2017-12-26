@@ -17,8 +17,10 @@
 #ifndef __PIT_H_
 #define __PIT_H_
 
-#include "../lib/stdint.h"      /* Generioc int types */
-#include "../lib/stddef.h"      /* OS_RETURN_E, OS_EVENT_ID*/
+#include "../lib/stdint.h"            /* Generioc int types */
+#include "../lib/stddef.h"            /* OS_RETURN_E, OS_EVENT_ID*/
+#include "../core/interrupts.h"       /* SCHED_TIMER_INTERRUPT_LINE,
+                                         MIN_INTERRUPT_LINE */
 
 /*****************************************
  * CONSTANTS
@@ -31,8 +33,6 @@
 #define PIT_COMM_SET_FREQ  0x43
 #define PIT_FREQ           100
 #define PIT_IRQ            0
-#define PIT_INTERRUPT_LINE 32
-
 
 /************************************
  * FUNCTIONS 

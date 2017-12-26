@@ -51,7 +51,7 @@ OS_RETURN_E set_IRQ_PIC_mask(const uint32_t IRQ_number, const uint8_t enabled)
     uint8_t init_mask;
     uint32_t cascading_number;
 
-    if(IRQ_number > MAX_IRQ_LINE)
+    if(IRQ_number > PIC_MAX_IRQ_LINE)
     {
         return OS_ERR_NO_SUCH_IRQ_LINE;
     }
@@ -103,8 +103,8 @@ OS_RETURN_E set_IRQ_PIC_mask(const uint32_t IRQ_number, const uint8_t enabled)
 }
 
 OS_RETURN_E set_IRQ_PIC_EOI(const uint32_t IRQ_number)
-{ 
-    if(IRQ_number > MAX_IRQ_LINE)
+{
+    if(IRQ_number > PIC_MAX_IRQ_LINE)
     {
         return OS_ERR_NO_SUCH_IRQ_LINE;
     }

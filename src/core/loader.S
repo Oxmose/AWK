@@ -17,8 +17,6 @@
 ;-----------------------------------------
 extern setup_gdt
 extern setup_idt
-extern init_kernel_interrupt
-extern setup_pic
 extern clear_screen
 extern kernel_kickstart
 extern _edata
@@ -93,9 +91,6 @@ section .text:
 
     ; Setup kernel IDT
     call setup_idt
-
-    ; Setup kernel interrupt handlers
-    call init_kernel_interrupt
 
     ; Kickstrat kernel
     call kernel_kickstart
