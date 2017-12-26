@@ -19,6 +19,8 @@
 #include "panic.h"		    /* kernel_panic */
 #include "kernel_output.h"  /* kernel_success, kernel_error */
 
+#include "../debug.h"      /* kernel_serial_debug */
+
 /* Header file */
 #include "driver_manager.h"
 
@@ -60,6 +62,10 @@ OS_RETURN_E register_driver(OS_RETURN_E (*init_func)(void), const char *name)
 	/* Set the structure */
 	strncpy(new_driver->name, name, DRIVER_MAX_NAME_LENGTH);
 	new_driver->init_driver = init_func;
+
+	#ifdef DEBUG_DRIVER_MANAGER
+    kernel_serial_debug("Adding new driver to load: %s\n", name);
+    #endif
 
 	spinlock_lock(&drivers_lock);
 

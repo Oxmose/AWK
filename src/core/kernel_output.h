@@ -43,4 +43,17 @@ void kernel_success(const char *__format, ...) __attribute__((format (printf, 1,
  */
 void kernel_info(const char *__format, ...) __attribute__((format (printf, 1, 2)));
 
+/* Print the desired string to the screen. Add a yellow [DEBUG] tag at the 
+ * beggining of the string before printing it.
+ *
+ * @param __format The format string to output.
+ */
+void kernel_debug(const char *__format, ...) __attribute__((format (printf, 1, 2)));
+
+/* Print the desired string to the serial port. Add a [DEBUG] tag at the 
+ * beggining of the string before printing it.
+ *
+ * @param __format The format string to output.
+ */
+void kernel_serial_debug(const char *__format, ...) __attribute__((format (printf, 1, 2)));
 #endif /* __KERNEL_OUTPUT_H_ */

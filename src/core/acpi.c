@@ -15,7 +15,9 @@
 #include "../lib/stddef.h" /* OS_RETURN_E */
 #include "../lib/string.h" /* memcpy */
 #include "../cpu/cpu.h"    /* MAX_CPU_COUNT */
-#include "kernel_output.h"
+#include "kernel_output.h" /* kernel_error */
+
+#include "../debug.h"      /* kernel_serial_debug */
 
 /* Header file */
 #include "acpi.h"
@@ -66,6 +68,10 @@ static OS_RETURN_E acpi_parse_apic(acpi_madt_t *madt_ptr)
         return OS_ERR_NULL_POINTER;
     }
 
+    #ifdef DEBUG_ACPI
+    kernel_serial_debug("Parsing MADT at 0x%08x\n", (uint32_t)madt_ptr);
+    #endif
+
     /* Verify checksum */
     sum = 0;
 
@@ -100,6 +106,12 @@ static OS_RETURN_E acpi_parse_apic(acpi_madt_t *madt_ptr)
         /* Check entry type */
         if(type == APIC_TYPE_LOCAL_APIC)
         {
+            #ifdef DEBUG_ACPI
+            kernel_serial_debug("Found LAPIC: CPU #%d | ID #%d | FLAGS %x\n", 
+                ((local_apic_t *)madt_entry)->acpi_cpu_id, 
+                ((local_apic_t *)madt_entry)->apic_id, 
+                ((local_apic_t *)madt_entry)->flags);
+            #endif
             if(cpu_count < MAX_CPU_COUNT)
             {
                 /* Add CPU info to the lapic table */
@@ -114,6 +126,12 @@ static OS_RETURN_E acpi_parse_apic(acpi_madt_t *madt_ptr)
         }
         else if(type == APIC_TYPE_IO_APIC)
         {
+            #ifdef DEBUG_ACPI
+            kernel_serial_debug("Found IO-APIC: ADDR #%08x | ID #%d | GSIB %x\n", 
+                ((io_apic_t *)madt_entry)->io_apic_addr, 
+                ((io_apic_t *)madt_entry)->apic_id, 
+                ((io_apic_t *)madt_entry)->global_system_interrupt_base);
+            #endif
             if(io_apic_count < MAX_IO_APIC_COUNT)
             {
                 /* Add IO APIC info to the table */
@@ -142,6 +160,11 @@ static OS_RETURN_E acpi_parse_facs(acpi_facs_t *facs_ptr)
     {
         return OS_ERR_NULL_POINTER;
     }
+
+    #ifdef DEBUG_ACPI
+    kernel_serial_debug("Parsing FACS at 0x%08x\n", (uint32_t)facs_ptr);
+    #endif
+
 #if 0
 /* TODO CHECKSUM NOT OK */
     /* Verify checksum */
@@ -178,6 +201,10 @@ static OS_RETURN_E acpi_parse_dsdt(acpi_dsdt_t *dsdt_ptr)
         return OS_ERR_NULL_POINTER;
     }
 
+    #ifdef DEBUG_ACPI
+    kernel_serial_debug("Parsing DSDT at 0x%08x\n", (uint32_t)dsdt_ptr);
+    #endif
+
     /* Verify checksum */
     sum = 0;
 
@@ -211,6 +238,10 @@ static OS_RETURN_E acpi_parse_fadt(acpi_fadt_t *fadt_ptr)
     {
         return OS_ERR_NULL_POINTER;
     }
+
+    #ifdef DEBUG_ACPI
+    kernel_serial_debug("Parsing FADT at 0x%08x\n", (uint32_t)fadt_ptr);
+    #endif
 
     /* Verify checksum */
     sum = 0;
@@ -269,6 +300,10 @@ static OS_RETURN_E acpi_parse_dt(acpi_header_t *header)
         return OS_ERR_NULL_POINTER;
     }
 
+    #ifdef DEBUG_ACPI
+    kernel_serial_debug("Parsing SDT at 0x%08x\n", (uint32_t)header);
+    #endif
+
     memcpy(sig_str, header->signature, 4);
     sig_str[4] = 0;
 
@@ -298,10 +333,7 @@ static OS_RETURN_E acpi_parse_dt(acpi_header_t *header)
             kernel_error("Failed to parse MADT [%d]\n", err);
         }
     }
-    else
-    {
-        //kernel_printf("RSDT Signature: %s 0x%x\n", sig_str, *((uint32_t*)header->signature));
-    }
+
     return err;
 }
 
@@ -320,6 +352,10 @@ static OS_RETURN_E acpi_parse_rsdt(rsdt_descriptor_t *rsdt_ptr)
     {
         return OS_ERR_NULL_POINTER;
     }
+
+    #ifdef DEBUG_ACPI
+    kernel_serial_debug("Parsing RSDT at 0x%08x\n", (uint32_t)rsdt_ptr);
+    #endif
 
     /* Verify checksum */
     sum = 0;
@@ -377,6 +413,10 @@ static OS_RETURN_E acpi_parse_xsdt(xsdt_descriptor_t *xsdt_ptr)
         return OS_ERR_NULL_POINTER;
     }
 
+    #ifdef DEBUG_ACPI
+    kernel_serial_debug("Parsing XSDT at 0x%08x\n", (uint32_t)xsdt_ptr);
+    #endif
+
     /* Verify checksum */
     sum = 0;
 
@@ -431,6 +471,10 @@ static OS_RETURN_E acpi_parse_rsdp(rsdp_descriptor_t *rsdp_desc)
         return OS_ERR_NULL_POINTER;
     }
 
+    #ifdef DEBUG_ACPI
+    kernel_serial_debug("Parsing RSDP at 0x%08x\n", (uint32_t)rsdp_desc);
+    #endif
+
     /* Verify checksum */
     sum = 0;
 
@@ -445,9 +489,13 @@ static OS_RETURN_E acpi_parse_rsdp(rsdp_descriptor_t *rsdp_desc)
         return OS_ERR_CHECKSUM_FAILED;
     }
 
+    #ifdef DEBUG_ACPI
+    kernel_serial_debug("ACPI revision %d detected \n", rsdp_desc->revision);
+    #endif
     /* ACPI version check */
     if(rsdp_desc->revision == 0)
     {
+        
         err = acpi_parse_rsdt((rsdt_descriptor_t *)rsdp_desc->rsdt_address);
         if(err != OS_NO_ERR)
         {
@@ -558,6 +606,9 @@ OS_RETURN_E init_acpi(void)
         /* Checking the RSDP signature */
         if(signature == ACPI_RSDP_SIG)
         {
+            #ifdef DEBUG_ACPI
+            kernel_serial_debug("ACPI RSDP found at 0x%08x\n", (uint32_t)range_begin);
+            #endif
             /* Parse RSDP */
             err = acpi_parse_rsdp((rsdp_descriptor_t*)range_begin);
             if(err == OS_NO_ERR)
@@ -606,10 +657,13 @@ uint8_t acpi_get_remmaped_irq(uint8_t irq_number)
         if (header->type == APIC_TYPE_INTERRUPT_OVERRIDE)
         {
             apic_interrupt_override_t *s = (apic_interrupt_override_t *)base;
-
+            
             /* Return remaped IRQ number */
             if (s->source == irq_number)
             {
+                #ifdef DEBUG_ACPI
+                kernel_serial_debug("ACPI Interrupt override found %d -> %d\n", s->source, s->interrupt);
+                #endif
                 return s->interrupt;
             }
         }

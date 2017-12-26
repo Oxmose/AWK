@@ -17,6 +17,8 @@
 #include "../lib/stdint.h" /* Generic int types */
 #include "../lib/malloc.h" /* malloc, free */
 
+#include "../debug.h"      /* kernel_serial_debug */
+
 /* Header include */
 #include "kernel_queue.h"
 
@@ -26,6 +28,12 @@ OS_RETURN_E kernel_enqueue_thread(kernel_thread_t *thread,
 {
     thread_queue_t *node;
     thread_queue_t *cursor;
+
+    #ifdef DEBUG_KERNEL_QUEUE
+    kernel_serial_debug("Enqueue kernel thread 0x%08x in queue 0x%08x\n", 
+                        (uint32_t)thread, 
+                        (uint32_t)queue);
+    #endif
 
     if(thread == NULL)
     {
@@ -90,6 +98,11 @@ kernel_thread_t* kernel_dequeue_thread(thread_queue_t *queue[2],
     thread_queue_t *node;
     kernel_thread_t *thread;
 
+    #ifdef DEBUG_KERNEL_QUEUE
+    kernel_serial_debug("Dequeue kernel thread in queue 0x%08x\n",
+                        (uint32_t)queue);
+    #endif
+
     if(error != NULL)
     {
         *error = OS_NO_ERR;
@@ -130,6 +143,12 @@ OS_RETURN_E kernel_remove_thread(thread_queue_t *queue[2],
 {
     thread_queue_t *node;
     
+    #ifdef DEBUG_KERNEL_QUEUE
+    kernel_serial_debug("Remove kernel thread 0x%08x in queue 0x%08x\n", 
+                        (uint32_t)thread, 
+                        (uint32_t)queue);
+    #endif
+
     /* If this priority queue is empty */
     if(queue[0] == NULL)
     {

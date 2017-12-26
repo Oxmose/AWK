@@ -19,7 +19,7 @@
 #define NULL ((void *)0)
 
 /* System return states */
-typedef enum __attribute__ ((packed, aligned(2))) OS_RETURN
+typedef enum OS_RETURN
 {
     OS_NO_ERR                              = 0,
 
@@ -56,6 +56,9 @@ typedef enum __attribute__ ((packed, aligned(2))) OS_RETURN
     OS_ERR_ACPI_UNSUPPORTED                = 23,
 
     OS_ERR_NO_SUCH_LAPIC_ID                = 24,
+    
+    OS_ERR_NO_SUCH_SERIAL_BAUDRATE         = 25,
+    OS_ERR_NO_SUCH_SERIAL_PARITY           = 26
 } OS_RETURN_E;
 
 typedef int32_t OS_EVENT_ID;

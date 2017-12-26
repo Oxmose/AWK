@@ -21,6 +21,7 @@ extern clear_screen
 extern kernel_kickstart
 extern _edata
 extern mem_heap_end
+extern init_serial
 
 extern cpu_info                 ; CPU INFO structure
 
@@ -85,6 +86,9 @@ section .text:
 
     ; Cleat screen
     call clear_screen
+
+    ; Init serial for debug 
+    call init_serial
 
     ; Setup kernel GDT
     call setup_gdt

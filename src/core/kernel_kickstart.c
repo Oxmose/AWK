@@ -12,6 +12,7 @@
  * AT THIS POINT INTERRUPT SHOULD BE DISABLED
  ******************************************************************************/
 
+#include "../drivers/serial.h"   /* init_serial */
 #include "../drivers/io_apic.h"  /* init_io_apic */
 #include "../drivers/pic.h"      /* init_pic */
 #include "../drivers/pit.h"      /* init_pit */
@@ -49,19 +50,19 @@ void kernel_kickstart(void)
 				for(int8_t j = 0; j < 4; ++j)
 				{
 				
-					printf("%c", (char)((regs[1] >> (j * 8)) & 0xFF));
+					kernel_printf("%c", (char)((regs[1] >> (j * 8)) & 0xFF));
 				}
 				for(int8_t j = 0; j < 4; ++j)
 				{
 				
-					printf("%c", (char)((regs[3] >> (j * 8)) & 0xFF));
+					kernel_printf("%c", (char)((regs[3] >> (j * 8)) & 0xFF));
 				}
 				for(int8_t j = 0; j < 4; ++j)
 				{
 				
-					printf("%c", (char)((regs[2] >> (j * 8)) & 0xFF));
+					kernel_printf("%c", (char)((regs[2] >> (j * 8)) & 0xFF));
 				}
-				printf("\n");
+				kernel_printf("\n");
 				
 			}
 
@@ -106,6 +107,14 @@ void kernel_kickstart(void)
 	else
 	{
 		kernel_error("Driver Manager  Initialization error [%d]\n", err);
+		kernel_panic();
+	}
+
+	/* Register SERIAL */
+	err = register_driver(init_serial, "SERIAL");
+	if(err != OS_NO_ERR)
+	{
+		kernel_error("SERIAL driver registration error [%d]\n", err);
 		kernel_panic();
 	}
 

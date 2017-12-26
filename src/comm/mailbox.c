@@ -20,6 +20,8 @@
 #include "../core/scheduler.h"     /* lock_thread, unlock_thread */
 #include "../sync/lock.h"          /* spinlocks */
 
+#include "../debug.h"      /* kernel_serial_debug */
+
 /* Header include */
 #include "mailbox.h"
 
@@ -41,6 +43,10 @@ OS_RETURN_E mailbox_init(mailbox_t *mailbox)
     mailbox->write_waiting_threads[1] = NULL; 
 
     mailbox->init = 1;
+
+    #ifdef DEBUG_MAILBOX
+    kernel_serial_debug("Mailbox 0x%08x initialized\n", (uint32_t)mailbox);
+    #endif
 
     return OS_NO_ERR;
 }

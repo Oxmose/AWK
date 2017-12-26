@@ -237,7 +237,7 @@ int main(int argc, char** argv)
 	//init_vga();
 	//draw_logo();
 
-	//create_thread(NULL, launch_tests, 64, "tests\0", NULL);
+	create_thread(NULL, launch_tests, 64, "tests\0", NULL);
 	
 	return 0;
 }

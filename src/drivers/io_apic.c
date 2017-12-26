@@ -1,6 +1,6 @@
 /*******************************************************************************
  *
- * File: io_apic.h
+ * File: io_apic.c
  *
  * Author: Alexy Torres Aurora Dugo
  *

@@ -20,7 +20,7 @@
 #include "../core/interrupts.h" /* MIN_INTERRUPT_LINE */
 
 /**********************************
- * IO_APIC constants
+ * CONSTANTS
  *********************************/
 #define IO_APIC_BASE_INTERRUPT_LINE MIN_INTERRUPT_LINE
 

@@ -26,6 +26,8 @@
 #include "panic.h"               /* panic, interrupt */
 #include "acpi.h"                /* acpi_get_io_apic_available */
 
+#include "../debug.h"      /* kernel_serial_debug */
+
 /* Header file */
 #include "interrupts.h"
 
@@ -49,6 +51,10 @@ static void spurious_handler(cpu_state_t* cpu, uint32_t id,
     (void)id;
     (void)stack;
 
+    #ifdef DEBUG_INTERRUPT
+    kernel_serial_debug("Spurious interrupt\n");
+    #endif
+
     set_IRQ_EOI(id);
     return;
 }
@@ -60,7 +66,7 @@ void kernel_interrupt_handler(cpu_state_t cpu_state,
                               uint32_t int_id,
                               stack_state_t stack_state)
 {
-   /* Execute custom handlers */
+    /* Execute custom handlers */
     if(int_id < IDT_ENTRY_COUNT && 
      kernel_interrupt_handlers[int_id].enabled == 1 &&
      kernel_interrupt_handlers[int_id].handler != NULL)
@@ -103,9 +109,17 @@ OS_RETURN_E init_kernel_interrupt(void)
     /* Get IO-APIC availability */
     io_apic_capable = acpi_get_io_apic_available();
 
+    #ifdef DEBUG_INTERRUPT
+    kernel_serial_debug("Interrupt IO-APIC available: %d\n", io_apic_capable);
+    #endif
+
     /* Get LAPIC availability */
     /* TODO */
     lapic_capable = 0;
+
+    #ifdef DEBUG_INTERRUPT
+    kernel_serial_debug("Interrupt LAPIC TIMER available: %d\n", lapic_capable);
+    #endif
 
     return OS_NO_ERR;
 }
@@ -142,6 +156,11 @@ OS_RETURN_E register_interrupt_handler(const uint32_t interrupt_line,
 
     spinlock_unlock(&handler_table_lock);
 
+    #ifdef DEBUG_INTERRUPT
+    kernel_serial_debug("Added INT %d handler at 0x%08x\n", 
+                         interrupt_line, (uint32_t)handler);
+    #endif
+
     return OS_NO_ERR;
 }
 
@@ -166,6 +185,10 @@ OS_RETURN_E remove_interrupt_handler(const uint32_t interrupt_line)
 
     spinlock_unlock(&handler_table_lock);
 
+    #ifdef DEBUG_INTERRUPT
+    kernel_serial_debug("Removed INT %d handle\n", interrupt_line);
+    #endif
+
     return OS_NO_ERR;
 }
 
@@ -177,13 +200,22 @@ void enable_interrupt(void)
     }
     if(int_lock_nesting == 0)
     {
+        #ifdef DEBUG_INTERRUPT
+        kernel_serial_debug("Enabled INT\n");
+        #endif
         sti();
     }
 }
 
 void disable_interrupt(void)
 {
-    cli();
+    if(int_lock_nesting == 0)
+    {
+        #ifdef DEBUG_INTERRUPT
+        kernel_serial_debug("Disabled INT\n");
+        #endif
+        cli();
+    }
     ++int_lock_nesting;
 }
 
@@ -193,6 +225,9 @@ OS_RETURN_E set_IRQ_mask(const uint32_t irq_number, const uint8_t enabled)
 
     if(io_apic_capable == 1)
     {
+        #ifdef DEBUG_INTERRUPT
+        kernel_serial_debug("IO_APIC mask INT %d: %d\n", irq_number, enabled);
+        #endif
         return set_IRQ_IO_APIC_mask(irq_number, enabled);
     }
     else
@@ -205,7 +240,9 @@ OS_RETURN_E set_IRQ_mask(const uint32_t irq_number, const uint8_t enabled)
         {
             return err;
         }
-
+        #ifdef DEBUG_INTERRUPT
+        kernel_serial_debug("PIC mask INT %d: %d\n", irq_number, enabled);
+        #endif
         return set_IRQ_PIC_mask(irq_number, enabled);
     }
 }

@@ -94,6 +94,12 @@ int perror(const int error)
 	    case OS_ERR_NO_SUCH_LAPIC_ID:
 	    	printf("No such LAPIC id");
 	    	break;
+	    case OS_ERR_NO_SUCH_SERIAL_BAUDRATE:
+	    	printf("Baudrate not supported");
+	    	break;
+	    case OS_ERR_NO_SUCH_SERIAL_PARITY:
+	    	printf("Serial parity not supported");
+	    	break;
 	    default:
 	    	printf("Unknown error");
 	}

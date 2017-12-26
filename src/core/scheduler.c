@@ -25,6 +25,8 @@
 #include "kernel_queue.h"   /* thread_queue_t,kernel_enqueue_thread,kernel_dequeue_thread */
 #include "panic.h"          /* kernel_panic */
 
+#include "../debug.h"      /* kernel_serial_debug */
+
  /* Header file */
  #include "scheduler.h"
 
@@ -76,11 +78,16 @@ extern int main(int, char**);
 
 static void *init_func(void *args)
 {
+    #ifdef DEBUG_SCHED
+    kernel_serial_debug("INIT Started\n");
+    #endif
     (void)args;
     char *argv[2] = {"main", NULL};
-    main(1, argv);
+    main(1, argv);    
 
-    
+    #ifdef DEBUG_SCHED
+    kernel_serial_debug("Main returned, INIT waiting for children\n");
+    #endif
 
     spinlock_lock(&sched_lock);
 
@@ -96,6 +103,10 @@ static void *init_func(void *args)
     } 
     spinlock_unlock(&sched_lock); 
 
+    #ifdef DEBUG_SCHED
+    kernel_serial_debug("INIT Ended\n");
+    #endif
+
     /* If here, the system is halted */
     system_state = HALTED;      
     return NULL;
@@ -109,7 +120,11 @@ static void* idle_sys(void* args)
     /* Enable interrupts */
     enable_interrupt();
     kernel_info("Interrupts unleached\n");
-    printf("=================================== Welcome! ===================================\n\n");
+    kernel_printf("=================================== Welcome! ===================================\n\n");
+
+    #ifdef DEBUG_SCHED
+    kernel_serial_debug("IDLE Started\n");
+    #endif
 
     /* We create the init thread */
     create_thread(&init_thread, init_func, KERNEL_HIGHEST_PRIORITY, "init\0", args);
@@ -141,6 +156,10 @@ static void thread_exit(void)
         spinlock_unlock(&sched_lock); 
         return;
     }
+
+    #ifdef DEBUG_SCHED
+    kernel_serial_debug("Exit thread %d\n", active_thread->pid);
+    #endif
 
 
     if(active_thread->joining_thread != NULL &&
@@ -484,6 +503,10 @@ OS_RETURN_E init_scheduler(void)
     system_state = RUNNING;  
     ++thread_count;
 
+    #ifdef DEBUG_SCHED
+    kernel_serial_debug("IDLE thread created\n");
+    #endif
+
     err = kernel_enqueue_thread(&idle_thread, global_threads_table, 
                                idle_thread.priority);
     if(err != OS_NO_ERR)
@@ -519,7 +542,6 @@ OS_RETURN_E init_scheduler(void)
 
     kernel_success("SCHED Initialized\n");
 
-
     /* First schedule */
     schedule();
 
@@ -542,6 +564,10 @@ OS_RETURN_E sleep(const unsigned int time_ms)
 
     active_thread->wakeup_time = get_current_uptime() + time_ms;
     active_thread->state = SLEEPING;
+
+    #ifdef DEBUG_SCHED
+    kernel_serial_debug("Thread %d asleep\n", active_thread->pid);
+    #endif
 
     schedule();
 
@@ -674,6 +700,10 @@ OS_RETURN_E create_thread(thread_t *thread,
 
     spinlock_unlock(&sched_lock);
 
+    #ifdef DEBUG_SCHED
+    kernel_serial_debug("Created thread %d\n", new_thread->pid);
+    #endif
+
     return OS_NO_ERR;
 }
 
@@ -689,7 +719,11 @@ OS_RETURN_E wait_thread(thread_t thread, void **ret_val)
         return OS_ERR_NO_SUCH_ID;
     }
 
-    --thread_count;
+    #ifdef DEBUG_SCHED
+    kernel_serial_debug("Thread %d waiting for thread %d\n", 
+                         active_thread->pid,
+                        thread->pid);
+    #endif
 
     /* If thread already done then remove it from the thread table */
     if(thread->state == ZOMBIE)
@@ -705,6 +739,14 @@ OS_RETURN_E wait_thread(thread_t thread, void **ret_val)
         kernel_remove_thread(active_thread->children, thread);
         kernel_remove_thread(zombie_threads_table, thread);
         kernel_remove_thread(global_threads_table, thread);
+        
+        #ifdef DEBUG_SCHED
+        kernel_serial_debug("Thread %d joined thread %d\n", 
+                             active_thread->pid,
+                             thread->pid);
+        #endif
+
+        --thread_count;
         free(thread);
 
         spinlock_unlock(&sched_lock);
@@ -729,6 +771,14 @@ OS_RETURN_E wait_thread(thread_t thread, void **ret_val)
     kernel_remove_thread(active_thread->children, thread);
     kernel_remove_thread(zombie_threads_table, thread);
     kernel_remove_thread(global_threads_table, thread);
+    
+    #ifdef DEBUG_SCHED
+    kernel_serial_debug("Thread %d joined thread %d\n", 
+                         active_thread->pid,
+                         thread->pid);
+    #endif
+
+    --thread_count;
     free(thread);
 
     spinlock_unlock(&sched_lock);
@@ -747,6 +797,12 @@ OS_RETURN_E lock_thread(const BLOCK_TYPE_E block_type)
     /* Lock the thread */
     active_thread->state      = BLOCKED;
     active_thread->block_type = block_type;
+
+    #ifdef DEBUG_SCHED
+    kernel_serial_debug("Thread %d locked, reason: %d\n", 
+                         active_thread->pid,
+                         block_type);
+    #endif
 
     /* Schedule to an other thread */
     schedule();
@@ -796,6 +852,12 @@ OS_RETURN_E unlock_thread(const thread_t thread,
     /* Unlock thread state */
     thread->state = READY;
 
+    #ifdef DEBUG_SCHED
+    kernel_serial_debug("Thread %d unlocked, reason: %d\n", 
+                         active_thread->pid,
+                         block_type);
+    #endif
+
     /* Schedule if asked for */
     if(do_schedule && active_thread->priority < thread->priority)
     {
@@ -830,6 +892,12 @@ OS_RETURN_E lock_io(const BLOCK_TYPE_E block_type)
             kernel_error("Could not enqueue thread in kbd IO table[%d]\n", err);
             kernel_panic();
         }
+
+        #ifdef DEBUG_SCHED
+        kernel_serial_debug("Thread %d io-locked, reason: %d\n", 
+                             active_thread->pid,
+                             block_type);
+        #endif
 
         /* Schedule to let other thread execute */
         schedule();
@@ -866,6 +934,12 @@ OS_RETURN_E unlock_io(const BLOCK_TYPE_E block_type)
         kernel_error("Could not dequee thread in kbd IO table[%d]\n", err);
         kernel_panic();
     }
+
+    #ifdef DEBUG_SCHED
+        kernel_serial_debug("Thread %d io-unlocked, reason: %d\n", 
+                             active_thread->pid,
+                             block_type);
+        #endif
 
     spinlock_unlock(&sched_lock);
 

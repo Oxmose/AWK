@@ -16,10 +16,11 @@
  *
  ******************************************************************************/
 
-#include "../lib/stdint.h" /* Generic int types */
-#include "../lib/stddef.h" /* OS_RETURN_E, NULL */
-#include "../lib/string.h" /* memmove */
-#include "../cpu/cpu.h"    /* outb */
+#include "../lib/stdint.h"     /* Generic int types */
+#include "../lib/stddef.h"     /* OS_RETURN_E, NULL */
+#include "../lib/string.h"     /* memmove */
+#include "../cpu/cpu.h"        /* outb */
+#include "../drivers/serial.h" /* serial_write */
 
 /* Header file */
 #include "vga_text.h"
@@ -85,6 +86,9 @@ static OS_RETURN_E print_char(const uint8_t line, const uint8_t column,
  */
 static void process_char(const char character)
 {
+    /* Write on serial */
+    serial_write(COM1, character);
+    
     /* If character is a normal ASCII character */
     if(character > 31 && character < 127)
     {
