@@ -16,10 +16,9 @@
 #include "../lib/stddef.h"  /* OS_RETURN_E, OS_EVENT_ID */
 #include "../lib/string.h"  /* strncpy */
 #include "../lib/malloc.h"  /* malloc, free */
-#include "../drivers/pit.h" /* get_current_uptime */
 #include "../cpu/cpu.h"     /* sti, hlt */
 #include "../sync/lock.h"   /* enable_interrupt */
-#include "interrupts.h"     /* register_interrupt_handler, set_IRQ_EOI */
+#include "interrupts.h"     /* register_interrupt_handler, set_IRQ_EOI, update_tick */
 #include "kernel_output.h"  /* kernel_success, kernel_error */
 #include "kernel_thread.h"  /* kernel_thread_t */
 #include "kernel_queue.h"   /* thread_queue_t,kernel_enqueue_thread,kernel_dequeue_thread */
@@ -108,7 +107,8 @@ static void *init_func(void *args)
     #endif
 
     /* If here, the system is halted */
-    system_state = HALTED;      
+    system_state = HALTED;
+
     return NULL;
 }
 
@@ -151,16 +151,17 @@ static void thread_exit(void)
     /* Set new thread state */
     active_thread->state = ZOMBIE;
 
-    if(active_thread == init_thread)
-    {
-        spinlock_unlock(&sched_lock); 
-        return;
-    }
-
     #ifdef DEBUG_SCHED
     kernel_serial_debug("Exit thread %d\n", active_thread->pid);
     #endif
 
+    if(active_thread == init_thread)
+    {
+        spinlock_unlock(&sched_lock); 
+
+        /* Schedule thread */
+        schedule();
+    }
 
     if(active_thread->joining_thread != NULL &&
        active_thread->joining_thread->state == JOINING)
@@ -211,6 +212,7 @@ static void thread_exit(void)
 
     
     spinlock_unlock(&sched_lock);
+
     /* Schedule thread */
     schedule();
 }
@@ -320,7 +322,7 @@ static void schedule_int(cpu_state_t *cpu_state, uint32_t int_id,
 {
     OS_RETURN_E err;
     (void) stack_state;
-    /* Update PIT tick count */
+    /* Update TIMER tick count */
     update_tick();
 
 #if SCHEDULE_DYN_PRIORITY

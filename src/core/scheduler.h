@@ -33,8 +33,6 @@
 
 #define SCHEDULE_DYN_PRIORITY   1
 
-#define SCHEDULER_SW_INT_LINE   0x30
-
 /****************************
  * STRUCTURES 
  ***************************/
