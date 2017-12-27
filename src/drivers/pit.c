@@ -66,18 +66,18 @@ OS_RETURN_E init_pit(void)
     return err;
 }
 
-void update_tick(void)
+void update_pit_tick(void)
 {
     ++tick_count;
     uptime += 1000 / PIT_FREQ;
 }
 
-uint32_t get_tick_count(void)
+uint32_t get_pit_tick_count(void)
 {
     return tick_count;
 }
 
-uint32_t get_current_uptime(void)
+uint32_t get_pit_current_uptime(void)
 {
     return uptime;
 }

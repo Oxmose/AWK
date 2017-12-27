@@ -19,6 +19,7 @@
 #include "../drivers/rtc.h"      /* init_rtc */
 #include "../drivers/mouse.h"    /* init_mouse */
 #include "../drivers/keyboard.h" /* init_keyboard */
+#include "../drivers/ata.h"      /* init_ata */
 #include "../cpu/cpu.h"          /* get_cpu_info */
 #include "../cpu/lapic.h"        /* init_lapic */
 #include "../lib/stdio.h"        /* printf */
@@ -128,6 +129,8 @@ void kernel_kickstart(void)
 
 	if(acpi_get_lapic_available() == 1)
 	{
+		kernel_info("LAPIC present, PIT will be initialized but not used\n");
+
 		/* Init Local APIC */
 		err = register_driver(init_lapic, "LAPIC");
 		if(err != OS_NO_ERR)
@@ -182,6 +185,14 @@ void kernel_kickstart(void)
 		kernel_panic();
 	}
 
+	/* Register ATA */
+	err = register_driver(init_ata, "ATA");
+	if(err != OS_NO_ERR)
+	{
+		kernel_error("ATA driver registration error [%d]\n", err);
+		kernel_panic();
+	}
+	
 	/* Load drivers */
 	err = load_drivers();
 	if(err != OS_NO_ERR)

@@ -44,24 +44,24 @@
 OS_RETURN_E init_pit(void);
 
 /* Uptade tick count and uptime */
-void update_tick(void);
+void update_pit_tick(void);
 
 /* Return current uptime
  *
  * @returns The current uptime in seconds.
  */
-uint32_t get_current_uptime(void);
+uint32_t get_pit_current_uptime(void);
 
 /* Return tick count since the system started
  *
  * @returns Tick count since the system started
  */
-uint32_t get_tick_count(void);
+uint32_t get_pit_tick_count(void);
 
 /* Returns tick count since the last call to this function
  *
  * @returns Tick count since the last call to this function
  */
-uint32_t get_cpu_tick_count(void);
+uint32_t get_pit_cpu_tick_count(void);
 
 #endif /* __PIT_H_ */

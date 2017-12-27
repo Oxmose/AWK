@@ -17,6 +17,10 @@
 #include "../lib/stdint.h"      /* Generic int types */
 #include "../lib/stddef.h"      /* OS_RETURN_E */
 
+/*********************************
+ * CONSTANTS 
+ ********************************/
+
 /* Mouse settings */
 #define MOUSE_COMM_PORT      0x64
 #define MOUSE_DATA_PORT      0x60

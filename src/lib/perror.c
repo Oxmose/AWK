@@ -100,6 +100,12 @@ int perror(const int error)
 	    case OS_ERR_NO_SUCH_SERIAL_PARITY:
 	    	printf("Serial parity not supported");
 	    	break;
+	    case OS_ERR_ATA_DEVICE_NOT_PRESENT:
+	    	printf("ATA device is not present");
+	    	break;
+    	case OS_ERR_ATA_DEVICE_ERROR:
+    		printf("ATA device error");
+    		break;
 	    default:
 	    	printf("Unknown error");
 	}

@@ -20,7 +20,7 @@
 #include "../lib/stddef.h"       /* OS_RETURN_E */
 #include "../cpu/cpu_settings.h" /* IDT_ENTRY_COUNT */
 
-#define MIN_INTERRUPT_LINE 32
+#define MIN_INTERRUPT_LINE 0x20
 #define MAX_INTERRUPT_LINE (IDT_ENTRY_COUNT - 2)
 
 #define SPURIOUS_INTERRUPT_LINE (IDT_ENTRY_COUNT - 1)
@@ -29,6 +29,9 @@
 #define PIT_INTERRUPT_LINE MIN_INTERRUPT_LINE
 #define RTC_IRQ_LINE       8
 #define RTC_INTERRUPT_LINE (MIN_INTERRUPT_LINE + RTC_IRQ_LINE)
+
+#define LAPIC_TIMER_INTERRUPT_LINE  0x30
+#define SCHEDULER_SW_INT_LINE       0x31
 
 /*****************************************
  * STRUCTURES
@@ -140,8 +143,22 @@ OS_RETURN_E set_IRQ_mask(const uint32_t irq_number, const uint8_t enabled);
  */
 OS_RETURN_E set_IRQ_EOI(const uint32_t irq_number);
 
+void update_tick(void);
+
 int32_t get_IRQ_SCHED_TIMER(void);
 
 int32_t get_line_SCHED_HW(void);
+
+/* Return current uptime
+ *
+ * @returns The current uptime in seconds.
+ */
+uint32_t get_current_uptime(void);
+
+/* Return tick count since the system started
+ *
+ * @returns Tick count since the system started
+ */
+uint32_t get_tick_count(void);
 
 #endif /* __INTERRUPTS_H_ */

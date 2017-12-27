@@ -103,7 +103,7 @@ OS_RETURN_E load_drivers(void)
 		err = save->init_driver();
 		if(err == OS_NO_ERR)
 		{
-			kernel_success("%s Initialized\n", save->name);
+			kernel_success("%s Initialized [%d]\n", save->name, err);
 		}
 		else
 		{

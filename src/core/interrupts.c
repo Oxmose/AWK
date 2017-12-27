@@ -17,6 +17,7 @@
 #include "../lib/stddef.h"       /* OS_RETURN_E */
 #include "../lib/string.h"       /* memset */
 #include "../drivers/pic.h"      /* set_IRQ_PIC_EOI, set_IRQ_PIC_mask */
+#include "../drivers/pit.h"      /* upadte_pit_tick */
 #include "../drivers/io_apic.h"  /* set_IRQ_IO_APIC_mask */
 #include "../cpu/cpu_settings.h" /* IDT_ENTRY_COUNT */
 #include "../cpu/cpu.h"          /* sti cli */
@@ -171,7 +172,7 @@ OS_RETURN_E remove_interrupt_handler(const uint32_t interrupt_line)
     {
         return OR_ERR_UNAUTHORIZED_INTERRUPT_LINE;
     }
-    
+
     spinlock_lock(&handler_table_lock);
 
     if(kernel_interrupt_handlers[interrupt_line].handler == NULL)
@@ -251,7 +252,7 @@ OS_RETURN_E set_IRQ_EOI(const uint32_t irq_number)
 {
     if(io_apic_capable == 1)
     {
-        return set_INT_LAPIC_EOI(irq_number + MIN_INTERRUPT_LINE);
+        return set_INT_LAPIC_EOI(irq_number);
     }
     else
     {
@@ -259,12 +260,23 @@ OS_RETURN_E set_IRQ_EOI(const uint32_t irq_number)
     }
 }
 
-int32_t get_IRQ_SCHED_TIMER(void)
+void update_tick(void)
 {
     if(lapic_capable == 1)
     {
         /* TODO */
-        return PIT_IRQ_LINE;
+    }
+    else
+    {
+        update_pit_tick();
+    }
+}
+
+int32_t get_IRQ_SCHED_TIMER(void)
+{
+    if(lapic_capable == 1)
+    {
+        return LAPIC_TIMER_INTERRUPT_LINE;
     }
     else
     {
@@ -276,11 +288,37 @@ int32_t get_line_SCHED_HW(void)
 {
     if(lapic_capable == 1)
     {
-        /* TODO */
-        return PIT_INTERRUPT_LINE;
+        return LAPIC_TIMER_INTERRUPT_LINE;
     }
     else
     {
         return PIT_INTERRUPT_LINE;
+    }
+}
+
+
+uint32_t get_current_uptime(void)
+{
+    if(lapic_capable == 1)
+    {
+        /* TODO */
+        return 0;
+    }
+    else
+    {
+        return get_pit_current_uptime();
+    }
+}
+
+uint32_t get_tick_count(void)
+{
+    if(lapic_capable == 1)
+    {
+        /* TODO */
+        return 0;
+    }
+    else
+    {
+        return get_pit_tick_count();
     }
 }

@@ -210,20 +210,49 @@ int8_t image[] = {
 
 };
 
-void draw_logo(void)
+void* draw_logo(void *args)
 {
-	for(int j = 0; j < 200; ++j)
-    {
-        for(int i = 0; i < 320; ++i)
-        {
-        	int8_t pixel = image[j * 320 + i];
-        	int8_t r = pixel >> 5 & 0x7;
-        	int8_t g = pixel >> 2 & 0x7;
-        	int8_t b = pixel & 0x3;
-            draw_pixel(i, j, r, g, b);
-        }
-        sleep(15);        
-    }
+	if((int)args == 0)
+	{
+		int limit = 320;
+		for(int j = 0; j < 200; ++j)
+	    {
+	    	
+	        
+	        for(int i = 0; i < limit; ++i)
+	        {
+	        	int8_t pixel = image[j * 320 + i];
+	        	int8_t r = pixel >> 5 & 0x7;
+	        	int8_t g = pixel >> 2 & 0x7;
+	        	int8_t b = pixel & 0x3;
+	            draw_pixel(i, j, r, g, b);
+	        }
+	        if(j % 5 == 0)
+	        	limit -= 8;
+	        sleep(20);        
+	    }
+	}
+	
+	else if((int)args == 1)	
+	{
+		int limit = 320;
+		for(int j = 199; j >= 0; --j)
+	    {        
+	        for(int i = 0; i < limit; ++i)
+	        {
+	        	int8_t pixel = image[j * 320 + 320 - limit + i];
+	        	int8_t r = pixel >> 5 & 0x7;
+	        	int8_t g = pixel >> 2 & 0x7;
+	        	int8_t b = pixel & 0x3;
+	            draw_pixel(320 - limit + i, j, r, g, b);
+	        }
+	        if(j % 5 == 0)
+	        	limit -= 8;
+	        sleep(20);        
+	    }
+	}
+	
+	return NULL;
 }
 
 int main(int argc, char** argv)
@@ -235,9 +264,10 @@ int main(int argc, char** argv)
 
 	//sleep(5000);
 	//init_vga();
-	//draw_logo();
 
-	create_thread(NULL, launch_tests, 64, "tests\0", NULL);
+	//create_thread(NULL, draw_logo, 32, "tests\0", (void*)0);
+	//create_thread(NULL, draw_logo, 32, "tests\0", (void*)1);
+	//create_thread(NULL, launch_tests, 64, "tests\0", NULL);
 	
 	return 0;
 }

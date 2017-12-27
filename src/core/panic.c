@@ -128,8 +128,8 @@ void panic(cpu_state_t *cpu_state, uint32_t int_id, stack_state_t *stack_state)
 	kernel_printf("|                                                                              |");
 	kernel_printf("|============================= SEGMENT REGISTERS ==============================|");
 	kernel_printf("|                                                                              |");
-	kernel_printf("| CS: 0x%04x  |  DS: 0x%04x  |  SS: 0x%04x                                     |", stack_state->cs, cpu_state->ds, cpu_state->ss);
-	kernel_printf("| ES: 0x%04x  |  FS: 0x%04x  |  GS: 0x%04x                                     |", cpu_state->es, cpu_state->fs, cpu_state->gs);
+	kernel_printf("| CS: 0x%04x  |  DS: 0x%04x  |  SS: 0x%04x                                     |", stack_state->cs & 0xFFFF, cpu_state->ds & 0xFFFF, cpu_state->ss & 0xFFFF);
+	kernel_printf("| ES: 0x%04x  |  FS: 0x%04x  |  GS: 0x%04x                                     |", cpu_state->es & 0xFFFF , cpu_state->fs & 0xFFFF , cpu_state->gs & 0xFFFF);
 	kernel_printf("|                                                                              |");
 	kernel_printf("|================================= EFLAGS REG =================================|");
 	kernel_printf("|                                                                              |");
