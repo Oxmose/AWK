@@ -6,6 +6,7 @@
 #include "test_vga.h"
 #include "test_mouse.h"
 #include "test_dyn_sched.h"
+#include "test_ata.h"
 
 #include "../lib/stdio.h"
 #include "../drivers/vga_text.h"
@@ -14,7 +15,7 @@
 #include "../sync/lock.h"
 #include "../core/scheduler.h"
 
-static const int32_t tests_count = 4;
+static const int32_t tests_count = 5;
 
 /***************
  TEST MUST BE EXECUTED ON THE LOWEST PRIORITY POSSIBLE 
@@ -96,6 +97,23 @@ void *launch_tests(void*args)
         printf("[SUCCESS]");
         set_color_scheme(FG_WHITE | BG_BLACK);
         printf(" Test dyn sched passed\n");
+    }
+#endif
+#ifdef TEST_ATA
+    printf("5/%d\n", tests_count);
+    if(test_ata())
+    {
+        set_color_scheme(FG_RED | BG_BLACK);
+        printf("[ERROR]");
+        set_color_scheme(FG_WHITE | BG_BLACK);
+        printf(" Test ATA failed\n");
+    }
+    else
+    {
+        set_color_scheme(FG_GREEN | BG_BLACK);
+        printf("[SUCCESS]");
+        set_color_scheme(FG_WHITE | BG_BLACK);
+        printf(" Test ATA passed\n");
     }
 #endif
 

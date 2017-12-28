@@ -106,6 +106,13 @@ int perror(const int error)
     	case OS_ERR_ATA_DEVICE_ERROR:
     		printf("ATA device error");
     		break;
+    	case OS_ERR_ATA_BAD_SECTOR_NUMBER:
+    		printf("ATA driver do not support this sector number");
+    		break;
+    	case OS_ERR_ATA_SIZE_TO_HUGE:
+    		printf("ATA driver do not support this read/write size, try to \
+divide your request into mulstiple read/write");
+    		break;
 	    default:
 	    	printf("Unknown error");
 	}

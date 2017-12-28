@@ -61,7 +61,9 @@ typedef enum __attribute__( ( packed, aligned( sizeof( uint16_t ) ) ) ) OS_RETUR
     OS_ERR_NO_SUCH_SERIAL_PARITY           = 26,
 
     OS_ERR_ATA_DEVICE_NOT_PRESENT          = 27,
-    OS_ERR_ATA_DEVICE_ERROR                = 28
+    OS_ERR_ATA_DEVICE_ERROR                = 28,
+    OS_ERR_ATA_BAD_SECTOR_NUMBER           = 29,
+    OS_ERR_ATA_SIZE_TO_HUGE                = 30,
 } OS_RETURN_E;
 
 typedef int32_t OS_EVENT_ID;

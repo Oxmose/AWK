@@ -129,8 +129,6 @@ void kernel_kickstart(void)
 
 	if(acpi_get_lapic_available() == 1)
 	{
-		kernel_info("LAPIC present, PIT will be initialized but not used\n");
-
 		/* Init Local APIC */
 		err = register_driver(init_lapic, "LAPIC");
 		if(err != OS_NO_ERR)

@@ -267,7 +267,7 @@ int main(int argc, char** argv)
 
 	//create_thread(NULL, draw_logo, 32, "tests\0", (void*)0);
 	//create_thread(NULL, draw_logo, 32, "tests\0", (void*)1);
-	//create_thread(NULL, launch_tests, 64, "tests\0", NULL);
+	create_thread(NULL, launch_tests, 64, "tests\0", NULL);
 	
 	return 0;
 }

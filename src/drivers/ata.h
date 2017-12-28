@@ -35,10 +35,15 @@
 #define ATA_COMMAND_PORT_OFFSET 0x007
 #define ATA_CONTROL_PORT_OFFSET 0x206
 
-#define ATA_IDENTIFY_COMMAND 0xEC
+#define ATA_IDENTIFY_COMMAND     0xEC
+#define ATA_READ_SECTOR_COMMAND  0x20
+#define ATA_WRITE_SECTOR_COMMAND 0x30
+#define ATA_FLUSH_SECTOR_COMMAND 0xE7
 
 #define ATA_FLAG_BUSY 0x80
 #define ATA_FLAG_ERR  0x01
+
+#define ATA_SECTOR_SIZE 512
 
 /*********************************
  * STRUCTURES
@@ -75,9 +80,9 @@ OS_RETURN_E init_ata(void);
 
 OS_RETURN_E ata_identify_device(ata_device_t device);
 
-OS_RETURN_E ata_read(ata_device_t, uint32_t sector, uint8_t* buffer, uint32_t size);
+OS_RETURN_E ata_read_sector(ata_device_t, const uint32_t sector, uint8_t* buffer, const uint32_t size);
 
-OS_RETURN_E ata_write(ata_device_t device, uint32_t sector, const uint8_t* buffer, uint32_t size);
+OS_RETURN_E ata_write_sector(ata_device_t device, const uint32_t sector, const uint8_t* buffer, const uint32_t size);
 
 OS_RETURN_E ata_flush(ata_device_t device);
 
