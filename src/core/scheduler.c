@@ -6,28 +6,35 @@
  *
  * Date: 16/12/2017
  *
- * Version: 1.0
+ * Version: 1.5
  *
  * Kernel scheduler
  * Thread creation and management functions are located in this file.
  *
  ******************************************************************************/
+
 #include "../lib/stdint.h"  /* Generic int types */
 #include "../lib/stddef.h"  /* OS_RETURN_E, OS_EVENT_ID */
 #include "../lib/string.h"  /* strncpy */
 #include "../lib/malloc.h"  /* malloc, free */
 #include "../cpu/cpu.h"     /* sti, hlt */
 #include "../sync/lock.h"   /* enable_interrupt */
-#include "interrupts.h"     /* register_interrupt_handler, set_IRQ_EOI, update_tick */
+#include "interrupts.h"     /* register_interrupt_handler,
+                               set_IRQ_EOI, update_tick */
 #include "kernel_output.h"  /* kernel_success, kernel_error */
 #include "kernel_thread.h"  /* kernel_thread_t */
-#include "kernel_queue.h"   /* thread_queue_t,kernel_enqueue_thread,kernel_dequeue_thread */
+#include "kernel_queue.h"   /* thread_queue_t,kernel_enqueue_thread,
+                               kernel_dequeue_thread */
 #include "panic.h"          /* kernel_panic */
 
 #include "../debug.h"      /* kernel_serial_debug */
 
- /* Header file */
- #include "scheduler.h"
+/* Header file */
+#include "scheduler.h"
+
+/*******************************************************************************
+ * GLOBAL VARIABLES
+ ******************************************************************************/
 
 /* INT management */
 static uint32_t sched_irq;
@@ -37,12 +44,12 @@ static uint32_t sched_hw_int_line;
 static lock_t sched_lock;
 
 /* Kernel thread */
-static kernel_thread_t idle_thread;
-static kernel_thread_t *init_thread;
+static kernel_thread_t  idle_thread;
+static kernel_thread_t* init_thread;
 
 /* Active thread */
-static kernel_thread_t *active_thread;
-static kernel_thread_t *old_thread;
+static kernel_thread_t* active_thread;
+static kernel_thread_t* old_thread;
 
 /* System state */
 static SYSTEM_STATE_E system_state;
@@ -50,10 +57,10 @@ static SYSTEM_STATE_E system_state;
 /* Threads management */
 static uint32_t last_given_pid;
 static uint32_t thread_count;
-static uint32_t first_schedule = 0;
+static uint32_t first_schedule;
 
 /*******************************************************
- * THREAD TABLES 
+ * THREAD TABLES
  * Sorted by priority:
  *     - active_thread: thread priority
  *     - sleeping_threads: thread wakeup time
@@ -65,42 +72,93 @@ static uint32_t first_schedule = 0;
  *
  * Index 0 is the head, 1 is the tail
  *******************************************************/
-static thread_queue_t *active_threads_table[2];
-static thread_queue_t *zombie_threads_table[2];
-static thread_queue_t *sleeping_threads_table[2];
-static thread_queue_t *io_waiting_threads_table[2];
+static thread_queue_t* active_threads_table[2];
+static thread_queue_t* zombie_threads_table[2];
+static thread_queue_t* sleeping_threads_table[2];
+static thread_queue_t* io_waiting_threads_table[2];
+static thread_queue_t* global_threads_table[2];
 
-static thread_queue_t *global_threads_table[2];
+/*******************************************************************************
+ * FUNCTIONS
+ ******************************************************************************/
 
 /* Extern user programm entry point */
 extern int main(int, char**);
 
-static void *init_func(void *args)
+/* INIT thread routine. In addition to the IDLE thread, the INIT thread is the
+ * last thread to run. The thread will gather all orphan thread and wait for
+ * their death before halting the system. The INIT thread routine is also
+ * responsible for calling the main function.
+ *
+ * @param args The argument to send to the INIT thread, usualy null.
+ * @return NULL always
+ */
+static void* init_func(void* args)
 {
+    OS_RETURN_E      err;
+    kernel_thread_t* thread;
+    char*            argv[2] = {"main", NULL};
+
     #ifdef DEBUG_SCHED
     kernel_serial_debug("INIT Started\n");
     #endif
+
     (void)args;
-    char *argv[2] = {"main", NULL};
-    main(1, argv);    
+    /* Call main */
+    main(1, argv);
 
     #ifdef DEBUG_SCHED
     kernel_serial_debug("Main returned, INIT waiting for children\n");
     #endif
 
-    spinlock_lock(&sched_lock);
+    err = spinlock_lock(&sched_lock);
+    if(err != OS_NO_ERR)
+    {
+        kernel_error("Error while locking lock 0x%08x in INIT [%d]\n",
+                     (uint32_t)&sched_lock, err);
+        kernel_panic();
+    }
 
-     /* Wait all children */
+    /* Wait all children */
     while(thread_count > 2)
     {
-        spinlock_unlock(&sched_lock);
-        if(active_thread->children[1] != NULL)
+
+        thread = kernel_dequeue_thread(active_thread->children, &err);
+        while(thread != NULL && err == OS_NO_ERR)
         {
-            wait_thread(active_thread->children[1]->thread, NULL);
+            err = spinlock_unlock(&sched_lock);
+            if(err != OS_NO_ERR)
+            {
+                kernel_error("Error while unlocking lock 0x%08x in INIT [%d]\n",
+                             (uint32_t)&sched_lock, err);
+                kernel_panic();
+            }
+
+            err = wait_thread(thread, NULL);
+            if(err != OS_NO_ERR)
+            {
+                kernel_error("Error while waiting thread in INIT [%d]\n", err);
+                kernel_panic();
+            }
+
+            err = spinlock_lock(&sched_lock);
+
+            if(err != OS_NO_ERR)
+            {
+                kernel_error("Error while locking lock 0x%08x in INIT [%d]\n",
+                             (uint32_t)&sched_lock, err);
+                kernel_panic();
+            }
+            thread = kernel_dequeue_thread(active_thread->children, &err);
         }
-        spinlock_lock(&sched_lock);
-    } 
-    spinlock_unlock(&sched_lock); 
+    }
+    err = spinlock_unlock(&sched_lock);
+    if(err != OS_NO_ERR)
+    {
+        kernel_error("Error while unlocking lock 0x%08x in INIT [%d]\n",
+                     (uint32_t)&sched_lock, err);
+        kernel_panic();
+    }
 
     #ifdef DEBUG_SCHED
     kernel_serial_debug("INIT Ended\n");
@@ -112,24 +170,38 @@ static void *init_func(void *args)
     return NULL;
 }
 
+/* IDLE thread routine. This thread should always be ready, it is the only
+ * threa running when no other trhread are ready. It allows better power
+ * consumption management. The IDLE thread launches the INIT thread before
+ * idling forever.
+ *
+ * @param args The argument to send to the IDLE thread, usualy null.
+ * @return NULL always, should never return.
+ */
 static void* idle_sys(void* args)
 {
-    
-    int8_t notify = 0;
-
-    /* Enable interrupts */
-    enable_interrupt();
-    kernel_info("Interrupts unleached\n");
-    kernel_printf("=================================== Welcome! ===================================\n\n");
+    OS_RETURN_E err;
+    int8_t      notify = 0;
 
     #ifdef DEBUG_SCHED
     kernel_serial_debug("IDLE Started\n");
     #endif
 
     /* We create the init thread */
-    create_thread(&init_thread, init_func, KERNEL_HIGHEST_PRIORITY, "init\0", args);
+    err = create_thread(&init_thread, init_func,
+                        KERNEL_HIGHEST_PRIORITY, "init\0", args);
+    if(err != OS_NO_ERR)
+    {
+        kernel_error("Error while creating INIT thread [%d]\n", err);
+        kernel_panic();
+    }
 
-    while(1)
+    kernel_info("Interrupts unleached\n");
+    kernel_printf("=================================== Welcome! ===============\
+====================\n");
+
+    /* Halt forever, hlt for energy consumption */
+    while(1 < 2)
     {
         sti();
         if(system_state == HALTED && notify == 0)
@@ -139,13 +211,15 @@ static void* idle_sys(void* args)
         }
         hlt();
     }
+
     return NULL;
 }
 
 static void thread_exit(void)
 {
-    OS_RETURN_E err;
-    kernel_thread_t *thread;
+    OS_RETURN_E      err;
+    kernel_thread_t* thread;
+
     spinlock_lock(&sched_lock);
 
     /* Set new thread state */
@@ -157,7 +231,7 @@ static void thread_exit(void)
 
     if(active_thread == init_thread)
     {
-        spinlock_unlock(&sched_lock); 
+        spinlock_unlock(&sched_lock);
 
         /* Schedule thread */
         schedule();
@@ -195,7 +269,7 @@ static void thread_exit(void)
         {
             thread->joining_thread = NULL;
         }
-        
+
         err = kernel_enqueue_thread(thread, init_thread->children, 0);
         if(err != OS_NO_ERR)
         {
@@ -210,7 +284,7 @@ static void thread_exit(void)
         kernel_panic();
     }
 
-    
+
     spinlock_unlock(&sched_lock);
 
     /* Schedule thread */
@@ -225,7 +299,7 @@ static void thread_wrapper(void)
     active_thread->ret_val = active_thread->function(active_thread->args);
 
     active_thread->end_time = get_current_uptime();
-    active_thread->exec_time = 
+    active_thread->exec_time =
         active_thread->end_time - active_thread->start_time;
 
     /* Exit thread properly */
@@ -244,7 +318,7 @@ static void select_thread(void)
     if(old_thread->state == ELECTED)
     {
 
-        err = kernel_enqueue_thread(old_thread, active_threads_table, 
+        err = kernel_enqueue_thread(old_thread, active_threads_table,
                              old_thread->priority);
         if(err != OS_NO_ERR)
         {
@@ -256,7 +330,7 @@ static void select_thread(void)
     }
     else if(active_thread->state == SLEEPING)
     {
-        err = kernel_enqueue_thread(old_thread, sleeping_threads_table, 
+        err = kernel_enqueue_thread(old_thread, sleeping_threads_table,
                                     old_thread->wakeup_time);
         if(err != OS_NO_ERR)
         {
@@ -268,7 +342,7 @@ static void select_thread(void)
     /* Wake up the sleeping threads */
     kernel_thread_t *sleeping;
     do
-    {       
+    {
         sleeping = kernel_dequeue_thread(sleeping_threads_table, &err);
         if(err != OS_NO_ERR)
         {
@@ -279,7 +353,7 @@ static void select_thread(void)
         /* If we should wakeup the thread */
         if(sleeping != NULL && sleeping->wakeup_time < current_time)
         {
-            err = kernel_enqueue_thread(sleeping, active_threads_table, 
+            err = kernel_enqueue_thread(sleeping, active_threads_table,
                                         sleeping->priority);
 
             if(err != OS_NO_ERR)
@@ -291,7 +365,7 @@ static void select_thread(void)
         }
         else if(sleeping != NULL)
         {
-            err = kernel_enqueue_thread(sleeping, sleeping_threads_table, 
+            err = kernel_enqueue_thread(sleeping, sleeping_threads_table,
                                         sleeping->wakeup_time);
             if(err != OS_NO_ERR)
             {
@@ -299,9 +373,9 @@ static void select_thread(void)
                 kernel_panic();
             }
             break;
-        }            
+        }
     } while(sleeping != NULL);
-    
+
     /* Get the new thread */
     active_thread = kernel_dequeue_thread(active_threads_table, &err);
     if(err != OS_NO_ERR)
@@ -317,7 +391,7 @@ static void select_thread(void)
     active_thread->state = ELECTED;
 }
 
-static void schedule_int(cpu_state_t *cpu_state, uint32_t int_id, 
+static void schedule_int(cpu_state_t *cpu_state, uint32_t int_id,
                          stack_state_t *stack_state)
 {
     OS_RETURN_E err;
@@ -333,7 +407,7 @@ static void schedule_int(cpu_state_t *cpu_state, uint32_t int_id,
         {
 
             /* Here the thread consumed all its time slice four times in a row
-             * then we decay its priority by one. 
+             * then we decay its priority by one.
              */
             ++(active_thread->full_consume);
             if(active_thread->full_consume >= 50)
@@ -471,11 +545,11 @@ OS_RETURN_E init_scheduler(void)
 
     /* Init thread context */
     idle_thread.eip = (uint32_t) thread_wrapper;
-    idle_thread.esp = 
+    idle_thread.esp =
         (uint32_t) &idle_thread.stack[THREAD_STACK_SIZE - 18];
-    idle_thread.ebp = 
+    idle_thread.ebp =
         (uint32_t) &idle_thread.stack[THREAD_STACK_SIZE - 1];
-    
+
     /* Init thread stack */
     idle_thread.stack[THREAD_STACK_SIZE - 1] = THREAD_INIT_EFLAGS;
     idle_thread.stack[THREAD_STACK_SIZE - 2] = THREAD_INIT_CS;
@@ -494,7 +568,7 @@ OS_RETURN_E init_scheduler(void)
     idle_thread.stack[THREAD_STACK_SIZE - 15] = THREAD_INIT_ESI;
     idle_thread.stack[THREAD_STACK_SIZE - 16] = THREAD_INIT_EDI;
     idle_thread.stack[THREAD_STACK_SIZE - 17] = idle_thread.ebp;
-    idle_thread.stack[THREAD_STACK_SIZE - 18] = 
+    idle_thread.stack[THREAD_STACK_SIZE - 18] =
         (uint32_t)&idle_thread.stack[THREAD_STACK_SIZE - 17];
 
     strncpy(idle_thread.name, "idle\0", 5);
@@ -502,14 +576,14 @@ OS_RETURN_E init_scheduler(void)
     active_thread = &idle_thread;
     old_thread = active_thread;
 
-    system_state = RUNNING;  
+    system_state = RUNNING;
     ++thread_count;
 
     #ifdef DEBUG_SCHED
     kernel_serial_debug("IDLE thread created\n");
     #endif
 
-    err = kernel_enqueue_thread(&idle_thread, global_threads_table, 
+    err = kernel_enqueue_thread(&idle_thread, global_threads_table,
                                idle_thread.priority);
     if(err != OS_NO_ERR)
     {
@@ -606,10 +680,10 @@ kernel_thread_t *get_active_thread(void)
     return active_thread;
 }
 
-OS_RETURN_E create_thread(thread_t *thread, 
-                          void *(*function)(void*), 
-                          const uint32_t priority, 
-                          const char *name, 
+OS_RETURN_E create_thread(thread_t *thread,
+                          void *(*function)(void*),
+                          const uint32_t priority,
+                          const char *name,
                           void *args)
 {
     OS_RETURN_E err;
@@ -649,11 +723,11 @@ OS_RETURN_E create_thread(thread_t *thread,
 
      /* Init thread context */
     new_thread->eip = (uint32_t) thread_wrapper;
-    new_thread->esp = 
+    new_thread->esp =
         (uint32_t) &new_thread->stack[THREAD_STACK_SIZE - 18];
-    new_thread->ebp = 
+    new_thread->ebp =
         (uint32_t) &new_thread->stack[THREAD_STACK_SIZE - 1];
-    
+
     /* Init thread stack */
     new_thread->stack[THREAD_STACK_SIZE - 1] = THREAD_INIT_EFLAGS;
     new_thread->stack[THREAD_STACK_SIZE - 2] = THREAD_INIT_CS;
@@ -672,20 +746,20 @@ OS_RETURN_E create_thread(thread_t *thread,
     new_thread->stack[THREAD_STACK_SIZE - 15] = THREAD_INIT_ESI;
     new_thread->stack[THREAD_STACK_SIZE - 16] = THREAD_INIT_EDI;
     new_thread->stack[THREAD_STACK_SIZE - 17] = new_thread->ebp;
-    new_thread->stack[THREAD_STACK_SIZE - 18] = 
+    new_thread->stack[THREAD_STACK_SIZE - 18] =
         (uint32_t)&new_thread->stack[THREAD_STACK_SIZE - 17];
 
     strncpy(new_thread->name, name, THREAD_MAX_NAME_LENGTH);
 
     spinlock_lock(&sched_lock);
-    err = kernel_enqueue_thread(new_thread, active_threads_table, 
+    err = kernel_enqueue_thread(new_thread, active_threads_table,
                                 priority);
     if(err != OS_NO_ERR)
     {
         return err;
     }
 
-    err = kernel_enqueue_thread(new_thread, global_threads_table, 
+    err = kernel_enqueue_thread(new_thread, global_threads_table,
                          new_thread->priority);
     if(err != OS_NO_ERR)
     {
@@ -714,7 +788,7 @@ OS_RETURN_E wait_thread(thread_t thread, void **ret_val)
     if(thread == NULL)
     {
         return OS_ERR_NULL_POINTER;
-    }     
+    }
 
     if(thread->state == DEAD)
     {
@@ -722,7 +796,7 @@ OS_RETURN_E wait_thread(thread_t thread, void **ret_val)
     }
 
     #ifdef DEBUG_SCHED
-    kernel_serial_debug("Thread %d waiting for thread %d\n", 
+    kernel_serial_debug("Thread %d waiting for thread %d\n",
                          active_thread->pid,
                         thread->pid);
     #endif
@@ -741,9 +815,9 @@ OS_RETURN_E wait_thread(thread_t thread, void **ret_val)
         kernel_remove_thread(active_thread->children, thread);
         kernel_remove_thread(zombie_threads_table, thread);
         kernel_remove_thread(global_threads_table, thread);
-        
+
         #ifdef DEBUG_SCHED
-        kernel_serial_debug("Thread %d joined thread %d\n", 
+        kernel_serial_debug("Thread %d joined thread %d\n",
                              active_thread->pid,
                              thread->pid);
         #endif
@@ -769,13 +843,13 @@ OS_RETURN_E wait_thread(thread_t thread, void **ret_val)
     }
 
     spinlock_lock(&sched_lock);
-    
+
     kernel_remove_thread(active_thread->children, thread);
     kernel_remove_thread(zombie_threads_table, thread);
     kernel_remove_thread(global_threads_table, thread);
-    
+
     #ifdef DEBUG_SCHED
-    kernel_serial_debug("Thread %d joined thread %d\n", 
+    kernel_serial_debug("Thread %d joined thread %d\n",
                          active_thread->pid,
                          thread->pid);
     #endif
@@ -801,7 +875,7 @@ OS_RETURN_E lock_thread(const BLOCK_TYPE_E block_type)
     active_thread->block_type = block_type;
 
     #ifdef DEBUG_SCHED
-    kernel_serial_debug("Thread %d locked, reason: %d\n", 
+    kernel_serial_debug("Thread %d locked, reason: %d\n",
                          active_thread->pid,
                          block_type);
     #endif
@@ -825,7 +899,7 @@ OS_RETURN_E unlock_thread(const thread_t thread,
     }
 
     /* Check thread state */
-    if(thread->state != BLOCKED || 
+    if(thread->state != BLOCKED ||
        thread->block_type != block_type)
     {
         switch(block_type)
@@ -839,7 +913,7 @@ OS_RETURN_E unlock_thread(const thread_t thread,
             default:
                 return OS_ERR_NULL_POINTER;
         }
-        
+
     }
     spinlock_lock(&sched_lock);
     err = kernel_enqueue_thread(thread, active_threads_table, thread->priority);
@@ -855,7 +929,7 @@ OS_RETURN_E unlock_thread(const thread_t thread,
     thread->state = READY;
 
     #ifdef DEBUG_SCHED
-    kernel_serial_debug("Thread %d unlocked, reason: %d\n", 
+    kernel_serial_debug("Thread %d unlocked, reason: %d\n",
                          active_thread->pid,
                          block_type);
     #endif
@@ -896,15 +970,15 @@ OS_RETURN_E lock_io(const BLOCK_TYPE_E block_type)
         }
 
         #ifdef DEBUG_SCHED
-        kernel_serial_debug("Thread %d io-locked, reason: %d\n", 
+        kernel_serial_debug("Thread %d io-locked, reason: %d\n",
                              active_thread->pid,
                              block_type);
         #endif
 
         /* Schedule to let other thread execute */
         schedule();
-    } 
-    return OS_NO_ERR;   
+    }
+    return OS_NO_ERR;
 }
 
 OS_RETURN_E unlock_io(const BLOCK_TYPE_E block_type)
@@ -922,7 +996,7 @@ OS_RETURN_E unlock_io(const BLOCK_TYPE_E block_type)
     thread = kernel_dequeue_thread(io_waiting_threads_table, &err);
     if(thread != NULL && err == OS_NO_ERR)
     {
-        err = kernel_enqueue_thread(thread, active_threads_table, 
+        err = kernel_enqueue_thread(thread, active_threads_table,
                                     thread->priority);
         if(err != OS_NO_ERR)
         {
@@ -938,7 +1012,7 @@ OS_RETURN_E unlock_io(const BLOCK_TYPE_E block_type)
     }
 
     #ifdef DEBUG_SCHED
-        kernel_serial_debug("Thread %d io-unlocked, reason: %d\n", 
+        kernel_serial_debug("Thread %d io-unlocked, reason: %d\n",
                              active_thread->pid,
                              block_type);
         #endif
