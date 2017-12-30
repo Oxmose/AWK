@@ -111,13 +111,7 @@ static void* init_func(void* args)
     kernel_serial_debug("Main returned, INIT waiting for children\n");
     #endif
 
-    err = spinlock_lock(&sched_lock);
-    if(err != OS_NO_ERR)
-    {
-        kernel_error("Error while locking lock 0x%08x in INIT [%d]\n",
-                     (uint32_t)&sched_lock, err);
-        kernel_panic();
-    }
+    spinlock_lock(&sched_lock);
 
     /* Wait all children */
     while(thread_count > 2)
@@ -126,13 +120,7 @@ static void* init_func(void* args)
         thread = kernel_dequeue_thread(active_thread->children, &err);
         while(thread != NULL && err == OS_NO_ERR)
         {
-            err = spinlock_unlock(&sched_lock);
-            if(err != OS_NO_ERR)
-            {
-                kernel_error("Error while unlocking lock 0x%08x in INIT [%d]\n",
-                             (uint32_t)&sched_lock, err);
-                kernel_panic();
-            }
+            spinlock_unlock(&sched_lock);
 
             err = wait_thread(thread, NULL);
             if(err != OS_NO_ERR)
@@ -141,24 +129,12 @@ static void* init_func(void* args)
                 kernel_panic();
             }
 
-            err = spinlock_lock(&sched_lock);
+            spinlock_lock(&sched_lock);
 
-            if(err != OS_NO_ERR)
-            {
-                kernel_error("Error while locking lock 0x%08x in INIT [%d]\n",
-                             (uint32_t)&sched_lock, err);
-                kernel_panic();
-            }
             thread = kernel_dequeue_thread(active_thread->children, &err);
         }
     }
-    err = spinlock_unlock(&sched_lock);
-    if(err != OS_NO_ERR)
-    {
-        kernel_error("Error while unlocking lock 0x%08x in INIT [%d]\n",
-                     (uint32_t)&sched_lock, err);
-        kernel_panic();
-    }
+    spinlock_unlock(&sched_lock);
 
     #ifdef DEBUG_SCHED
     kernel_serial_debug("INIT Ended\n");
@@ -215,6 +191,11 @@ static void* idle_sys(void* args)
     return NULL;
 }
 
+/* Exit point of a thread. The function will release the resources of the thread
+ * and manage its children (INIT will inherit them). Put the thread in a ZOMBIE
+ * state. If an other thread is already joining the active thread, then the
+ * joining thread will switch from blocked to ready state.
+ */
 static void thread_exit(void)
 {
     OS_RETURN_E      err;
@@ -233,7 +214,7 @@ static void thread_exit(void)
     {
         spinlock_unlock(&sched_lock);
 
-        /* Schedule thread */
+        /* Schedule thread, should never return since the state is zombie */
         schedule();
     }
 
@@ -276,6 +257,7 @@ static void thread_exit(void)
             kernel_error("Could not enqueue thread to init[%d]\n", err);
             kernel_panic();
         }
+
         thread = kernel_dequeue_thread(active_thread->children, &err);
     }
     if(err != OS_NO_ERR)
@@ -284,13 +266,17 @@ static void thread_exit(void)
         kernel_panic();
     }
 
-
     spinlock_unlock(&sched_lock);
 
     /* Schedule thread */
     schedule();
 }
 
+/* Thread launch routine. Wrapper for the actual thread routine. The wrapper
+ * will call the thread routine, pass its arguments and gather the return value
+ * of the thread function to allow the joining thread to retreive it.
+ * Some statistics about the thread might be added in this function.
+ */
 static void thread_wrapper(void)
 {
     /* TODO STAT PROBE OR SOMETHING */
@@ -306,6 +292,11 @@ static void thread_wrapper(void)
     thread_exit();
 }
 
+/* Set the old_thread and active_thread pointers. The function will select the
+ * next most prioritary thread to be executed.
+ * This function also wake up sleeping thread which wake-up time has been
+ * reached
+ */
 static void select_thread(void)
 {
     OS_RETURN_E err;
@@ -391,11 +382,18 @@ static void select_thread(void)
     active_thread->state = ELECTED;
 }
 
+/* !!! THIS FUNCTION SHOULD NEVER BE CALLED OUTSIDE OF AN INTERRUPT !!!
+ * Scheduling function, will the interrupt saved the registers in the current
+ * thread stack. The function will call the select_thread function and then
+ * set the CPU registers with the values on the new active_thread stack.
+ * Then the function manage interruption and return from interrupt.
+ */
 static void schedule_int(cpu_state_t *cpu_state, uint32_t int_id,
                          stack_state_t *stack_state)
 {
     OS_RETURN_E err;
     (void) stack_state;
+
     /* Update TIMER tick count */
     update_tick();
 
@@ -454,7 +452,8 @@ static void schedule_int(cpu_state_t *cpu_state, uint32_t int_id,
 
         active_thread->last_sched = 0;
     }
-#endif
+
+#endif /* SCHEDULE_DYN_PRIORITY */
 
     /* If not first schedule */
     if(first_schedule == 1)
@@ -584,14 +583,14 @@ OS_RETURN_E init_scheduler(void)
     #endif
 
     err = kernel_enqueue_thread(&idle_thread, global_threads_table,
-                               idle_thread.priority);
+                                idle_thread.priority);
     if(err != OS_NO_ERR)
     {
         kernel_error("Could not enqueue thread in global table[%d]\n", err);
         kernel_panic();
     }
 
-    sched_irq = (uint32_t)get_IRQ_SCHED_TIMER();
+    sched_irq         = (uint32_t)get_IRQ_SCHED_TIMER();
     sched_hw_int_line = (uint32_t)get_line_SCHED_HW();
 
     /* Register SW interrupt scheduling */
@@ -616,12 +615,13 @@ OS_RETURN_E init_scheduler(void)
         return err;
     }
 
-    kernel_success("SCHED Initialized\n");
+    kernel_success("SCHEDULER Initialized\n");
 
     /* First schedule */
     schedule();
 
-    return err;
+    /* We should never return fron this function */
+    return OS_ERR_UNAUTHORIZED_ACTION;
 }
 
 void schedule(void)
@@ -675,19 +675,24 @@ uint32_t get_priority(void)
     return active_thread->priority;
 }
 
-kernel_thread_t *get_active_thread(void)
+kernel_thread_t* get_active_thread(void)
 {
     return active_thread;
 }
 
-OS_RETURN_E create_thread(thread_t *thread,
-                          void *(*function)(void*),
+OS_RETURN_E create_thread(thread_t* thread,
+                          void* (*function)(void*),
                           const uint32_t priority,
                           const char *name,
-                          void *args)
+                          void* args)
 {
-    OS_RETURN_E err;
-    kernel_thread_t *new_thread;
+    OS_RETURN_E      err;
+    kernel_thread_t* new_thread;
+
+    if(thread != NULL)
+    {
+        *thread = NULL;
+    }
 
     /* Check if priority is free */
     if(priority > KERNEL_LOWEST_PRIORITY)
@@ -696,10 +701,6 @@ OS_RETURN_E create_thread(thread_t *thread,
     }
 
     new_thread = malloc(sizeof(kernel_thread_t));
-    if(thread != NULL)
-    {
-        *thread = new_thread;
-    }
 
     if(new_thread == NULL)
     {
@@ -756,6 +757,7 @@ OS_RETURN_E create_thread(thread_t *thread,
                                 priority);
     if(err != OS_NO_ERR)
     {
+        free(new_thread);
         return err;
     }
 
@@ -763,12 +765,14 @@ OS_RETURN_E create_thread(thread_t *thread,
                          new_thread->priority);
     if(err != OS_NO_ERR)
     {
+        free(new_thread);
         return err;
     }
 
     err = kernel_enqueue_thread(new_thread, active_thread->children, 0);
     if(err != OS_NO_ERR)
     {
+        free(new_thread);
         return err;
     }
 
@@ -780,10 +784,15 @@ OS_RETURN_E create_thread(thread_t *thread,
     kernel_serial_debug("Created thread %d\n", new_thread->pid);
     #endif
 
+    if(thread != NULL)
+    {
+        *thread = new_thread;
+    }
+
     return OS_NO_ERR;
 }
 
-OS_RETURN_E wait_thread(thread_t thread, void **ret_val)
+OS_RETURN_E wait_thread(thread_t thread, void** ret_val)
 {
     if(thread == NULL)
     {
@@ -876,8 +885,8 @@ OS_RETURN_E lock_thread(const BLOCK_TYPE_E block_type)
 
     #ifdef DEBUG_SCHED
     kernel_serial_debug("Thread %d locked, reason: %d\n",
-                         active_thread->pid,
-                         block_type);
+                        active_thread->pid,
+                        block_type);
     #endif
 
     /* Schedule to an other thread */
@@ -935,7 +944,7 @@ OS_RETURN_E unlock_thread(const thread_t thread,
     #endif
 
     /* Schedule if asked for */
-    if(do_schedule && active_thread->priority < thread->priority)
+    if(do_schedule)
     {
         schedule();
     }
@@ -978,6 +987,7 @@ OS_RETURN_E lock_io(const BLOCK_TYPE_E block_type)
         /* Schedule to let other thread execute */
         schedule();
     }
+
     return OS_NO_ERR;
 }
 
@@ -1022,16 +1032,19 @@ OS_RETURN_E unlock_io(const BLOCK_TYPE_E block_type)
     return OS_NO_ERR;
 }
 
-OS_RETURN_E get_threads_info(thread_info_t *threads, int32_t *size)
+OS_RETURN_E get_threads_info(thread_info_t* threads, int32_t* size)
 {
-    int32_t i;
-    thread_queue_t *cursor;
-    kernel_thread_t *cursor_thread;
+    int32_t          i;
+    thread_queue_t*  cursor;
+    kernel_thread_t* cursor_thread;
 
     if(threads == NULL)
     {
         return OS_ERR_NULL_POINTER;
-        *size = -1;
+    }
+    if(size == NULL)
+    {
+        return OS_ERR_NULL_POINTER;
     }
 
     spinlock_lock(&sched_lock);
