@@ -11,31 +11,27 @@ thread_t locked_th;
 void *locked_th_func(void *args)
 {
     (void)args;
-    printf("TH2 STARTS\n");
-    printf("TH2 PRIo: %d\n", get_priority());
+    printf(" (T2 P %d) ", get_priority());
     spinlock_lock(&lock);
 
-    printf("TH2 PRIo: %d\n", get_priority());
+    printf(" (T2 P %d) ", get_priority());
 
     spinlock_unlock(&lock);
-    printf("TH2 ENDS\n");
     return NULL;
 }
 
 void *launch_func_block(void*args)
 {
     (void)args;
-    printf("TH1 STARTS\n");
-    printf("TH1 PRIo: %d\n", get_priority());
+    printf(" (T1 P %d) ", get_priority());
     spinlock_lock(&lock);
 
     create_thread(&locked_th, locked_th_func, 25, "thread_func", (void*)1);
     schedule();
 
-    printf("TH1 PRIo: %d\n", get_priority());
+    printf(" (T1 P %d) ", get_priority());
 
     spinlock_unlock(&lock);
-    printf("TH1 ENDS\n");
     return NULL;
 }
 
@@ -56,5 +52,7 @@ int test_dyn_sched(void)
         printf("Error while waiting thread! [%d]\n", err);
         perror(err);
     }
+
+    printf("\n");
     return 0;
 }

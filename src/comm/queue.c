@@ -61,6 +61,10 @@ OS_RETURN_E queue_init(queue_t* queue, const uint32_t length)
 
     queue->init = 1;
 
+    #ifdef DEBUG_QUEUE
+    kernel_serial_debug("Queue 0x%08x INIT\n", (uint32_t)queue);
+    #endif
+
     return spinlock_init(&queue->lock);
 }
 
@@ -69,6 +73,10 @@ void* queue_pend(queue_t* queue, OS_RETURN_E* error)
     OS_RETURN_E      err;
     void*            ret_val;
     kernel_thread_t* thread;
+
+    #ifdef DEBUG_QUEUE
+    kernel_serial_debug("Queue 0x%08x PEND\n", (uint32_t)queue);
+    #endif
 
     if(queue == NULL)
     {
@@ -187,7 +195,11 @@ void* queue_pend(queue_t* queue, OS_RETURN_E* error)
             kernel_panic();
         }
 
-        return OS_NO_ERR;
+        #ifdef DEBUG_QUEUE
+        kernel_serial_debug("Queue 0x%08x ACQUIRED\n", (uint32_t)queue);
+        #endif
+
+        return ret_val;
     }
     else if(err != OS_NO_ERR)
     {
@@ -210,6 +222,10 @@ void* queue_pend(queue_t* queue, OS_RETURN_E* error)
         *error = OS_NO_ERR;
     }
 
+    #ifdef DEBUG_QUEUE
+    kernel_serial_debug("Queue 0x%08x ACQUIRED\n", (uint32_t)queue);
+    #endif
+
     return ret_val;
 }
 
@@ -217,6 +233,10 @@ OS_RETURN_E queue_post(queue_t* queue, void* element)
 {
     OS_RETURN_E      err;
     kernel_thread_t* thread;
+
+    #ifdef DEBUG_QUEUE
+    kernel_serial_debug("Queue 0x%08x POST\n", (uint32_t)queue);
+    #endif
 
     if(queue == NULL)
     {
@@ -319,6 +339,10 @@ OS_RETURN_E queue_destroy(queue_t* queue)
 {
     OS_RETURN_E       err;
     kernel_thread_t* thread;
+
+    #ifdef DEBUG_QUEUE
+    kernel_serial_debug("Queue 0x%08x DESTROY\n", (uint32_t)queue);
+    #endif
 
     if(queue == NULL)
     {

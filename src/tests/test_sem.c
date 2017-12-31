@@ -28,9 +28,9 @@ void *sem_thread_1(void *args)
             (void )args;
             return NULL;
         }
-        printf("Thread 1\n");
+        printf(" (T1) ");
         ++lock_res;
-        sleep(1000);
+        sleep(500);
         if(sem_post(&sem2))
         {
             printf("Failed to post sem2\n");
@@ -38,7 +38,7 @@ void *sem_thread_1(void *args)
             return NULL;
         }
     }
-    printf("Thread 1 end\n");
+    printf(" (T1 END) ");
 
     return NULL;
 }
@@ -52,7 +52,7 @@ void *sem_thread_2(void *args)
             (void )args;
             return NULL;
         }
-        printf("Thread 2\n");
+        printf(" (T2) ");
         ++lock_res;
         sleep(300);
         if(sem_post(&sem3))
@@ -61,8 +61,8 @@ void *sem_thread_2(void *args)
             (void )args;
             return NULL;
         }
-    }    
-    printf("Thread 2 end\n");
+    }
+    printf(" (T2 END) ");
 
     return NULL;
 }
@@ -77,7 +77,7 @@ void *sem_thread_3(void *args)
             (void )args;
             return NULL;
         }
-        printf("Thread 3\n");
+        printf(" (T3) ");
         ++lock_res;
         if(sem_post(&sem1))
         {
@@ -92,7 +92,7 @@ void *sem_thread_3(void *args)
         (void )args;
             return NULL;
     }
-    printf("Thread 3 end\n");
+    printf(" (T3 END) ");
 
     return NULL;
 }
@@ -130,12 +130,12 @@ void *sem_thread_4(void *args)
         {
             printf("Failed to pend sem4,%d\n", i);
             lock_res = -3;
-            
+
             (void )args;
             return NULL;
         }
     }
-    printf("Thread 4 end\n");
+    printf(" (T4 END) ");
 
     return NULL;
 }
@@ -155,7 +155,7 @@ void *sem_thread_5(void *args)
             return NULL;
         }
     }
-    printf("Thread 5 end\n");
+    printf(" (T5 END) ");
 
     return NULL;
 }
@@ -291,5 +291,8 @@ int test_sem(void)
         printf("Error while waiting thread! [%d]\n", err);
         return -1;
     }
+
+    printf("\n");
+
     return lock_res != 9;
 }

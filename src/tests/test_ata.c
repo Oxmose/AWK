@@ -10,18 +10,18 @@ int test_ata(void)
 
     char buffer[35] = "THIS IS A TEST FOR PATHOS TEST TEST";
     char recv[36] = {0};
-    if(ata_write_sector(dev, 21, (uint8_t*)buffer, 35) != OS_NO_ERR)
+    if(ata_write_sector(dev, 500, (uint8_t*)buffer, 35) != OS_NO_ERR)
     {
         printf("Failed to write\n");
         return 1;
     }
-    if(ata_write_sector(dev, 0, (uint8_t*)buffer, 35) != OS_NO_ERR)
+    if(ata_write_sector(dev, 600, (uint8_t*)buffer, 35) != OS_NO_ERR)
     {
         printf("Failed to write\n");
         return 1;
     }
 
-    if(ata_read_sector(dev, 0, (uint8_t*)recv, 35) != OS_NO_ERR)
+    if(ata_read_sector(dev, 600, (uint8_t*)recv, 35) != OS_NO_ERR)
     {
         printf("Failed to read\n");
         return 1;
@@ -35,7 +35,7 @@ int test_ata(void)
 
 
     memset(recv, 0, 36);
-    if(ata_read_sector(dev, 21, (uint8_t*)recv, 35) != OS_NO_ERR)
+    if(ata_read_sector(dev, 500, (uint8_t*)recv, 35) != OS_NO_ERR)
     {
         printf("Failed to read\n");
         return 1;

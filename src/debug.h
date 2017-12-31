@@ -20,12 +20,13 @@
 
 #include "core/kernel_output.h" /* kernel_serial_debug */
 
-//#define DEBUG_MAILBOX
+#define DEBUG_MAILBOX
+#define DEBUG_QUEUE
 //#define DEBUG_ACPI
 //#define DEBUG_DRIVER_MANAGER
 //#define DEBUG_INTERRUPT
 //#define DEBUG_KERNEL_QUEUE
-#define DEBUG_SCHED
+//#define DEBUG_SCHED
 //#define DEBUG_ATA
 
 #endif /* DEBUG */

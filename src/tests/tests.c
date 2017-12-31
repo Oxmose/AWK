@@ -15,7 +15,7 @@
 #include "../sync/lock.h"
 #include "../core/scheduler.h"
 
-#ifdef TEST
+#ifdef TESTS
 static const int32_t tests_count = 5;
 #endif
 
@@ -101,6 +101,7 @@ void *launch_tests(void*args)
         printf(" Test dyn sched passed\n");
     }
 #endif
+    printf("\n");
 #ifdef TEST_ATA
     printf("5/%d\n", tests_count);
     if(test_ata())

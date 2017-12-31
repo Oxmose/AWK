@@ -18,15 +18,15 @@ uint32_t lock_res;
 
 void *mutex_thread_1(void *args)
 {
-    for(int i = 0; i < 1000; ++i)
+    for(int i = 0; i < 100000; ++i)
     {
         if(mutex_pend(&mutex1))
         {
             printf("Failed to pend mutex1 1\n");
             return NULL;
         }
-        
-        ++lock_res;    
+
+        ++lock_res;
 
         //if(i % 500 == 0)
             //printf("T1\n");
@@ -38,13 +38,13 @@ void *mutex_thread_1(void *args)
         }
         sleep(1);
     }
-    printf("Thread 1 end\n");
+    printf(" (T1 END) ");
     (void )args;
     return NULL;
 }
 void *mutex_thread_2(void *args)
 {
-    for(int i = 0; i < 1000; ++i)
+    for(int i = 0; i < 100000; ++i)
     {
         if(mutex_pend(&mutex1))
         {
@@ -52,8 +52,8 @@ void *mutex_thread_2(void *args)
             return NULL;
         }
 
-        
-        ++lock_res;    
+
+        ++lock_res;
 
         //if(i % 500 == 0)
             //printf("T2\n");
@@ -64,8 +64,8 @@ void *mutex_thread_2(void *args)
             return NULL;
         }
         sleep(1);
-    }    
-    printf("Thread 2 end\n");
+    }
+    printf(" (T2 END) ");
     (void )args;
     return NULL;
 }
@@ -88,7 +88,7 @@ void *mutex_thread_3(void *args)
     }
     else
     {
-        //printf("Thread 3 end\n");
+        printf(" (T3 END) ");
         return NULL;
     }
 
@@ -97,7 +97,7 @@ void *mutex_thread_3(void *args)
         printf("Failed to post mutex2 3\n");
         return NULL;
     }
-    printf("Thread 3 end\n");
+    printf(" (T3 END) ");
     (void )args;
     return NULL;
 }
@@ -172,12 +172,12 @@ int test_mutex(void)
         return -1;
     }
 
-    
+
     if(wait_thread(thread_mutex3, NULL) != OS_NO_ERR)
     {
         printf("Error while waiting thread! [%d]\n", err);
         return -1;
     }
-
-    return lock_res != 2000;
+    printf("\n");
+    return lock_res != 200000;
 }

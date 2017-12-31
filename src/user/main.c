@@ -3,6 +3,7 @@
 
 #include "../drivers/vga_graphic.h"
 #include "../drivers/ata.h"
+#include "../drivers/keyboard.h"
 
 #include "../sync/semaphore.h"
 
@@ -145,7 +146,17 @@ int main(int argc, char** argv)
         printf("Arg %d: %s\n", i, argv[i]);
     }
 
-    //sleep(5000);
+
+
+    thread_t test_th;
+    create_thread(&test_th, launch_tests, 64, "tests\0", NULL);
+
+    wait_thread(test_th, NULL);
+
+    printf("\nPress enter key to start demo");
+    char t;
+    getch(&t);
+
     init_vga();
 
     sem_init(&load_sem, 0);
@@ -154,7 +165,7 @@ int main(int argc, char** argv)
     create_thread(NULL, load_image, 32, "tests\0", (void*)0);
     create_thread(NULL, draw_logo, 32, "tests\0", (void*)0);
     create_thread(NULL, draw_logo, 32, "tests\0", (void*)1);
-    //create_thread(NULL, launch_tests, 64, "tests\0", NULL);
+
 
     return 0;
 }
