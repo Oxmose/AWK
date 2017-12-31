@@ -17,9 +17,9 @@
 #include "../lib/stdint.h"      /* Generic int types */
 #include "../lib/stddef.h"      /* OS_RETURN_E */
 
-/*****************************************
+/*******************************************************************************
  * CONSTANTS
- ****************************************/
+ ******************************************************************************/
 
 /* RTC clock settings */
 #define RTC_IRQ             8
@@ -47,9 +47,9 @@
 
 #define CURRENT_YEAR 2018
 
-/*****************************************
+/*******************************************************************************
  * STRUCTURES
- ****************************************/
+ ******************************************************************************/
 
 /* Date structure */
 typedef struct date
@@ -74,9 +74,9 @@ typedef struct rtc_event
 } rtc_event_t;
 
 
-/************************************
- * FUNCTIONS 
- ***********************************/
+/*******************************************************************************
+ * FUNCTIONS
+ ******************************************************************************/
 
 /* Init system rtc time and date
  *
@@ -103,16 +103,16 @@ uint32_t get_current_daytime(void);
  * @param period The period at wich the event should be executed.
  * @param event_id the OS_EVENT_ID buffer to receive the event id, may be -1 on
  * error.
- * @returns The error code. 
+ * @returns The error code.
  */
-OS_RETURN_E register_rtc_event(void (*function)(void), 
+OS_RETURN_E register_rtc_event(void (*function)(void),
                                const uint32_t period,
-                               OS_EVENT_ID *event_id);
+                               OS_EVENT_ID* event_id);
 
 /* Unregister a clock event based on the event id given as parameter.
  *
  * @param event_id The even id to be unregistered.
- * @returns The error code. 
+ * @returns The error code.
  */
 OS_RETURN_E unregister_rtc_event(const OS_EVENT_ID event_id);
 

@@ -32,12 +32,13 @@
 /* Header file */
 #include "interrupts.h"
 
-/* Keep track on the nexting level, kernel start with interrupt disabled */
-static uint32_t int_lock_nesting = 1;
+/*******************************************************************************
+ * GLOBAL VARIABLES
+ ******************************************************************************/
 
 /* Handlers for each interrupt */
 static custom_handler_t kernel_interrupt_handlers[IDT_ENTRY_COUNT];
-static lock_t handler_table_lock;
+static lock_t           handler_table_lock;
 
 /* Tells the kernel if we use PIC or IO-APIC to manage IRQs */
 static uint8_t io_apic_capable;
@@ -45,11 +46,17 @@ static uint8_t io_apic_capable;
 /* Tells the kernel if the LAPIC is available */
 static uint8_t lapic_capable;
 
-static void spurious_handler(cpu_state_t* cpu, uint32_t id, 
+/* Keep track on the nexting level, kernel start with interrupt disabled */
+static uint32_t int_lock_nesting = 1;
+
+/*******************************************************************************
+ * FUNCTIONS
+ ******************************************************************************/
+
+static void spurious_handler(cpu_state_t* cpu, uint32_t id,
                              stack_state_t* stack)
 {
     (void)cpu;
-    (void)id;
     (void)stack;
 
     #ifdef DEBUG_INTERRUPT
@@ -61,16 +68,16 @@ static void spurious_handler(cpu_state_t* cpu, uint32_t id,
 }
 
 /*******************************************************************************
- * GLOBAL INTERRUPT HANDLER 
+ * GLOBAL INTERRUPT HANDLER
  ******************************************************************************/
 void kernel_interrupt_handler(cpu_state_t cpu_state,
                               uint32_t int_id,
                               stack_state_t stack_state)
 {
     /* Execute custom handlers */
-    if(int_id < IDT_ENTRY_COUNT && 
-     kernel_interrupt_handlers[int_id].enabled == 1 &&
-     kernel_interrupt_handlers[int_id].handler != NULL)
+    if(int_id < IDT_ENTRY_COUNT &&
+       kernel_interrupt_handlers[int_id].enabled == 1 &&
+       kernel_interrupt_handlers[int_id].handler != NULL)
     {
         kernel_interrupt_handlers[int_id]
         .handler(&cpu_state, int_id, &stack_state);
@@ -86,9 +93,9 @@ OS_RETURN_E init_kernel_interrupt(void)
     uint32_t i;
 
     /* Blank custo interrupt handlers */
-    memset(kernel_interrupt_handlers, 0, 
+    memset(kernel_interrupt_handlers, 0,
            sizeof(custom_handler_t) * IDT_ENTRY_COUNT);
-  
+
     /* Attach Panic to the first 32 interrupt */
     for(i = 0; i < 32; ++i)
     {
@@ -102,10 +109,8 @@ OS_RETURN_E init_kernel_interrupt(void)
 
     /* Attach spurious event handler */
     kernel_interrupt_handlers[SPURIOUS_INTERRUPT_LINE].enabled = 1;
-    kernel_interrupt_handlers[SPURIOUS_INTERRUPT_LINE].handler = 
+    kernel_interrupt_handlers[SPURIOUS_INTERRUPT_LINE].handler =
                                                                spurious_handler;
-
-    spinlock_init(&handler_table_lock);
 
     /* Get IO-APIC availability */
     io_apic_capable = acpi_get_io_apic_available();
@@ -122,18 +127,20 @@ OS_RETURN_E init_kernel_interrupt(void)
     kernel_serial_debug("Interrupt LAPIC TIMER available: %d\n", lapic_capable);
     #endif
 
+    spinlock_init(&handler_table_lock);
+
     return OS_NO_ERR;
 }
 
-OS_RETURN_E register_interrupt_handler(const uint32_t interrupt_line, 
+OS_RETURN_E register_interrupt_handler(const uint32_t interrupt_line,
                                        void(*handler)(
-                                             cpu_state_t*, 
-                                             uint32_t, 
+                                             cpu_state_t*,
+                                             uint32_t,
                                              stack_state_t*
                                              )
                                        )
 {
-    if(interrupt_line < MIN_INTERRUPT_LINE || 
+    if(interrupt_line < MIN_INTERRUPT_LINE ||
        interrupt_line > MAX_INTERRUPT_LINE)
     {
         return OR_ERR_UNAUTHORIZED_INTERRUPT_LINE;
@@ -149,25 +156,26 @@ OS_RETURN_E register_interrupt_handler(const uint32_t interrupt_line,
     if(kernel_interrupt_handlers[interrupt_line].handler != NULL)
     {
         spinlock_unlock(&handler_table_lock);
+
         return OS_ERR_INTERRUPT_ALREADY_REGISTERED;
     }
 
     kernel_interrupt_handlers[interrupt_line].handler = handler;
     kernel_interrupt_handlers[interrupt_line].enabled = 1;
 
-    spinlock_unlock(&handler_table_lock);
-
     #ifdef DEBUG_INTERRUPT
-    kernel_serial_debug("Added INT %d handler at 0x%08x\n", 
+    kernel_serial_debug("Added INT %d handler at 0x%08x\n",
                          interrupt_line, (uint32_t)handler);
     #endif
+
+    spinlock_unlock(&handler_table_lock);
 
     return OS_NO_ERR;
 }
 
 OS_RETURN_E remove_interrupt_handler(const uint32_t interrupt_line)
 {
-    if(interrupt_line < MIN_INTERRUPT_LINE || 
+    if(interrupt_line < MIN_INTERRUPT_LINE ||
        interrupt_line > MAX_INTERRUPT_LINE)
     {
         return OR_ERR_UNAUTHORIZED_INTERRUPT_LINE;
@@ -178,17 +186,18 @@ OS_RETURN_E remove_interrupt_handler(const uint32_t interrupt_line)
     if(kernel_interrupt_handlers[interrupt_line].handler == NULL)
     {
         spinlock_unlock(&handler_table_lock);
+
         return OS_ERR_INTERRUPT_NOT_REGISTERED;
     }
 
     kernel_interrupt_handlers[interrupt_line].handler = NULL;
     kernel_interrupt_handlers[interrupt_line].enabled = 0;
 
-    spinlock_unlock(&handler_table_lock);
-
     #ifdef DEBUG_INTERRUPT
     kernel_serial_debug("Removed INT %d handle\n", interrupt_line);
     #endif
+
+    spinlock_unlock(&handler_table_lock);
 
     return OS_NO_ERR;
 }
@@ -204,6 +213,7 @@ void enable_interrupt(void)
         #ifdef DEBUG_INTERRUPT
         kernel_serial_debug("Enabled INT\n");
         #endif
+
         sti();
     }
 }
@@ -215,6 +225,7 @@ void disable_interrupt(void)
         #ifdef DEBUG_INTERRUPT
         kernel_serial_debug("Disabled INT\n");
         #endif
+
         cli();
     }
     ++int_lock_nesting;
@@ -229,6 +240,7 @@ OS_RETURN_E set_IRQ_mask(const uint32_t irq_number, const uint8_t enabled)
         #ifdef DEBUG_INTERRUPT
         kernel_serial_debug("IO_APIC mask INT %d: %d\n", irq_number, enabled);
         #endif
+
         return set_IRQ_IO_APIC_mask(irq_number, enabled);
     }
     else
@@ -241,9 +253,11 @@ OS_RETURN_E set_IRQ_mask(const uint32_t irq_number, const uint8_t enabled)
         {
             return err;
         }
+
         #ifdef DEBUG_INTERRUPT
         kernel_serial_debug("PIC mask INT %d: %d\n", irq_number, enabled);
         #endif
+
         return set_IRQ_PIC_mask(irq_number, enabled);
     }
 }

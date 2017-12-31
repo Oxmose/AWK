@@ -12,7 +12,7 @@
  ******************************************************************************/
 
 #include "../cpu/cpu.h"            /* outb inb */
-#include "../core/interrupts.h"    /* register_interrupt, cpu_state, 
+#include "../core/interrupts.h"    /* register_interrupt, cpu_state,
                                     * stack_state, set_IRQ_EOI, set_IRQ_mask */
 #include "../lib/stdint.h"         /* Generic int types */
 #include "../lib/stddef.h"         /* OS_RETURN_E, OS_EVENT_ID */
@@ -21,6 +21,10 @@
 
 /* Header include */
 #include "mouse.h"
+
+/*******************************************************************************
+ * GLOBAL VARIABLES
+ ******************************************************************************/
 
 /* Mouse state */
 static mouse_state_t mouse_state;
@@ -32,28 +36,38 @@ static int8_t  mouse_byte[3];
 /* Mouse lock */
 static lock_t mouse_events_lock;
 static lock_t mouse_lock;
+
 /* Events table */
 static mouse_event_t mouse_events[MOUSE_MAX_EVENT_COUNT];
 
-__inline__ static void mouse_wait(const uint8_t a_type) 
+/*******************************************************************************
+ * FUNCTIONS
+ ******************************************************************************/
+
+/* Induces a delay between two opperations on the mouse.
+ * Allow to wait until A bit is 1 0r 0.
+ *
+ * @param a_type Tells if we should wait until A bit it so 1 or 0.
+ */
+__inline__ static void mouse_wait(const uint8_t a_type)
 {
     uint32_t timeout = 100000;
-    if (!a_type) 
+    if (a_type != 0)
     {
-        while (--timeout) 
+        while (--timeout)
         {
-            if ((inb(MOUSE_COMM_PORT) & MOUSE_BBIT) == 1) 
+            if ((inb(MOUSE_COMM_PORT) & MOUSE_BBIT) == 1)
             {
                 return;
             }
         }
         return;
-    } 
-    else 
+    }
+    else
     {
-        while (--timeout) 
+        while (--timeout)
         {
-            if (!((inb(MOUSE_COMM_PORT) & MOUSE_ABIT))) 
+            if (!((inb(MOUSE_COMM_PORT) & MOUSE_ABIT)))
             {
                 return;
             }
@@ -62,7 +76,11 @@ __inline__ static void mouse_wait(const uint8_t a_type)
     }
 }
 
-__inline__ static void mouse_write(const uint8_t write) 
+/* Write to the mouse port.
+ *
+ * @param write The value to write to the data port
+ */
+__inline__ static void mouse_write(const uint8_t write)
 {
     mouse_wait(1);
     outb(MOUSE_WRITE, MOUSE_COMM_PORT);
@@ -70,7 +88,11 @@ __inline__ static void mouse_write(const uint8_t write)
     outb(write, MOUSE_DATA_PORT);
 }
 
-__inline__ static uint8_t mouse_read(void) 
+/* Read from the mouse port.
+ *
+ * @returns The value read from the mouse data port.
+ */
+__inline__ static uint8_t mouse_read(void)
 {
     char t;
     mouse_wait(0);
@@ -78,27 +100,33 @@ __inline__ static uint8_t mouse_read(void)
     return t;
 }
 
-static void mouse_interrupt_handler(cpu_state_t *cpu_state, uint32_t int_id, 
-                                    stack_state_t *stack_state)
+/* Mouse IRQ handler, read the mouse state and update the system mouse state.
+ *
+ * @param cpu_state The cpu registers before the interrupt.
+ * @param int_id The interrupt line that called the handler.
+ * @param stack_state The stack state before the interrupt.
+ */
+static void mouse_interrupt_handler(cpu_state_t* cpu_state, uint32_t int_id,
+                                    stack_state_t* stack_state)
 {
     (void)cpu_state;
     (void)stack_state;
 
-    int8_t mouse_in;
-    uint8_t status;
+    int8_t   mouse_in;
+    uint8_t  status;
     uint32_t i;
 
     status = inb(MOUSE_COMM_PORT);
-    while (status & MOUSE_BBIT) 
+    while (status & MOUSE_BBIT)
     {
         mouse_in = inb(MOUSE_DATA_PORT);
-        if (status & MOUSE_F_BIT) 
+        if (status & MOUSE_F_BIT)
         {
-            switch (mouse_cycle) 
+            switch (mouse_cycle)
             {
                 case 0:
                     mouse_byte[0] = mouse_in;
-                    if (!(mouse_in & MOUSE_V_BIT)) 
+                    if (!(mouse_in & MOUSE_V_BIT))
                     {
                         return;
                     }
@@ -111,13 +139,13 @@ static void mouse_interrupt_handler(cpu_state_t *cpu_state, uint32_t int_id,
                 case 2:
                     mouse_byte[2] = mouse_in;
                     /* We now have a full mouse packet ready to use */
-                    if (mouse_byte[0] & 0x80 || mouse_byte[0] & 0x40) 
+                    if (mouse_byte[0] & 0x80 || mouse_byte[0] & 0x40)
                     {
                         /* x/y overflow? bad packet! */
                         break;
                     }
 
-                    /* SENSIVITY */  
+                    /* SENSIVITY */
                     #if 0
                     if(mouse_byte[1] < -11)
                     {
@@ -141,10 +169,10 @@ static void mouse_interrupt_handler(cpu_state_t *cpu_state, uint32_t int_id,
                     {
                         mouse_state.pos_x = mouse_byte[1];
                         mouse_state.pos_y = mouse_byte[2];
-                    }                    
+                    }
 
                     /* Managing clicks */
-                    if (mouse_byte[0] & 0x01) 
+                    if (mouse_byte[0] & 0x01)
                     {
                         mouse_state.flags |= MOUSE_LEFT_CLICK;
                     }
@@ -152,7 +180,7 @@ static void mouse_interrupt_handler(cpu_state_t *cpu_state, uint32_t int_id,
                     {
                         mouse_state.flags &= ~MOUSE_LEFT_CLICK;
                     }
-                    if (mouse_byte[0] & 0x02) 
+                    if (mouse_byte[0] & 0x02)
                     {
                         mouse_state.flags |= MOUSE_RIGHT_CLICK;
                     }
@@ -160,7 +188,7 @@ static void mouse_interrupt_handler(cpu_state_t *cpu_state, uint32_t int_id,
                     {
                         mouse_state.flags &= ~MOUSE_RIGHT_CLICK;
                     }
-                    if (mouse_byte[0] & 0x04) 
+                    if (mouse_byte[0] & 0x04)
                     {
                         mouse_state.flags |= MOUSE_MIDDLE_CLICK;
                     }
@@ -193,7 +221,7 @@ static void mouse_interrupt_handler(cpu_state_t *cpu_state, uint32_t int_id,
 OS_RETURN_E init_mouse(void)
 {
     OS_RETURN_E err;
-    uint32_t i;
+    uint32_t    i;
 
     /* Init mouse setings */
     mouse_state.pos_x = 0;
@@ -225,7 +253,7 @@ OS_RETURN_E init_mouse(void)
     }
 
     /* Set PS2 interrupt handler */
-    err = register_interrupt_handler(MOUSE_INTERRUPT_LINE_PS2, 
+    err = register_interrupt_handler(MOUSE_INTERRUPT_LINE_PS2,
                                      mouse_interrupt_handler);
     if(err != OS_NO_ERR)
     {
@@ -276,7 +304,7 @@ OS_RETURN_E register_mouse_event(void (*function)(void),
     {
         *event_id = i;
     }
-    
+
     spinlock_unlock(&mouse_events_lock);
 
     return OS_NO_ERR;
@@ -306,14 +334,16 @@ OS_RETURN_E unregister_mouse_event(const OS_EVENT_ID event_id)
     return OS_NO_ERR;
 }
 
-OS_RETURN_E get_mouse_state(mouse_state_t *state)
+OS_RETURN_E get_mouse_state(mouse_state_t* state)
 {
     if(state == NULL)
     {
         return OS_ERR_NULL_POINTER;
     }
+
     spinlock_lock(&mouse_lock);
     memcpy(state, &mouse_state, sizeof(mouse_state_t));
     spinlock_unlock(&mouse_lock);
+
     return OS_NO_ERR;
 }

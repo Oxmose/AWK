@@ -26,7 +26,7 @@
 //#define DEBUG_INTERRUPT
 //#define DEBUG_KERNEL_QUEUE
 #define DEBUG_SCHED
-#define DEBUG_ATA
+//#define DEBUG_ATA
 
 #endif /* DEBUG */
 

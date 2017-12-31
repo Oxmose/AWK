@@ -8,14 +8,11 @@
  *
  * Version: 1.0
  *
- * PIT (Programmable interval timer) driver
- * System main timer management. Allows to define system ticks.
- * The PIT is only used to call the scheduler.
- *
+ * PIT (Programmable interval timer) driver.
  ******************************************************************************/
 
 #include "../cpu/cpu.h"            /* outb */
-#include "../core/interrupts.h"    /* register_interrupt, cpu_state, 
+#include "../core/interrupts.h"    /* register_interrupt, cpu_state,
                                     * stack_state, set_IRQ_mask, set_IRQ_EOI */
 #include "../lib/stdint.h"         /* Generioc int types */
 #include "../lib/stddef.h"         /* OS_RETURN_E */
@@ -23,14 +20,28 @@
 /* Header include */
 #include "pit.h"
 
+/*******************************************************************************
+ * GLOBAL VARIABLES
+ ******************************************************************************/
+
 /* Uptime in miliseconds */
 static uint32_t uptime;
 
 /* Tick counter, circular when reaching overflow */
 static uint32_t tick_count;
 
-static void dummy_handler(cpu_state_t *cpu_state, uint32_t int_id, 
-                          stack_state_t *stack_state)
+/*******************************************************************************
+ * FUNCTIONS
+ ******************************************************************************/
+
+/* PIT IRQ handler. dummy routine setting EOI.
+ *
+ * @param cpu_state The cpu registers before the interrupt.
+ * @param int_id The interrupt line that called the handler.
+ * @param stack_state The stack state before the interrupt.
+ */
+static void dummy_handler(cpu_state_t* cpu_state, uint32_t int_id,
+                          stack_state_t* stack_state)
 {
     (void)cpu_state;
     (void)int_id;
@@ -42,9 +53,9 @@ static void dummy_handler(cpu_state_t *cpu_state, uint32_t int_id,
 OS_RETURN_E init_pit(void)
 {
     OS_RETURN_E err;
-    
+
     /* Init system times */
-    uptime = 0;
+    uptime     = 0;
     tick_count = 0;
 
     /* Set clock frequency */
@@ -54,7 +65,7 @@ OS_RETURN_E init_pit(void)
     outb(tick_freq >> 8, PIT_DATA_PORT);
 
     /* Set clock interrupt handler */
-    err = register_interrupt_handler(PIT_INTERRUPT_LINE, 
+    err = register_interrupt_handler(PIT_INTERRUPT_LINE,
                                      dummy_handler);
 
     if(err == OS_NO_ERR)

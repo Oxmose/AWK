@@ -20,6 +20,10 @@
 #include "../lib/stddef.h"       /* OS_RETURN_E */
 #include "../cpu/cpu_settings.h" /* IDT_ENTRY_COUNT */
 
+/*******************************************************************************
+ * CONSTANTS
+ ******************************************************************************/
+
 #define MIN_INTERRUPT_LINE 0x20
 #define MAX_INTERRUPT_LINE (IDT_ENTRY_COUNT - 2)
 
@@ -33,9 +37,9 @@
 #define LAPIC_TIMER_INTERRUPT_LINE  0x30
 #define SCHEDULER_SW_INT_LINE       0x31
 
-/*****************************************
+/*******************************************************************************
  * STRUCTURES
- ****************************************/
+ ******************************************************************************/
 
 /* Holds the CPU register values */
 struct cpu_state
@@ -58,7 +62,7 @@ struct cpu_state
 typedef struct cpu_state cpu_state_t;
 
 /* Hold the stack state before the interrupt */
-struct stack_state 
+struct stack_state
 {
     uint32_t error_code;
     uint32_t eip;
@@ -71,29 +75,30 @@ struct custom_handler
 {
     int8_t  pad0;
     int16_t pad1;
-    int8_t enabled;
+    int8_t  enabled;
     void(*handler)(cpu_state_t*, uint32_t, stack_state_t*);
 };
 typedef struct custom_handler custom_handler_t;
 
-/*****************************************
+/*******************************************************************************
  * FUNCTIONS
- ****************************************/
+ ******************************************************************************/
 
 /* Generic and global interrupt handler. This function should only be called
  * by an assembly interrupt handler. The function will dispatch the interrupt
  * to the desired function to handler the interrupt.
+ *
  * @param cpu_state The cpu registers structure.
  * @param int_id The interrupt number.
- * @param stack_state The stack state before the interrupt that contain cs, eip, 
+ * @param stack_state The stack state before the interrupt that contain cs, eip,
  * error code and the eflags register value.
  */
 void kernel_interrupt_handler(cpu_state_t cpu_state,
                               uint32_t int_id,
                               stack_state_t stack_state);
 
-/* Blanck the handlers memory and initialize the first 32 interrupt to catch 
- * intel exceptions. 
+/* Blanck the handlers memory and initialize the first 32 interrupt to catch
+ * intel exceptions.
  * @return The function returns OS_NO_ERR in case of succes, otherwise, please
  * refer to the error codes.
  */
@@ -102,15 +107,16 @@ OS_RETURN_E init_kernel_interrupt(void);
 /* Register a custom interrupt handler to be executed. The interrupt line must
  * be greater or equal to the minimal authorized custom interrupt line and less
  * than the maximum one.
+ *
  * @param interrupt_line The interrupt line to attach the handler to.
  * @param handler The handler for the desired interrupt.
  * @return The function returns OS_NO_ERR in case of succes, otherwise, please
  * refer to the error codes.
  */
-OS_RETURN_E register_interrupt_handler(const uint32_t interrupt_line, 
+OS_RETURN_E register_interrupt_handler(const uint32_t interrupt_line,
                                        void(*handler)(
-                                             cpu_state_t*, 
-                                             uint32_t, 
+                                             cpu_state_t*,
+                                             uint32_t,
                                              stack_state_t*
                                              )
                                        );
@@ -118,6 +124,7 @@ OS_RETURN_E register_interrupt_handler(const uint32_t interrupt_line,
 /* Unregister a custom interrupt handler to be executed. The interrupt line must
  * be greater or equal to the minimal authorized custom interrupt line and less
  * than the maximum one.
+ *
  * @param interrupt_line The interrupt line to deattach the handler from.
  * @return The function returns OS_NO_ERR in case of succes, otherwise, please
  * refer to the error codes.
@@ -131,6 +138,7 @@ void enable_interrupt(void);
 void disable_interrupt(void);
 
 /* Set the IRQ mask for the IRQ number given as parameter.
+ *
  * @param irq_number The irq number to enable/disable.
  * @param enabled Must be set to 1 to enable the IRQ or 0 to disable the IRQ.
  * @return The state or error code.
@@ -138,6 +146,7 @@ void disable_interrupt(void);
 OS_RETURN_E set_IRQ_mask(const uint32_t irq_number, const uint8_t enabled);
 
 /* Acknomledge the IRQ.
+ *
  * @param irq_number The irq number to acknowledge.
  * @return The state or error code.
  */

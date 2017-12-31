@@ -18,17 +18,17 @@ thread_t launch;
 
 void *test_func(void *arg)
 {
-	int argv = (int)arg;
-	printf("%d - ", argv);
-	for(unsigned int i = 0; i < 100000000; ++i);
-	printf("%d - ", argv);
-	for(unsigned int i = 0; i < 100000000; ++i);
-	printf("%d - ", argv);
-	for(unsigned int i = 0; i < 100000000; ++i);
-	printf("%d - ", argv);
-	for(unsigned int i = 0; i < 100000000; ++i);
+    int argv = (int)arg;
+    printf("%d - ", argv);
+    for(unsigned int i = 0; i < 100000000; ++i);
+    printf("%d - ", argv);
+    for(unsigned int i = 0; i < 100000000; ++i);
+    printf("%d - ", argv);
+    for(unsigned int i = 0; i < 100000000; ++i);
+    printf("%d - ", argv);
+    for(unsigned int i = 0; i < 100000000; ++i);
 
-	printf(" (%d - END) ", argv);
+    printf(" (%d - END) ", argv);
 
 return NULL;
 }
@@ -36,7 +36,7 @@ return NULL;
 void *launch_func(void*args)
 {
     (void)args;
-	if(create_thread(&thread1, test_func, 1, "thread1", (void*) 1) != OS_NO_ERR)
+    if(create_thread(&thread1, test_func, 1, "thread1", (void*) 1) != OS_NO_ERR)
     {
         set_color_scheme(FG_RED | BG_BLACK);
         printf("[RDLK]");
@@ -88,8 +88,8 @@ void *launch_func(void*args)
 
     sleep(15000);
 
-	OS_RETURN_E err;
-	if((err = wait_thread(thread1, NULL)) != OS_NO_ERR)
+    OS_RETURN_E err;
+    if((err = wait_thread(thread1, NULL)) != OS_NO_ERR)
     {
         printf("Error while waiting thread! [%d]\n", err);
         perror(err);
@@ -109,7 +109,7 @@ void *launch_func(void*args)
         printf("Error while waiting thread! [%d]\n", err);
         perror(err);
     }
- 	if((err = wait_thread(thread5, NULL)) != OS_NO_ERR)
+     if((err = wait_thread(thread5, NULL)) != OS_NO_ERR)
     {
         printf("Error while waiting thread! [%d]\n", err);
         perror(err);
@@ -130,7 +130,7 @@ void *launch_func(void*args)
 
 int test_multithread(void)
 {
-	if(create_thread(&launch, launch_func, 0, "thread_func", (void*)1) != OS_NO_ERR)
+    if(create_thread(&launch, launch_func, 0, "thread_func", (void*)1) != OS_NO_ERR)
     {
         set_color_scheme(FG_RED | BG_BLACK);
         printf("[RDLK]");
@@ -144,5 +144,5 @@ int test_multithread(void)
         printf("Error while waiting thread! [%d]\n", err);
         perror(err);
     }
-	return 0;
+    return 0;
 }

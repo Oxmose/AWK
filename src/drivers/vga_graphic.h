@@ -9,7 +9,7 @@
  * Version: 1.0
  *
  * VGA Graphic driver.
- ******************************************************************************/          
+ ******************************************************************************/
 
 #ifndef __VGA_GRAPHIC_H_
 #define __VGA_GRAPHIC_H_
@@ -17,9 +17,9 @@
 #include "../lib/stdint.h" /* Generic int types */
 #include "../lib/stddef.h" /* OS_RETURN_E */
 
-/**********************************
- * VGA constants
- *********************************/
+/*******************************************************************************
+ * CONSTANTS
+ ******************************************************************************/
 
 #define VGA_AC_INDEX        0x3C0
 #define VGA_AC_WRITE        0x3C0
@@ -39,35 +39,76 @@
 #define VGA_GC_INDEX        0x3CE
 #define VGA_GC_DATA         0x3CF
 
-#define VGA_CRTC_INDEX      0x3D4    
-#define VGA_CRTC_DATA       0x3D5  
+#define VGA_CRTC_INDEX      0x3D4
+#define VGA_CRTC_DATA       0x3D5
 
 #define VGA_TEXT_FRAMEBUFFER   0xB8000
 #define VGA_GRAP_FRAMEBUFFER_A 0xA0000
 #define VGA_GRAP_FRAMEBUFFER_B 0xB0000
 
-/**********************************
+/*******************************************************************************
  * STRUCTURES
- *********************************/
+ ******************************************************************************/
+
 typedef enum VGA_MODE_E
 {
     VGA_MODE_320_200_256,
     VGA_MODE_NOT_SUPPORTED
 } VGA_MODE_E;
 
-/**********************************
+/*******************************************************************************
  * FUNCTIONS
- *********************************/
+ ******************************************************************************/
 
+/* Init VGA driver structures and hardware.
+ *
+ * @returns OS_NO_ERR if successfull. Otherwise an error is returned.
+ */
 OS_RETURN_E init_vga(void);
 
-OS_RETURN_E set_vga_mode(uint32_t width, uint32_t height, uint32_t colordepth);
+/* Set the new VGA mode corresponding to the settings given as parameter. If the
+ * settings are not supported an error is returned.
+ *
+ * @param width The resolution's width in pixels.
+ * @param height The resolution's height in pixels.
+ * @param colordepth The colordepth to use.
+ * @returns OS_NO_ERR if successfull. Otherwise an error is returned.
+ */
+OS_RETURN_E set_vga_mode(const uint32_t width, const uint32_t height,
+                         const uint32_t colordepth);
 
-OS_RETURN_E draw_pixel(uint32_t x, uint32_t y, 
-	                   uint8_t red, uint8_t green, uint8_t blue);
+/* Draw a pixel on the screen at the corresponding coordinates.
+ * If the coordinates are out of bound an error is returned.
+ * Top left coordinates are 0, 0.
+ *
+ * @param x The x coordinate.
+ * @param y The y cooridnate.
+ * @param red The red component value.
+ * @param green The green component value.
+ * @param blue The blue component value.
+ * @returns OS_NO_ERR if successfull. Otherwise an error is returned.
+ */
+OS_RETURN_E draw_pixel(const uint32_t x, const uint32_t y,
+                       const uint8_t red, const uint8_t green,
+                       const uint8_t blue);
 
-OS_RETURN_E draw_rectangle(uint32_t x, uint32_t y, 
-                           uint32_t width, uint32_t height,
-                           uint8_t red, uint8_t green, uint8_t blue);
+/* Draw a rectangle on the screen at the corresponding coordinates.
+ * If the coordinates are out of bound or the size is too big for the screen and
+ * the mode, an error is returned.
+ * Top left coordinates are 0, 0.
+ *
+ * @param x The x coordinate.
+ * @param y The y cooridnate.
+ * @param width The width of the rectangle.
+ * @param height The height of the rectangle.
+ * @param red The red component value.
+ * @param green The green component value.
+ * @param blue The blue component value.
+ * @returns OS_NO_ERR if successfull. Otherwise an error is returned.
+ */
+OS_RETURN_E draw_rectangle(const uint32_t x, const uint32_t y,
+                           const uint32_t width, const uint32_t height,
+                           const uint8_t red, const uint8_t green,
+                           const uint8_t blue);
 
 #endif /* __VGA_GRAPHIC_H_ */

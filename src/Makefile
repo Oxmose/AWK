@@ -1,8 +1,8 @@
 # Noyau
 KERNEL = kernel.bin
 
-CORE_DIR = $(wildcard core/*.c core/*.S) 
-CPU_DIR = $(wildcard cpu/*.c cpu/*.S) 
+CORE_DIR = $(wildcard core/*.c core/*.S)
+CPU_DIR = $(wildcard cpu/*.c cpu/*.S)
 DRIVERS_DIR = $(wildcard drivers/*.c drivers/*.S)
 LIB_DIR = $(wildcard lib/*.c lib/*.S)
 SYNC_DIR = $(wildcard sync/*.c sync/*.S)
@@ -22,9 +22,9 @@ OBJCOPY = objcopy
 QEMU = /usr/bin/qemu-system-i386
 
 CFLAGS = -m32 -g -gstabs -O0 -std=c99 -nostdinc -fno-builtin -nostdlib -fno-stack-protector -nostartfiles -nodefaultlibs -Wall -Wextra -Werror -Wimplicit-fallthrough=0 -c
-ASFLAGS = -f elf -w+gnu-elf-extensions 
+ASFLAGS = -f elf -w+gnu-elf-extensions
 LDFLAGS = -e loader -T linker.ld -melf_i386
-QEMUOPTS = -cpu core2duo -rtc base=localtime -m 64M -hda extradisk.img -m 128 -gdb tcp::1234 -vga cirrus -serial stdio -kernel
+QEMUOPTS = -cpu core2duo -rtc base=localtime -m 64M -hda extradisk.raw -m 128 -gdb tcp::1234 -vga cirrus -serial stdio -kernel
 
 # cible principale, on nettoie systematiquement le repertoire avant
 .PHONY: all
@@ -52,4 +52,5 @@ debug:
 
 bootable: all
 	cp $(KERNEL) ../iso/boot/
+	rm ../iso/bootable.iso
 	grub2-mkrescue -o ../iso/bootable.iso ../iso

@@ -3,11 +3,11 @@ static char *curptr = mem_heap;
 static struct malloc_state av_;  /* never directly referenced */
 void *sbrk(ptrdiff_t diff)
 {
-	char *s = curptr;
-	char *c = s + diff;
-	if ((c < curptr) || (c > mem_heap_end)) return ((void*)(-1));
-	curptr = c;
-	return s;
+    char *s = curptr;
+    char *c = s + diff;
+    if ((c < curptr) || (c > mem_heap_end)) return ((void*)(-1));
+    curptr = c;
+    return s;
 }
 
 
@@ -2340,7 +2340,7 @@ int mALLOPt(param_number, value) int param_number; int value;
 
 int slwait (int *sl) {
     while (InterlockedCompareExchange ((void **) sl, (void *) 1, (void *) 0) != 0) 
-	    Sleep (0);
+        Sleep (0);
     return 0;
 }
 
@@ -2446,7 +2446,7 @@ void *sbrk (long size) {
                     assert (0 < remaining_commit_size && remaining_commit_size % g_pagesize == 0); {
                         /* Commit this */
                         void *base_committed = VirtualAlloc (g_last->top_committed, remaining_commit_size,
-							                                 MEM_COMMIT, PAGE_READWRITE);
+                                                             MEM_COMMIT, PAGE_READWRITE);
                         /* Check returned pointer for consistency */
                         if (base_committed != g_last->top_committed)
                             goto sbrk_exit;
@@ -2508,7 +2508,7 @@ void *sbrk (long size) {
                         assert (0 < reserve_size && reserve_size % g_regionsize == 0);
                         /* Try to reserve this */
                         base_reserved = VirtualAlloc (memory_info.BaseAddress, reserve_size, 
-					                                  MEM_RESERVE, PAGE_NOACCESS);
+                                                      MEM_RESERVE, PAGE_NOACCESS);
                         if (! base_reserved) {
                             int rc = GetLastError ();
                             if (rc != ERROR_INVALID_ADDRESS) 
@@ -2554,7 +2554,7 @@ void *sbrk (long size) {
             assert (0 < commit_size && commit_size % g_pagesize == 0); {
                 /* Commit this */
                 void *base_committed = VirtualAlloc (g_last->top_committed, commit_size, 
-				    			                     MEM_COMMIT, PAGE_READWRITE);
+                                                     MEM_COMMIT, PAGE_READWRITE);
                 /* Check returned pointer for consistency */
                 if (base_committed != g_last->top_committed)
                     goto sbrk_exit;
@@ -2673,7 +2673,7 @@ void *mmap (void *ptr, long size, long prot, long type, long handle, long arg) {
     assert (size % g_pagesize == 0);
     /* Allocate this */
     ptr = VirtualAlloc (ptr, size,
-					    MEM_RESERVE | MEM_COMMIT | MEM_TOP_DOWN, PAGE_READWRITE);
+                        MEM_RESERVE | MEM_COMMIT | MEM_TOP_DOWN, PAGE_READWRITE);
     if (! ptr) {
         ptr = (void *) MORECORE_FAILURE;
         goto mmap_exit;
@@ -2785,45 +2785,45 @@ int cpuinfo (int whole, CHUNK_SIZE_T  *kernel, CHUNK_SIZE_T  *user) {
 
 void mem_bug(const char *_reason)
 {
-	printf("%s\n", _reason);
-	*(char *)0 = 1;
+    printf("%s\n", _reason);
+    *(char *)0 = 1;
 }
 
 void *mem_alloc(unsigned long length)
 {
-	unsigned long l = ((length + sizeof(unsigned long) - 1)
-		/ sizeof(unsigned long)) + 4;
-	unsigned long l2 = l * sizeof(unsigned long);
-	unsigned long *p;
-	if (!length) return 0;
-	if (l2 <= length) return 0;
-	p = public_mALLOc(l2);
-	if (!p) return 0;
-	p[0] = length;
-	p[1] = 0xa51234ab;
-	p[l-2] = 0xdeadfedc;
-	p[l-1] = (unsigned long)p;
-	p = p+2;
-	memset(p, 0, l2 - 4 * sizeof(unsigned long));
-	return p;
+    unsigned long l = ((length + sizeof(unsigned long) - 1)
+        / sizeof(unsigned long)) + 4;
+    unsigned long l2 = l * sizeof(unsigned long);
+    unsigned long *p;
+    if (!length) return 0;
+    if (l2 <= length) return 0;
+    p = public_mALLOc(l2);
+    if (!p) return 0;
+    p[0] = length;
+    p[1] = 0xa51234ab;
+    p[l-2] = 0xdeadfedc;
+    p[l-1] = (unsigned long)p;
+    p = p+2;
+    memset(p, 0, l2 - 4 * sizeof(unsigned long));
+    return p;
 }
 
 void mem_free(void *zone, unsigned long length)
 {
-	unsigned long *p = zone;
-	unsigned long l = ((length + sizeof(unsigned long) - 1)
-		/ sizeof(unsigned long)) + 4;
-	if (!length) return;
-	p -= 2;
-	if (p[1] != 0xa51234ab) mem_bug("allocator error : memory just before the block corrupted or block already freed");
-	if (p[0] != length) mem_bug("allocator error : not the same length as when allocated");
-	if (p[l-2] != 0xdeadfedc) mem_bug("allocator error : memory just after the block corrupted");
-	if (p[l-1] != (unsigned long)p) mem_bug("allocator error : wrong block address or memory just after the block corrupted");
-	memset(p, 0, l * sizeof(unsigned long)); // Help to catch usage after a free
-	public_fREe(p);
+    unsigned long *p = zone;
+    unsigned long l = ((length + sizeof(unsigned long) - 1)
+        / sizeof(unsigned long)) + 4;
+    if (!length) return;
+    p -= 2;
+    if (p[1] != 0xa51234ab) mem_bug("allocator error : memory just before the block corrupted or block already freed");
+    if (p[0] != length) mem_bug("allocator error : not the same length as when allocated");
+    if (p[l-2] != 0xdeadfedc) mem_bug("allocator error : memory just after the block corrupted");
+    if (p[l-1] != (unsigned long)p) mem_bug("allocator error : wrong block address or memory just after the block corrupted");
+    memset(p, 0, l * sizeof(unsigned long)); // Help to catch usage after a free
+    public_fREe(p);
 }
 
 void mem_free_nolength(void *zone)
 {
-	mem_free(zone, ((unsigned long *)zone)[-2]);
+    mem_free(zone, ((unsigned long *)zone)[-2]);
 }

@@ -21,25 +21,43 @@
 /* Header file */
 #include "lapic.h"
 
-/* Local APIC address */
-static uint8_t *lapic_base_addr;
+/*******************************************************************************
+ * GLOBAL VARIABLES
+ ******************************************************************************/
 
-static uint32_t lapic_read(uint32_t reg)
+/* Local APIC controller address */
+static uint8_t* lapic_base_addr;
+
+/*******************************************************************************
+ * FUNCTIONS
+ ******************************************************************************/
+
+/* Read Local APIC register, the acces is a memory mapped IO.
+ *
+ * @param reg The register of the Local APIC to read.
+ * @return The value contained in the Local APIC register.
+ */
+__inline__ static uint32_t lapic_read(uint32_t reg)
 {
     return mapped_io_read_32(lapic_base_addr + reg);
 }
 
-static void lapic_write(uint32_t reg, uint32_t data)
+/* Write Local APIC register, the acces is a memory mapped IO.
+ *
+ * @param reg The register of the Local APIC to write.
+ * @param data The value to write in the register.
+ */
+__inline__ static void lapic_write(uint32_t reg, uint32_t data)
 {
     mapped_io_write_32(lapic_base_addr + reg, data);
 }
 
 OS_RETURN_E init_lapic(void)
 {
-	/* Get Local APIC base address */
+    /* Get Local APIC base address */
     lapic_base_addr = get_lapic_addr();
 
-	/* Enable all interrupts */
+    /* Enable all interrupts */
     lapic_write(LAPIC_TPR, 0);
 
     /* Set logical destination mode */
@@ -54,12 +72,12 @@ OS_RETURN_E init_lapic(void)
 
 uint32_t get_lapic_id(void)
 {
-	return (lapic_read(LAPIC_ID) >> 24);
+    return (lapic_read(LAPIC_ID) >> 24);
 }
 
 OS_RETURN_E lapic_send_ipi_init(const uint32_t lapic_id)
 {
-	OS_RETURN_E err;
+    OS_RETURN_E err;
 
     /* Check LACPI id */
     err = acpi_check_lapic_id(lapic_id);
@@ -68,9 +86,10 @@ OS_RETURN_E lapic_send_ipi_init(const uint32_t lapic_id)
         return err;
     }
 
-	lapic_write(LAPIC_ICRHI, lapic_id << ICR_DESTINATION_SHIFT);
-    lapic_write(LAPIC_ICRLO, ICR_INIT | ICR_PHYSICAL
-        | ICR_ASSERT | ICR_EDGE | ICR_NO_SHORTHAND);
+    /* Send IPI */
+    lapic_write(LAPIC_ICRHI, lapic_id << ICR_DESTINATION_SHIFT);
+    lapic_write(LAPIC_ICRLO, ICR_INIT | ICR_PHYSICAL |
+                ICR_ASSERT | ICR_EDGE | ICR_NO_SHORTHAND);
 
     /* Wait for pending sends */
     while ((lapic_read(LAPIC_ICRLO) & ICR_SEND_PENDING) != 0)
@@ -79,7 +98,7 @@ OS_RETURN_E lapic_send_ipi_init(const uint32_t lapic_id)
     return err;
 }
 
-OS_RETURN_E lapic_send_ipi_startup(const uint32_t lapic_id, 
+OS_RETURN_E lapic_send_ipi_startup(const uint32_t lapic_id,
                                    const uint32_t vector)
 {
     OS_RETURN_E err;
@@ -91,25 +110,26 @@ OS_RETURN_E lapic_send_ipi_startup(const uint32_t lapic_id,
         return err;
     }
 
-	lapic_write(LAPIC_ICRHI, lapic_id << ICR_DESTINATION_SHIFT);
-    lapic_write(LAPIC_ICRLO, vector | ICR_STARTUP
-        | ICR_PHYSICAL | ICR_ASSERT | ICR_EDGE | ICR_NO_SHORTHAND);
+    /* Send IPI */
+    lapic_write(LAPIC_ICRHI, lapic_id << ICR_DESTINATION_SHIFT);
+    lapic_write(LAPIC_ICRLO, vector | ICR_STARTUP | ICR_PHYSICAL |
+                ICR_ASSERT | ICR_EDGE | ICR_NO_SHORTHAND);
 
     /* Wait for pending sends */
     while ((lapic_read(LAPIC_ICRLO) & ICR_SEND_PENDING) != 0)
     {}
 
-	return err;
+    return err;
 }
 
 OS_RETURN_E set_INT_LAPIC_EOI(const uint32_t interrupt_line)
 {
-	if(interrupt_line > SPURIOUS_INTERRUPT_LINE)
-	{
-		return OS_ERR_NO_SUCH_IRQ_LINE;
-	}
+    if(interrupt_line > SPURIOUS_INTERRUPT_LINE)
+    {
+        return OS_ERR_NO_SUCH_IRQ_LINE;
+    }
 
-	lapic_write(LAPIC_EOI, 0);
+    lapic_write(LAPIC_EOI, 0);
 
-	return OS_NO_ERR;
+    return OS_NO_ERR;
 }

@@ -20,177 +20,177 @@ uint32_t lock_res;
 
 void *sem_thread_1(void *args)
 {
-	for(int i = 0; i < 3; ++i)
-	{
-		if(sem_pend(&sem1))
-		{
-			printf("Failed to pend sem1\n");
-			(void )args;
+    for(int i = 0; i < 3; ++i)
+    {
+        if(sem_pend(&sem1))
+        {
+            printf("Failed to pend sem1\n");
+            (void )args;
             return NULL;
-		}
-		printf("Thread 1\n");
-		++lock_res;
-		sleep(1000);
-		if(sem_post(&sem2))
-		{
-			printf("Failed to post sem2\n");
-			(void )args;
+        }
+        printf("Thread 1\n");
+        ++lock_res;
+        sleep(1000);
+        if(sem_post(&sem2))
+        {
+            printf("Failed to post sem2\n");
+            (void )args;
             return NULL;
-		}
-	}
-	printf("Thread 1 end\n");
+        }
+    }
+    printf("Thread 1 end\n");
 
-	return NULL;
+    return NULL;
 }
 void *sem_thread_2(void *args)
 {
-	for(int i = 0; i < 3; ++i)
-	{
-		if(sem_pend(&sem2))
-		{
-			printf("Failed to pend sem2\n");
-			(void )args;
+    for(int i = 0; i < 3; ++i)
+    {
+        if(sem_pend(&sem2))
+        {
+            printf("Failed to pend sem2\n");
+            (void )args;
             return NULL;
-		}
-		printf("Thread 2\n");
-		++lock_res;
-		sleep(300);
-		if(sem_post(&sem3))
-		{
-			printf("Failed to post sem3\n");
-			(void )args;
+        }
+        printf("Thread 2\n");
+        ++lock_res;
+        sleep(300);
+        if(sem_post(&sem3))
+        {
+            printf("Failed to post sem3\n");
+            (void )args;
             return NULL;
-		}
-	}	
-	printf("Thread 2 end\n");
+        }
+    }    
+    printf("Thread 2 end\n");
 
-	return NULL;
+    return NULL;
 }
 
 void *sem_thread_3(void *args)
 {
-	for(int i = 0; i < 3; ++i)
-	{
-		if(sem_pend(&sem3))
-		{
-			printf("Failed to pend sem3\n");
-			(void )args;
+    for(int i = 0; i < 3; ++i)
+    {
+        if(sem_pend(&sem3))
+        {
+            printf("Failed to pend sem3\n");
+            (void )args;
             return NULL;
-		}
-		printf("Thread 3\n");
-		++lock_res;
-		if(sem_post(&sem1))
-		{
-			printf("Failed to post sem1\n");
-			(void )args;
+        }
+        printf("Thread 3\n");
+        ++lock_res;
+        if(sem_post(&sem1))
+        {
+            printf("Failed to post sem1\n");
+            (void )args;
             return NULL;
-		}
-	}
-	if(sem_post(&sem_end))
-	{
-		printf("Failed to post sem_end\n");
-		(void )args;
+        }
+    }
+    if(sem_post(&sem_end))
+    {
+        printf("Failed to post sem_end\n");
+        (void )args;
             return NULL;
-	}
-	printf("Thread 3 end\n");
+    }
+    printf("Thread 3 end\n");
 
-	return NULL;
+    return NULL;
 }
 
 void *sem_thread_4(void *args)
 {
-	int8_t val;
-	if(sem_try_pend(&sem4, &val) != OS_SEM_LOCKED)
-	{
-		printf("Failed to try_pend sem4\n");
-		(void )args;
+    int8_t val;
+    if(sem_try_pend(&sem4, &val) != OS_SEM_LOCKED)
+    {
+        printf("Failed to try_pend sem4\n");
+        (void )args;
             return NULL;
-	}
-	if(val == -1)
-	{
-		if(sem_post(&sem1))
-		{
-			printf("Failed to post sem1\n");
-			(void )args;
+    }
+    if(val == -1)
+    {
+        if(sem_post(&sem1))
+        {
+            printf("Failed to post sem1\n");
+            (void )args;
             return NULL;
-		}
-	}
-	else
-	{
-		printf("Failed to try_pend sem4, wrong value\n");
-		lock_res = 535;
-		(void )args;
+        }
+    }
+    else
+    {
+        printf("Failed to try_pend sem4, wrong value\n");
+        lock_res = 535;
+        (void )args;
             return NULL;
-	}
-	for(int i = 0; i < 3; ++i)
-	{
-		OS_RETURN_E err;
-		err = sem_pend(&sem4);
-		if(err != OS_ERR_SEM_UNINITIALIZED)
-		{
-			printf("Failed to pend sem4,%d\n", i);
-			lock_res = -3;
-			
-			(void )args;
+    }
+    for(int i = 0; i < 3; ++i)
+    {
+        OS_RETURN_E err;
+        err = sem_pend(&sem4);
+        if(err != OS_ERR_SEM_UNINITIALIZED)
+        {
+            printf("Failed to pend sem4,%d\n", i);
+            lock_res = -3;
+            
+            (void )args;
             return NULL;
-		}
-	}
-	printf("Thread 4 end\n");
+        }
+    }
+    printf("Thread 4 end\n");
 
-	return NULL;
+    return NULL;
 }
 
 void *sem_thread_5(void *args)
 {
-	for(int i = 0; i < 3; ++i)
-	{
-		OS_RETURN_E err;
-		err = sem_pend(&sem4);
-		if(err != OS_ERR_SEM_UNINITIALIZED)
-		{
-			printf("Failed to pend sem4,%d\n", i);
-			lock_res = -3;
+    for(int i = 0; i < 3; ++i)
+    {
+        OS_RETURN_E err;
+        err = sem_pend(&sem4);
+        if(err != OS_ERR_SEM_UNINITIALIZED)
+        {
+            printf("Failed to pend sem4,%d\n", i);
+            lock_res = -3;
 
-			(void )args;
+            (void )args;
             return NULL;
-		}
-	}
-	printf("Thread 5 end\n");
+        }
+    }
+    printf("Thread 5 end\n");
 
-	return NULL;
+    return NULL;
 }
 
 
 int test_sem(void)
 {
-	if(sem_init(&sem1, 0) != OS_NO_ERR)
-	{
-		printf("Failed to init sem1\n");
-		return -1;
-	}
-	if(sem_init(&sem2, 0) != OS_NO_ERR)
-	{
-		printf("Failed to init sem2\n");
-		return -1;
-	}
-	if(sem_init(&sem3, 0) != OS_NO_ERR)
-	{
-		printf("Failed to init sem3\n");
-		return -1;
-	}
-	if(sem_init(&sem4, -1) != OS_NO_ERR)
-	{
-		printf("Failed to init sem4\n");
-		return -1;
-	}
-	if(sem_init(&sem_end, 0) != OS_NO_ERR)
-	{
-		printf("Failed to init sem_end\n");
-		return -1;
-	}
+    if(sem_init(&sem1, 0) != OS_NO_ERR)
+    {
+        printf("Failed to init sem1\n");
+        return -1;
+    }
+    if(sem_init(&sem2, 0) != OS_NO_ERR)
+    {
+        printf("Failed to init sem2\n");
+        return -1;
+    }
+    if(sem_init(&sem3, 0) != OS_NO_ERR)
+    {
+        printf("Failed to init sem3\n");
+        return -1;
+    }
+    if(sem_init(&sem4, -1) != OS_NO_ERR)
+    {
+        printf("Failed to init sem4\n");
+        return -1;
+    }
+    if(sem_init(&sem_end, 0) != OS_NO_ERR)
+    {
+        printf("Failed to init sem_end\n");
+        return -1;
+    }
 
 
-	lock_res = 0;
+    lock_res = 0;
 
     if(create_thread(&thread_sem1, sem_thread_1, 1, "thread1", NULL) != OS_NO_ERR)
     {
@@ -234,39 +234,39 @@ int test_sem(void)
     }
 
 
-	if(sem_pend(&sem_end) != OS_NO_ERR)
-	{
-		printf("Failed to pend sem_end\n");
-		return -1;
-	}
+    if(sem_pend(&sem_end) != OS_NO_ERR)
+    {
+        printf("Failed to pend sem_end\n");
+        return -1;
+    }
 
-	if(sem_destroy(&sem1) != OS_NO_ERR)
-	{
-		printf("Failed to destroy sem1\n");
-		return -1;
-	}
-	if(sem_destroy(&sem2) != OS_NO_ERR)
-	{
-		printf("Failed to destroy sem2\n");
-		return -1;
-	}
-	if(sem_destroy(&sem3) != OS_NO_ERR)
-	{
-		printf("Failed to destroy sem3\n");
-		return -1;
-	}
-	if(sem_destroy(&sem4) != OS_NO_ERR)
-	{
-		printf("Failed to destroy sem4\n");
-		return -1;
-	}
-	if(sem_destroy(&sem_end) != OS_NO_ERR)
-	{
-		printf("Failed to destroy sem_end\n");
-		return -1;
-	}
-	OS_RETURN_E err;
-	if((err = wait_thread(thread_sem1, NULL)) != OS_NO_ERR)
+    if(sem_destroy(&sem1) != OS_NO_ERR)
+    {
+        printf("Failed to destroy sem1\n");
+        return -1;
+    }
+    if(sem_destroy(&sem2) != OS_NO_ERR)
+    {
+        printf("Failed to destroy sem2\n");
+        return -1;
+    }
+    if(sem_destroy(&sem3) != OS_NO_ERR)
+    {
+        printf("Failed to destroy sem3\n");
+        return -1;
+    }
+    if(sem_destroy(&sem4) != OS_NO_ERR)
+    {
+        printf("Failed to destroy sem4\n");
+        return -1;
+    }
+    if(sem_destroy(&sem_end) != OS_NO_ERR)
+    {
+        printf("Failed to destroy sem_end\n");
+        return -1;
+    }
+    OS_RETURN_E err;
+    if((err = wait_thread(thread_sem1, NULL)) != OS_NO_ERR)
     {
         printf("Error while waiting thread! [%d]\n", err);
         return -1;
@@ -286,7 +286,7 @@ int test_sem(void)
         printf("Error while waiting thread! [%d]\n", err);
         return -1;
     }
- 	if(wait_thread(thread_sem5, NULL) != OS_NO_ERR)
+     if(wait_thread(thread_sem5, NULL) != OS_NO_ERR)
     {
         printf("Error while waiting thread! [%d]\n", err);
         return -1;

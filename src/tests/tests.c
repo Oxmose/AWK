@@ -15,10 +15,12 @@
 #include "../sync/lock.h"
 #include "../core/scheduler.h"
 
+#ifdef TEST
 static const int32_t tests_count = 5;
+#endif
 
 /***************
- TEST MUST BE EXECUTED ON THE LOWEST PRIORITY POSSIBLE 
+ TEST MUST BE EXECUTED ON THE LOWEST PRIORITY POSSIBLE
  ****************/
 
 void *launch_tests(void*args)

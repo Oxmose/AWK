@@ -642,7 +642,7 @@ OS_RETURN_E sleep(const unsigned int time_ms)
     active_thread->state = SLEEPING;
 
     #ifdef DEBUG_SCHED
-    kernel_serial_debug("Thread %d asleep\n", active_thread->pid);
+    //kernel_serial_debug("Thread %d asleep\n", active_thread->pid);
     #endif
 
     schedule();
@@ -939,7 +939,7 @@ OS_RETURN_E unlock_thread(const thread_t thread,
 
     #ifdef DEBUG_SCHED
     kernel_serial_debug("Thread %d unlocked, reason: %d\n",
-                         active_thread->pid,
+                         thread->pid,
                          block_type);
     #endif
 

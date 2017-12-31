@@ -25,7 +25,15 @@
 /* Header include */
 #include "mailbox.h"
 
-OS_RETURN_E mailbox_init(mailbox_t *mailbox)
+/*******************************************************************************
+ * GLOBAL VARIABLES
+ ******************************************************************************/
+
+/*******************************************************************************
+ * FUNCTIONS
+ ******************************************************************************/
+
+OS_RETURN_E mailbox_init(mailbox_t* mailbox)
 {
     /* Pointer check */
     if(mailbox == NULL)
@@ -35,12 +43,11 @@ OS_RETURN_E mailbox_init(mailbox_t *mailbox)
 
     /* Init the mailbox */
     mailbox->state = 0;
-    spinlock_init(&mailbox->lock);
 
     mailbox->read_waiting_threads[0]  = NULL;
     mailbox->read_waiting_threads[1]  = NULL;
     mailbox->write_waiting_threads[0] = NULL;
-    mailbox->write_waiting_threads[1] = NULL; 
+    mailbox->write_waiting_threads[1] = NULL;
 
     mailbox->init = 1;
 
@@ -48,14 +55,14 @@ OS_RETURN_E mailbox_init(mailbox_t *mailbox)
     kernel_serial_debug("Mailbox 0x%08x initialized\n", (uint32_t)mailbox);
     #endif
 
-    return OS_NO_ERR;
+    return spinlock_init(&mailbox->lock);;
 }
 
-void* mailbox_pend(mailbox_t *mailbox, OS_RETURN_E *error)
+void* mailbox_pend(mailbox_t* mailbox, OS_RETURN_E* error)
 {
-    OS_RETURN_E err;
-    void *ret_val;
-    kernel_thread_t *thread;
+    OS_RETURN_E      err;
+    void*            ret_val;
+    kernel_thread_t* thread;
 
     /* Check mailbox pointer */
     if(mailbox == NULL)
@@ -68,12 +75,28 @@ void* mailbox_pend(mailbox_t *mailbox, OS_RETURN_E *error)
         return NULL;
     }
 
-    spinlock_lock(&mailbox->lock);
+    err = spinlock_lock(&mailbox->lock);
+    if(err != OS_NO_ERR)
+    {
+        if(error != NULL)
+        {
+            *error = err;
+        }
+        return NULL;
+    }
 
     /* Check for mailbox initialization */
     if(mailbox->init != 1)
     {
-        spinlock_unlock(&mailbox->lock);
+        err = spinlock_unlock(&mailbox->lock);
+        if(err != OS_NO_ERR)
+        {
+            if(error != NULL)
+            {
+                *error = err;
+            }
+            return NULL;
+        }
 
         if(error != NULL)
         {
@@ -86,17 +109,25 @@ void* mailbox_pend(mailbox_t *mailbox, OS_RETURN_E *error)
     /* If the mailbox is empty block thread */
     while(mailbox->state == 0)
     {
-    
         /* Adding the thread to the blocked set of reading threads */
-        err = kernel_enqueue_thread(get_active_thread(), 
-                                    mailbox->read_waiting_threads, 0);
+        err = kernel_enqueue_thread(get_active_thread(),
+                                    mailbox->read_waiting_threads,
+                                    0);
         if(err != OS_NO_ERR)
         {
             kernel_error("Could not enqueue thread to mailbox[%d]\n", err);
             kernel_panic();
         }
 
-        spinlock_unlock(&mailbox->lock);
+        err = spinlock_unlock(&mailbox->lock);
+        if(err != OS_NO_ERR)
+        {
+            if(error != NULL)
+            {
+                *error = err;
+            }
+            return NULL;
+        }
 
         /* Scheduling the thread */
         err = lock_thread(QUEUE);
@@ -106,7 +137,15 @@ void* mailbox_pend(mailbox_t *mailbox, OS_RETURN_E *error)
             kernel_panic();
         }
 
-        spinlock_lock(&mailbox->lock);
+        err = spinlock_lock(&mailbox->lock);
+        if(err != OS_NO_ERR)
+        {
+            if(error != NULL)
+            {
+                *error = err;
+            }
+            return NULL;
+        }
     }
 
     /* Get mailbox value */
@@ -115,11 +154,19 @@ void* mailbox_pend(mailbox_t *mailbox, OS_RETURN_E *error)
     /* Manage mailbox state */
     mailbox->state = 0;
 
-    /* Check if we can wake up a thread */ 
-    thread = kernel_dequeue_thread(mailbox->write_waiting_threads, &err);   
+    /* Check if we can wake up a thread */
+    thread = kernel_dequeue_thread(mailbox->write_waiting_threads, &err);
     if(thread != NULL && err == OS_NO_ERR)
     {
-        spinlock_unlock(&mailbox->lock);
+        err = spinlock_unlock(&mailbox->lock);
+        if(err != OS_NO_ERR)
+        {
+            if(error != NULL)
+            {
+                *error = err;
+            }
+            return NULL;
+        }
 
         err = unlock_thread(thread, QUEUE, 1);
         if(err != OS_NO_ERR)
@@ -136,7 +183,15 @@ void* mailbox_pend(mailbox_t *mailbox, OS_RETURN_E *error)
         kernel_panic();
     }
 
-    spinlock_unlock(&mailbox->lock);
+    err = spinlock_unlock(&mailbox->lock);
+    if(err != OS_NO_ERR)
+    {
+        if(error != NULL)
+        {
+            *error = err;
+        }
+        return NULL;
+    }
 
     if(error != NULL)
     {
@@ -146,21 +201,29 @@ void* mailbox_pend(mailbox_t *mailbox, OS_RETURN_E *error)
     return ret_val;
 }
 
-OS_RETURN_E mailbox_post(mailbox_t *mailbox, void *element)
+OS_RETURN_E mailbox_post(mailbox_t* mailbox, void* element)
 {
-    OS_RETURN_E err;
-    kernel_thread_t *thread;
+    OS_RETURN_E      err;
+    kernel_thread_t* thread;
 
     if(mailbox == NULL)
     {
         return OS_ERR_NULL_POINTER;
     }
 
-    spinlock_lock(&mailbox->lock);
+    err = spinlock_lock(&mailbox->lock);
+    if(err != OS_NO_ERR)
+    {
+        return err;
+    }
 
     if(mailbox->init != 1)
     {
-        spinlock_unlock(&mailbox->lock);
+        err = spinlock_unlock(&mailbox->lock);
+        if(err != OS_NO_ERR)
+        {
+            return err;
+        }
 
         return OS_ERR_MAILBOX_NON_INITIALIZED;
     }
@@ -168,17 +231,21 @@ OS_RETURN_E mailbox_post(mailbox_t *mailbox, void *element)
     /* If the mailbox is full then posting block thread */
     while(mailbox->state == 1)
     {
-    
         /* Adding the thread to the blocked threads set. */
-        err = kernel_enqueue_thread(get_active_thread(), 
-                                    mailbox->write_waiting_threads, 0);
+        err = kernel_enqueue_thread(get_active_thread(),
+                                    mailbox->write_waiting_threads,
+                                    0);
         if(err != OS_NO_ERR)
         {
             kernel_error("Could not enqueue thread to mailbox[%d]\n", err);
             kernel_panic();
         }
 
-        spinlock_unlock(&mailbox->lock);
+        err = spinlock_unlock(&mailbox->lock);
+        if(err != OS_NO_ERR)
+        {
+            return err;
+        }
 
         err = lock_thread(QUEUE);
         if(err != OS_NO_ERR)
@@ -187,7 +254,11 @@ OS_RETURN_E mailbox_post(mailbox_t *mailbox, void *element)
             kernel_panic();
         }
 
-        spinlock_lock(&mailbox->lock);
+        err = spinlock_lock(&mailbox->lock);
+        if(err != OS_NO_ERR)
+        {
+            return err;
+        }
     }
 
     /* Set value of the mailbox */
@@ -197,10 +268,14 @@ OS_RETURN_E mailbox_post(mailbox_t *mailbox, void *element)
     mailbox->state = 1;
 
     /* Check if we can wake up a thread */
-    thread = kernel_dequeue_thread(mailbox->read_waiting_threads, &err); 
+    thread = kernel_dequeue_thread(mailbox->read_waiting_threads, &err);
     if(thread != NULL && err == OS_NO_ERR)
     {
-        spinlock_unlock(&mailbox->lock);
+        err = spinlock_unlock(&mailbox->lock);
+        if(err != OS_NO_ERR)
+        {
+            return err;
+        }
 
         err = unlock_thread(thread, QUEUE, 1);
         if(err != OS_NO_ERR)
@@ -213,30 +288,36 @@ OS_RETURN_E mailbox_post(mailbox_t *mailbox, void *element)
     }
     else if(err != OS_NO_ERR)
     {
-      kernel_error("Could not dequeue thread from mailbox[%d]\n", err);
-      kernel_panic();
+        kernel_error("Could not dequeue thread from mailbox[%d]\n", err);
+        kernel_panic();
     }
 
-    spinlock_unlock(&mailbox->lock);
-
-    return OS_NO_ERR;
+    return spinlock_unlock(&mailbox->lock);
 }
 
-OS_RETURN_E mailbox_destroy(mailbox_t *mailbox)
+OS_RETURN_E mailbox_destroy(mailbox_t* mailbox)
 {
-    kernel_thread_t *thread;
-    OS_RETURN_E err;
+    OS_RETURN_E      err;
+    kernel_thread_t* thread;
 
     if(mailbox == NULL)
     {
         return OS_ERR_NULL_POINTER;
     }
 
-    spinlock_lock(&mailbox->lock);
+    err = spinlock_lock(&mailbox->lock);
+    if(err != OS_NO_ERR)
+        {
+            return err;
+        }
 
     if(mailbox->init != 1)
     {
-        spinlock_unlock(&mailbox->lock);
+        err = spinlock_unlock(&mailbox->lock);
+        if(err != OS_NO_ERR)
+        {
+            return err;
+        }
 
         return OS_ERR_MAILBOX_NON_INITIALIZED;
     }
@@ -245,7 +326,7 @@ OS_RETURN_E mailbox_destroy(mailbox_t *mailbox)
     mailbox->init  = 0;
     mailbox->state = 0;
 
-    /* Check if we can wake up a thread */ 
+    /* Check if we can wake up a thread */
     thread = kernel_dequeue_thread(mailbox->read_waiting_threads, &err);
     while(thread != NULL && err == OS_NO_ERR)
     {
@@ -280,41 +361,65 @@ OS_RETURN_E mailbox_destroy(mailbox_t *mailbox)
         kernel_panic();
     }
 
-    spinlock_unlock(&mailbox->lock);
-
-    return OS_NO_ERR;
+    return spinlock_unlock(&mailbox->lock);
 }
 
-int8_t mailbox_isempty(mailbox_t *mailbox, OS_RETURN_E *error)
+int8_t mailbox_isempty(mailbox_t* mailbox, OS_RETURN_E* error)
 {
-    int8_t ret;
+    int8_t      ret;
+    OS_RETURN_E err;
 
     if(mailbox == NULL)
     {
         if(error != NULL)
         {
-        *error = OS_ERR_NULL_POINTER;
+            *error = OS_ERR_NULL_POINTER;
+        }
+
+        return -1;
+    }
+
+    err = spinlock_lock(&mailbox->lock);
+    if(err != OS_NO_ERR)
+    {
+        if(error != NULL)
+        {
+            *error = err;
         }
         return -1;
     }
 
-    spinlock_lock(&mailbox->lock);
-
     if(mailbox->init != 1)
     {
-        spinlock_unlock(&mailbox->lock);
-  
+        err = spinlock_unlock(&mailbox->lock);
+        if(err != OS_NO_ERR)
+        {
+            if(error != NULL)
+            {
+                *error = err;
+            }
+            return -1;
+        }
+
         if(error != NULL)
         {
             *error = OS_ERR_MAILBOX_NON_INITIALIZED;
         }
-    
+
         return -1;
     }
 
     ret = (mailbox->state == 0);
 
-    spinlock_unlock(&mailbox->lock);
+    err = spinlock_unlock(&mailbox->lock);
+    if(err != OS_NO_ERR)
+    {
+        if(error != NULL)
+        {
+            *error = err;
+        }
+        return -1;
+    }
 
     if(error != NULL)
     {

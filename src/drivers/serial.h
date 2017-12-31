@@ -8,7 +8,7 @@
  *
  * Version: 1.0
  *
- * Serial for the kernel.
+ * Serial driver for the kernel.
  ******************************************************************************/
 
 #ifndef __SERIAL_H_
@@ -17,18 +17,19 @@
 #include "../lib/stddef.h" /* OS_RETURN_E */
 #include "../lib/stdint.h" /* Generic int types */
 
-/**********************************
+/*******************************************************************************
  * CONSTANTS
- *********************************/ 
+ ******************************************************************************/
+
 #define SERIAL_COM1_BASE                0x3F8
-#define SERIAL_COM2_BASE				0x2F8
-#define SERIAL_COM3_BASE				0x3E8
-#define SERIAL_COM4_BASE				0x2E8
+#define SERIAL_COM2_BASE                0x2F8
+#define SERIAL_COM3_BASE                0x3E8
+#define SERIAL_COM4_BASE                0x2E8
 
 #define COM1 SERIAL_COM1_BASE
 #define COM2 SERIAL_COM2_BASE
 #define COM3 SERIAL_COM3_BASE
-#define COM4 SERIAL_COM4_BASE  
+#define COM4 SERIAL_COM4_BASE
 
 #define SERIAL_DEBUG_PORT COM1
 
@@ -66,34 +67,46 @@
 
 #define SERIAL_FIFO_DEPTH_14     0x00
 #define SERIAL_FIFO_DEPTH_64     0x10
-/**********************************
+
+/*******************************************************************************
  * STRUCTURES
- *********************************/
+ ******************************************************************************/
+
 typedef enum SERIAL_BAUDRATE
 {
-	BAURDATE_50     = 2304,
-	BAUDRATE_75     = 1536,
-	BAUDRATE_150    = 768,
-	BAUDRATE_300    = 384,
-	BAUDRATE_600    = 192,
-	BAUDRATE_1200   = 96,
-	BAUDRATE_1800   = 64,
-	BAUDRATE_2400   = 48,
-	BAUDRATE_4800   = 24,
-	BAUDRATE_7200   = 16,
-	BAUDRATE_9600   = 12,
-	BAUDRATE_14400  = 8,
-	BAUDRATE_19200  = 6,
-	BAUDRATE_38400  = 3,
-	BAUDRATE_57600  = 2,
-	BAUDRATE_115200 = 1,
+    BAURDATE_50     = 2304,
+    BAUDRATE_75     = 1536,
+    BAUDRATE_150    = 768,
+    BAUDRATE_300    = 384,
+    BAUDRATE_600    = 192,
+    BAUDRATE_1200   = 96,
+    BAUDRATE_1800   = 64,
+    BAUDRATE_2400   = 48,
+    BAUDRATE_4800   = 24,
+    BAUDRATE_7200   = 16,
+    BAUDRATE_9600   = 12,
+    BAUDRATE_14400  = 8,
+    BAUDRATE_19200  = 6,
+    BAUDRATE_38400  = 3,
+    BAUDRATE_57600  = 2,
+    BAUDRATE_115200 = 1,
 } SERIAL_BAUDRATE_E;
 
-/**********************************
+/*******************************************************************************
  * FUNCTIONS
- *********************************/
+ ******************************************************************************/
+
+/* Init serial driver structures and hardware.
+ *
+ * @returns OS_NO_ERR if successfull. Otherwise an error is returned.
+ */
 OS_RETURN_E init_serial(void);
 
-void serial_write(uint32_t port, const char a);
+/* Write the data given as patameter on the desired port.
+ *
+ * @param port The desired port to write the data to.
+ * @param data The byte to write to the serial port.
+ */
+void serial_write(const uint32_t port, const uint8_t data);
 
 #endif /* __SERIAL_H_ */

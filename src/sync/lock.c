@@ -17,7 +17,15 @@
 /* Header file */
 #include "lock.h"
 
-OS_RETURN_E spinlock_lock(lock_t *lock)
+/*******************************************************************************
+ * GLOBAL VARIABLES
+ ******************************************************************************/
+
+/*******************************************************************************
+ * FUNCTIONS
+ ******************************************************************************/
+
+OS_RETURN_E spinlock_lock(lock_t* lock)
 {
     if(lock == NULL)
     {
@@ -25,11 +33,11 @@ OS_RETURN_E spinlock_lock(lock_t *lock)
     }
 
     while(cpu_test_and_set(lock) == 1);
-    
+
     return OS_NO_ERR;
 }
 
-OS_RETURN_E spinlock_unlock(lock_t *lock)
+OS_RETURN_E spinlock_unlock(lock_t* lock)
 {
     if(lock == NULL)
     {
@@ -41,7 +49,7 @@ OS_RETURN_E spinlock_unlock(lock_t *lock)
     return OS_NO_ERR;
 }
 
-OS_RETURN_E spinlock_init(lock_t *lock)
+OS_RETURN_E spinlock_init(lock_t* lock)
 {
-    return spinlock_unlock(lock);    
+    return spinlock_unlock(lock);
 }

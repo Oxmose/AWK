@@ -22,9 +22,9 @@
 #include "kernel_thread.h"  /* thread_t */
 #include "kernel_queue.h"   /* kernel_queue_t */
 
-/****************************
+/*******************************************************************************
  * CONSTANTS
- ***************************/
+ ******************************************************************************/
 #define SCHEDULE_PERIOD         1
 
 #define KERNEL_LOWEST_PRIORITY  64
@@ -33,9 +33,10 @@
 
 #define SCHEDULE_DYN_PRIORITY   1
 
-/****************************
- * STRUCTURES 
- ***************************/
+/*******************************************************************************
+ * STRUCTURES
+ ******************************************************************************/
+
 /* System possible sates */
 typedef enum SYSTEM_STATE
 {
@@ -54,69 +55,79 @@ typedef struct thread_info
 
     THREAD_STATE_E   state;
 
-    thread_queue_t *children;
+    thread_queue_t* children;
 
     uint32_t start_time;
     uint32_t end_time;
     uint32_t exec_time;
 } thread_info_t;
 
-/****************************
- * FUNCTIONS 
- ***************************/
+/*******************************************************************************
+ * FUNCTIONS
+ ******************************************************************************/
 
-/* Return system state 
- * @returns The system state.
+/* Tells the system state: HALTED or RUNNING.
+ *
+ * @returns The system state (RUNNING or HALTED)
  */
 SYSTEM_STATE_E get_system_state(void);
 
 /* Init the scheduler service.
  * This function SHOULD BE THE LAST CALLED AT THE INIT OF THE KERNEL
  * !!!! IT SHOULD NEVER RETURN !!!!
+ *
  * @return If the function returns, it means the init failed, the error code is
  * set accordingly.
  */
 OS_RETURN_E init_scheduler(void);
 
-/* Schedule current thread, raise an interrupt.
+/* Call the scheduler, use interrupt since we should never call the
+ * scheduler outside of an interrupt context
  */
 void schedule(void);
 
 /* Put the calling thread to sleep.
+ *
  * @param time_ms The number of milliseconds to wait.
  * @returns The success or error code.
  */
 OS_RETURN_E sleep(const unsigned int time_ms);
 
 /* Returns the number of existing threads
+ *
  * @returns The number of alive thread (all but dead).
  */
 uint32_t get_thread_count(void);
 
 /* Returns the PID of the current executing thread.
+ *
  * @returns The PID of the current executing thread.
  */
 int32_t get_pid(void);
 
 /* Returns the PPID of the current executing thread.
+ *
  * @returns The PPID of the current executing thread.
  */
 int32_t get_ppid(void);
 
 /* Returns the name of the current executing thread.
+ *
  * @returns The name of the current executing thread.
  */
 char *get_current_thread_name(void);
 
 /* Returns the priority of the current executing thread.
+ *
  * @returns The priority of the current executing thread.
  */
 uint32_t get_priority(void);
 
 /* Returns the executing thread structuer pointer.
+ *
  * @returns The executing thread structuer pointer.
  */
-kernel_thread_t *get_active_thread(void);
+kernel_thread_t* get_active_thread(void);
 
 /* Create a new thread in the thread table.
  *
@@ -127,18 +138,18 @@ kernel_thread_t *get_active_thread(void);
  * @param args The arguments to be used by the thread.
  * @returns OS_NO_ERR on success, error code otherwise.
  */
-OS_RETURN_E create_thread(thread_t *thread, 
-	                      void *(*function)(void*), 
-	                      const uint32_t priority, 
-	                      const char *name, 
-	                      void *args);
+OS_RETURN_E create_thread(thread_t* thread,
+                          void* (*function)(void*),
+                          const uint32_t priority,
+                          const char* name,
+                          void* args);
 
 /* Remove a thread from the threads table. Wait for the thread to finish.
  *
  * @param thread The pointer to the thread structure.
  * @returns OS_NO_ERR on success, error code otherwise.
  */
-OS_RETURN_E wait_thread(thread_t thread, void **ret_val);
+OS_RETURN_E wait_thread(thread_t thread, void** ret_val);
 
 /* Add a thread to the active threads table, the thread might be contained
  * in an other structure such as a mutex
@@ -151,7 +162,8 @@ OS_RETURN_E wait_thread(thread_t thread, void **ret_val);
 OS_RETURN_E unlock_thread(const thread_t thread,
                           const BLOCK_TYPE_E block_type,
                           const uint8_t do_schedule);
-/* Remove the active thread from the active threads table, the thread might be 
+
+/* Remove the active thread from the active threads table, the thread might be
  * contained in an other structure such as a mutex
  *
  * @param block_type The type of block (mutex, sem, ...)
@@ -172,6 +184,18 @@ OS_RETURN_E lock_io(const BLOCK_TYPE_E block_type);
  */
 OS_RETURN_E unlock_io(const BLOCK_TYPE_E block_type);
 
-OS_RETURN_E get_threads_info(thread_info_t *threads, int32_t *size);
+/* Get all the system threads information.
+ * The function will fill the structure given as parameter until there is no
+ * more thread to gather information from or the function already gathered
+ * size threads. If size is greater than the current threads count in the system
+ * then it will be modified to the current threads count.
+ *
+ * @param thread The array in wich we want to store the threads information.
+ * @param size The size of the array given as parameter.  If size is greater
+ * than the current threads count in the system then it will be modified to the
+ * current threads count.
+ * @returns OS_NO_ERR on success, error code otherwise.
+ */
+OS_RETURN_E get_threads_info(thread_info_t* threads, int32_t* size);
 
 #endif /* __SCHEDULER_H_ */

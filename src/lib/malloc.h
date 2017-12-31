@@ -2845,8 +2845,8 @@ static int region_list_append (region_list_entry **last, void *base_reserved, lo
 /* Free and unlink the last region entry from the region list */
 static int region_list_remove (region_list_entry **last);
 
-#define CEIL(size,to)	(((size)+(to)-1)&~((to)-1))
-#define FLOOR(size,to)	((size)&~((to)-1))
+#define CEIL(size,to)    (((size)+(to)-1)&~((to)-1))
+#define FLOOR(size,to)    ((size)&~((to)-1))
 
 #define SBRK_SCALE  0
 /* #define SBRK_SCALE  1 */

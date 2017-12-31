@@ -19,269 +19,354 @@
 #include "../core/panic.h"         /* kernel_panic */
 #include "../core/scheduler.h"     /* lock_thread, unlock_thread */
 #include "../sync/lock.h"          /* lock_t */
-#include "../lib/malloc.h"		   /* malloc, free */
+#include "../lib/malloc.h"         /* malloc, free */
+
+#include "../debug.h"      /* kernel_serial_debug */
 
 /* Header include */
 #include "queue.h"
 
-OS_RETURN_E queue_init(queue_t *queue, const uint32_t length)
+/*******************************************************************************
+ * GLOBAL VARIABLES
+ ******************************************************************************/
+
+/*******************************************************************************
+ * FUNCTIONS
+ ******************************************************************************/
+
+OS_RETURN_E queue_init(queue_t* queue, const uint32_t length)
 {
-	if(queue == NULL)
-	{
-		return OS_ERR_NULL_POINTER;
-	}
+    if(queue == NULL)
+    {
+        return OS_ERR_NULL_POINTER;
+    }
 
-	/* Init the queue */
-	queue->container = malloc(sizeof(void*) * length);
-	if(queue->container == NULL)
-	{
-		return OS_ERR_MALLOC;
-	}
+    /* Init the queue */
+    queue->container = malloc(sizeof(void*) * length);
+    if(queue->container == NULL)
+    {
+        return OS_ERR_MALLOC;
+    }
 
-	queue->head = 0;
-	queue->tail = 0;
-	spinlock_init(&queue->lock);
+    queue->head = 0;
+    queue->tail = 0;
 
-	queue->max_length = length;
-	queue->length     = 0;
+    queue->max_length = length;
+    queue->length     = 0;
 
-	queue->read_waiting_threads[0]  = NULL;
+    queue->read_waiting_threads[0]  = NULL;
     queue->read_waiting_threads[1]  = NULL;
     queue->write_waiting_threads[0] = NULL;
     queue->write_waiting_threads[1] = NULL;
 
-	queue->init = 1;
+    queue->init = 1;
 
-	return OS_NO_ERR;
+    return spinlock_init(&queue->lock);
 }
 
-void* queue_pend(queue_t *queue, OS_RETURN_E *error)
+void* queue_pend(queue_t* queue, OS_RETURN_E* error)
 {
-	OS_RETURN_E err;
-	void *ret_val;
-	kernel_thread_t *thread;
+    OS_RETURN_E      err;
+    void*            ret_val;
+    kernel_thread_t* thread;
 
-	if(queue == NULL)
-	{
-		if(error != NULL)
-		{
-			*error = OS_ERR_NULL_POINTER;
-		}
+    if(queue == NULL)
+    {
+        if(error != NULL)
+        {
+            *error = OS_ERR_NULL_POINTER;
+        }
 
-		return NULL;
-	}
+        return NULL;
+    }
 
-	spinlock_lock(&queue->lock);
+    err = spinlock_lock(&queue->lock);
+    if(err != OS_NO_ERR)
+    {
+        if(error != NULL)
+        {
+            *error = err;
+        }
+        return NULL;
+    }
 
-	if(queue->init != 1)
-	{
-		spinlock_unlock(&queue->lock);
+    if(queue->init != 1)
+    {
+        err = spinlock_unlock(&queue->lock);
+        if(err != OS_NO_ERR)
+        {
+            if(error != NULL)
+            {
+                *error = err;
+            }
+            return NULL;
+        }
 
-		if(error != NULL)
-		{
-			*error = OS_ERR_QUEUE_NON_INITIALIZED;
-		}
+        if(error != NULL)
+        {
+            *error = OS_ERR_QUEUE_NON_INITIALIZED;
+        }
 
-		return NULL;
-	}
+        return NULL;
+    }
 
-	/* If the queue is empty block thread */
-	while(queue->length == 0)
-	{
-		/* Adding the thread to the blocked set of reading threads */
-	    err = kernel_enqueue_thread(get_active_thread(), 
-	    	                        queue->read_waiting_threads, 0);
-	    if(err != OS_NO_ERR)
-	    {
-	        kernel_error("Could not enqueue thread to queue[%d]\n", err);
-        	kernel_panic();
-	    }
+    /* If the queue is empty block thread */
+    while(queue->length == 0)
+    {
+        /* Adding the thread to the blocked set of reading threads */
+        err = kernel_enqueue_thread(get_active_thread(),
+                                    queue->read_waiting_threads,
+                                    0);
+        if(err != OS_NO_ERR)
+        {
+            kernel_error("Could not enqueue thread to queue[%d]\n", err);
+            kernel_panic();
+        }
 
-	    spinlock_unlock(&queue->lock);
+        err = spinlock_unlock(&queue->lock);
+        if(err != OS_NO_ERR)
+        {
+            if(error != NULL)
+            {
+                *error = err;
+            }
+            return NULL;
+        }
 
-	    /* Scheduling the thread */
-	    err = lock_thread(QUEUE);
-	    if(err != OS_NO_ERR)
-	    {
-	        kernel_error("Could not lock thread to queue[%d]\n", err);
-        	kernel_panic();
-	    }
+        /* Scheduling the thread */
+        err = lock_thread(QUEUE);
+        if(err != OS_NO_ERR)
+        {
+            kernel_error("Could not lock thread to queue[%d]\n", err);
+            kernel_panic();
+        }
 
-	    spinlock_lock(&queue->lock);
-	}
+        err = spinlock_lock(&queue->lock);
+        if(err != OS_NO_ERR)
+        {
+            if(error != NULL)
+            {
+                *error = err;
+            }
+            return NULL;
+        }
+    }
 
-	/* Get value */
-	ret_val = queue->container[queue->tail];
+    /* Get value */
+    ret_val = queue->container[queue->tail];
 
-	/* Manage index */
-	if(queue->tail >= queue->max_length)
-	{
-		queue->tail = 0;
-	}
-	else
-	{
-		++queue->tail;
-	}
-	--queue->length;
+    /* Manage index */
+    if(queue->tail >= queue->max_length)
+    {
+        queue->tail = 0;
+    }
+    else
+    {
+        ++queue->tail;
+    }
+    --queue->length;
 
-	/* Check if we can wake up a thread */
-	thread = kernel_dequeue_thread(queue->write_waiting_threads, &err);
+    /* Check if we can wake up a thread */
+    thread = kernel_dequeue_thread(queue->write_waiting_threads, &err);
     if(thread != NULL && err == OS_NO_ERR)
     {
-      	spinlock_unlock(&queue->lock);
+        err = spinlock_unlock(&queue->lock);
+        if(err != OS_NO_ERR)
+        {
+            if(error != NULL)
+            {
+                *error = err;
+            }
+            return NULL;
+        }
 
-      	err = unlock_thread(thread, QUEUE, 1);
-      	if(err != OS_NO_ERR)
-	    {
-	        kernel_error("Could not unlock thread from queue[%d]\n", err);
-	    	kernel_panic();
-	    }
+        err = unlock_thread(thread, QUEUE, 1);
+        if(err != OS_NO_ERR)
+        {
+            kernel_error("Could not unlock thread from queue[%d]\n", err);
+            kernel_panic();
+        }
 
-      	return OS_NO_ERR;
+        return OS_NO_ERR;
     }
     else if(err != OS_NO_ERR)
     {
         kernel_error("Could not dequeue thread from queue[%d]\n", err);
-    	kernel_panic();
+        kernel_panic();
     }
-	
-	spinlock_unlock(&queue->lock);
 
-	if(error != NULL)
-	{
-		*error = OS_NO_ERR;
-	}
+    err = spinlock_unlock(&queue->lock);
+    if(err != OS_NO_ERR)
+    {
+        if(error != NULL)
+        {
+            *error = err;
+        }
+        return NULL;
+    }
 
-	return ret_val;
+    if(error != NULL)
+    {
+        *error = OS_NO_ERR;
+    }
+
+    return ret_val;
 }
 
-OS_RETURN_E queue_post(queue_t *queue, void *element)
+OS_RETURN_E queue_post(queue_t* queue, void* element)
 {
-	OS_RETURN_E err;
-	kernel_thread_t *thread;
+    OS_RETURN_E      err;
+    kernel_thread_t* thread;
 
-	if(queue == NULL)
-	{
-		return OS_ERR_NULL_POINTER;
-	}
+    if(queue == NULL)
+    {
+        return OS_ERR_NULL_POINTER;
+    }
 
-	spinlock_lock(&queue->lock);
+    err = spinlock_lock(&queue->lock);
+    if(err != OS_NO_ERR)
+    {
+        return err;
+    }
 
-	if(queue->init != 1)
-	{
-		spinlock_unlock(&queue->lock);
+    if(queue->init != 1)
+    {
+        err = spinlock_unlock(&queue->lock);
+        if(err != OS_NO_ERR)
+        {
+            return err;
+        }
 
-		return OS_ERR_QUEUE_NON_INITIALIZED;
-	}	
+        return OS_ERR_QUEUE_NON_INITIALIZED;
+    }
 
-	/* If the queue is full block thread */
-	while(queue->length == queue->max_length)
-	{
-		/* Adding the thread to the blocked threads set. */
-	    err = kernel_enqueue_thread(get_active_thread(), 
-	    	                        queue->write_waiting_threads, 0);
-	    if(err != OS_NO_ERR)
-	    {
-	        kernel_error("Could not enqueue thread to queue[%d]\n", err);
-        	kernel_panic();
-	    }
+    /* If the queue is full block thread */
+    while(queue->length == queue->max_length)
+    {
+        /* Adding the thread to the blocked threads set. */
+        err = kernel_enqueue_thread(get_active_thread(),
+                                    queue->write_waiting_threads,
+                                    0);
+        if(err != OS_NO_ERR)
+        {
+            kernel_error("Could not enqueue thread to queue[%d]\n", err);
+            kernel_panic();
+        }
 
-	    spinlock_unlock(&queue->lock);
+        err = spinlock_unlock(&queue->lock);
+        if(err != OS_NO_ERR)
+        {
+            return err;
+        }
 
-	    err = lock_thread(QUEUE);
-	    if(err != OS_NO_ERR)
-	    {
-	        kernel_error("Could not lock thread to queue[%d]\n", err);
-        	kernel_panic();
-	    }
+        err = lock_thread(QUEUE);
+        if(err != OS_NO_ERR)
+        {
+            kernel_error("Could not lock thread to queue[%d]\n", err);
+            kernel_panic();
+        }
 
-	    spinlock_lock(&queue->lock);
-	}
+        err = spinlock_lock(&queue->lock);
+        if(err != OS_NO_ERR)
+        {
+            return err;
+        }
+    }
 
-	/* Set value */
-	queue->container[queue->head] = element;
+    /* Set value */
+    queue->container[queue->head] = element;
 
-	/* Manage index */
-	if(queue->head >= queue->max_length)
-	{
-		queue->head = 0;
-	}
-	else
-	{
-		++queue->head;
-	}
-	++queue->length;
+    /* Manage index */
+    if(queue->head >= queue->max_length)
+    {
+        queue->head = 0;
+    }
+    else
+    {
+        ++queue->head;
+    }
+    ++queue->length;
 
-	/* Check if we can wake up a thread */
-	thread = kernel_dequeue_thread(queue->read_waiting_threads, &err);
-	if(thread != NULL && err == OS_NO_ERR)
-	{    
-	    spinlock_unlock(&queue->lock);
+    /* Check if we can wake up a thread */
+    thread = kernel_dequeue_thread(queue->read_waiting_threads, &err);
+    if(thread != NULL && err == OS_NO_ERR)
+    {
+        err = spinlock_unlock(&queue->lock);
+        if(err != OS_NO_ERR)
+        {
+            return err;
+        }
 
-	    err = unlock_thread(thread, QUEUE, 1);
-	    if(err != OS_NO_ERR)
-    	{
-        	kernel_error("Could not unlock thread from queue[%d]\n", err);
-    		kernel_panic();
-    	}
+        err = unlock_thread(thread, QUEUE, 1);
+        if(err != OS_NO_ERR)
+        {
+            kernel_error("Could not unlock thread from queue[%d]\n", err);
+            kernel_panic();
+        }
 
-		return OS_NO_ERR;
-	}
-	else if(err != OS_NO_ERR)
+        return OS_NO_ERR;
+    }
+    else if(err != OS_NO_ERR)
     {
         kernel_error("Could not dequeue thread from queue[%d]\n", err);
-    	kernel_panic();
+        kernel_panic();
     }
 
-	spinlock_unlock(&queue->lock);
-
-	return OS_NO_ERR;
+    return spinlock_unlock(&queue->lock);
 }
 
-OS_RETURN_E queue_destroy(queue_t *queue)
+OS_RETURN_E queue_destroy(queue_t* queue)
 {
-	kernel_thread_t *thread;
-    OS_RETURN_E err;
+    OS_RETURN_E       err;
+    kernel_thread_t* thread;
 
-	if(queue == NULL)
-	{
-		return OS_ERR_NULL_POINTER;
-	}
+    if(queue == NULL)
+    {
+        return OS_ERR_NULL_POINTER;
+    }
 
-	spinlock_lock(&queue->lock);	
+    err = spinlock_lock(&queue->lock);
+    if(err != OS_NO_ERR)
+    {
+        return err;
+    }
 
-	if(queue->init != 1)
-	{
-		spinlock_unlock(&queue->lock);
+    if(queue->init != 1)
+    {
+        err = spinlock_unlock(&queue->lock);
+        if(err != OS_NO_ERR)
+        {
+            return err;
+        }
 
-		return OS_ERR_QUEUE_NON_INITIALIZED;
-	}
+        return OS_ERR_QUEUE_NON_INITIALIZED;
+    }
 
-	queue->init = 0;
-	queue->head = 0;
-	queue->tail = 0;
+    queue->init = 0;
+    queue->head = 0;
+    queue->tail = 0;
 
-	queue->max_length = 0;
-	queue->length     = 0;
+    queue->max_length = 0;
+    queue->length     = 0;
 
-	free(queue->container);
+    free(queue->container);
 
-	/* Check if we can wake up threads */
-	thread = kernel_dequeue_thread(queue->read_waiting_threads, &err);
+    /* Check if we can wake up threads */
+    thread = kernel_dequeue_thread(queue->read_waiting_threads, &err);
     while(thread != NULL && err == OS_NO_ERR)
     {
         err = unlock_thread(thread, QUEUE, 0);
         if(err != OS_NO_ERR)
-	    {
-	        kernel_error("Could not unlock thread from queue[%d]\n", err);
-	    	kernel_panic();
-	    }
-	    thread = kernel_dequeue_thread(queue->read_waiting_threads, &err);
+        {
+            kernel_error("Could not unlock thread from queue[%d]\n", err);
+            kernel_panic();
+        }
+        thread = kernel_dequeue_thread(queue->read_waiting_threads, &err);
     }
     if(err != OS_NO_ERR)
     {
         kernel_error("Could not dequeue thread from queue[%d]\n", err);
-    	kernel_panic();
+        kernel_panic();
     }
 
     thread = kernel_dequeue_thread(queue->write_waiting_threads, &err);
@@ -289,67 +374,92 @@ OS_RETURN_E queue_destroy(queue_t *queue)
     {
         err = unlock_thread(thread, QUEUE, 0);
         if(err != OS_NO_ERR)
-	    {
-	        kernel_error("Could not unlock thread from queue[%d]\n", err);
-	    	kernel_panic();
-	    }
+        {
+            kernel_error("Could not unlock thread from queue[%d]\n", err);
+            kernel_panic();
+        }
     }
     if(err != OS_NO_ERR)
     {
         kernel_error("Could not dequeue thread from queue[%d]\n", err);
-    	kernel_panic();
+        kernel_panic();
     }
 
-	spinlock_unlock(&queue->lock);
-
-	return OS_NO_ERR;
+    return spinlock_unlock(&queue->lock);
 }
 
-int32_t queue_length(queue_t *queue, OS_RETURN_E *error)
+int32_t queue_length(queue_t* queue, OS_RETURN_E* error)
 {
-	int32_t queue_size;
+    int32_t     queue_size;
+    OS_RETURN_E err;
 
-	if(queue == NULL)
-	{
-		if(error != NULL)
-		{
-			*error = OS_ERR_NULL_POINTER;
-		}
+    if(queue == NULL)
+    {
+        if(error != NULL)
+        {
+            *error = OS_ERR_NULL_POINTER;
+        }
 
-		return -1;
-	}
+        return -1;
+    }
 
-	spinlock_lock(&queue->lock);
+    err = spinlock_lock(&queue->lock);
+    if(err != OS_NO_ERR)
+    {
+        if(error != NULL)
+        {
+            *error = err;
+        }
+        return -1;
+    }
 
-	if(queue->init != 1)
-	{
-		if(error != NULL)
-		{
-			*error = OS_ERR_QUEUE_NON_INITIALIZED;
-		}
+    if(queue->init != 1)
+    {
+        if(error != NULL)
+        {
+            *error = OS_ERR_QUEUE_NON_INITIALIZED;
+        }
 
-		spinlock_unlock(&queue->lock);
+        err = spinlock_unlock(&queue->lock);
+        if(err != OS_NO_ERR)
+        {
+            if(error != NULL)
+            {
+                *error = err;
+            }
+            return -1;
+        }
 
-		return -1;
-	}
+        return -1;
+    }
 
-	queue_size = queue->length;
+    queue_size = queue->length;
 
-	spinlock_unlock(&queue->lock);
+    err = spinlock_unlock(&queue->lock);
+    if(err != OS_NO_ERR)
+    {
+        if(error != NULL)
+        {
+            *error = err;
+        }
+        return -1;
+    }
 
-	if(error != NULL)
-	{
-		*error = OS_NO_ERR;
-	}
+    if(error != NULL)
+    {
+        *error = OS_NO_ERR;
+    }
 
-	return queue_size;
+    return queue_size;
 }
 
-int8_t queue_isempty(queue_t *queue, OS_RETURN_E *error)
+int8_t queue_isempty(queue_t* queue, OS_RETURN_E* error)
 {
-	int32_t size = queue_length(queue, error);
-	if(size == -1)
-		return -1;
+    int32_t size = queue_length(queue, error);
+    if(size == -1)
+    {
+        return -1;
+    }
 
-	return (size == 0);
+    return (size == 0);
 }

@@ -18,23 +18,40 @@
 #include "../core/acpi.h"       /* acpi_get_io_apic_address */
 #include "../cpu/cpu.h"         /* mapped_io_read_32, mapped_io_write_32 */
 
-#include "../core/kernel_output.h"
-
 /* Header file */
 #include "io_apic.h"
 
-/* IO APIC base address */
-static uint8_t *io_apic_base_addr;
+/*******************************************************************************
+ * GLOBAL VARIABLES
+ ******************************************************************************/
 
+/* IO APIC base address */
+static uint8_t* io_apic_base_addr;
+
+/* IRQ redirection count */
 static uint32_t max_redirect_count;
 
-static void io_apic_write(const uint8_t reg, const uint32_t val)
+/*******************************************************************************
+ * FUNCTIONS
+ ******************************************************************************/
+
+/* Write to the IO APIC controller memory.
+ *
+ * @param reg The register to write.
+ * @param val The value to write to the register.
+ */
+__inline__ static void io_apic_write(const uint8_t reg, const uint32_t val)
 {
     mapped_io_write_32((uint32_t*)(io_apic_base_addr + IOREGSEL), reg);
     mapped_io_write_32((uint32_t*)(io_apic_base_addr + IOWIN), val);
 }
 
-static uint32_t io_apic_read(const uint8_t reg)
+/* Read into the IO APIC controller memory.
+ *
+ * @param reg The register to read.
+ * @returns The value contained in the register.
+ */
+__inline__ static uint32_t io_apic_read(const uint8_t reg)
 {
     mapped_io_write_32((uint32_t*)(io_apic_base_addr + IOREGSEL), reg);
     return mapped_io_read_32((uint32_t*)(io_apic_base_addr + IOWIN));
@@ -42,8 +59,8 @@ static uint32_t io_apic_read(const uint8_t reg)
 
 OS_RETURN_E set_IRQ_IO_APIC_mask(const uint32_t irq_number, const uint8_t enabled)
 {
-    uint32_t entry_lo = 0;
-    uint32_t entry_hi = 0;
+    uint32_t entry_lo   = 0;
+    uint32_t entry_hi   = 0;
     uint32_t actual_irq = 0;
 
     if(irq_number > max_redirect_count)
@@ -68,8 +85,8 @@ OS_RETURN_E set_IRQ_IO_APIC_mask(const uint32_t irq_number, const uint8_t enable
 
 OS_RETURN_E init_io_apic(void)
 {
-    uint32_t i;
-    uint32_t read_count;
+    uint32_t    i;
+    uint32_t    read_count;
     OS_RETURN_E err;
 
     /* Get IO APIC base address */

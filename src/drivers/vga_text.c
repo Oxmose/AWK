@@ -9,11 +9,10 @@
  * Version: 1.0
  *
  * VGA text mode driver.
- * Allows the kernel to display text and general ASCII characters to be 
- * displayed on the screen. 
+ * Allows the kernel to display text and general ASCII characters to be
+ * displayed on the screen.
  * Includes cursor management, screen colors management and other fancy
  * screen driver things.
- *
  ******************************************************************************/
 
 #include "../lib/stdint.h"     /* Generic int types */
@@ -25,6 +24,10 @@
 /* Header file */
 #include "vga_text.h"
 
+/*******************************************************************************
+ * GLOBAL VARIABLES
+ ******************************************************************************/
+
 /* Screen runtime parameters */
 static colorscheme_t screen_scheme = BG_BLACK | FG_WHITE;
 static cursor_t      screen_cursor;
@@ -33,7 +36,11 @@ static cursor_t      last_printed_cursor;
 /* Set the last column printed with a char */
 static uint8_t last_columns[SCREEN_LINE_SIZE] = {0};
 
-/* Return the memory address of the screen framebuffer position at the 
+/*******************************************************************************
+ * FUNCTIONS
+ ******************************************************************************/
+
+/* Return the memory address of the screen framebuffer position at the
  * coordinates
  * given as arguments.
  *
@@ -41,16 +48,17 @@ static uint8_t last_columns[SCREEN_LINE_SIZE] = {0};
  * @param line The line index of the coordinates.
  * @param column The column index of the coordinates.
  */
-__inline__ static uint16_t *get_framebuffer(uint8_t line, uint8_t column)
+__inline__ static uint16_t* get_framebuffer(const uint8_t line,
+                                            const uint8_t column)
 {
     /* Avoid overflow on text mode */
     if(line > SCREEN_LINE_SIZE - 1 || column > SCREEN_COL_SIZE -1)
     {
-        return (uint16_t *)(VGA_TEXT_FRAMEBUFFER);
+        return (uint16_t*)(VGA_TEXT_FRAMEBUFFER);
     }
 
     /* Returns the mem adress of the coordinates */
-    return (uint16_t *)(VGA_TEXT_FRAMEBUFFER + 2 * 
+    return (uint16_t*)(VGA_TEXT_FRAMEBUFFER + 2 *
            (column + line * SCREEN_COL_SIZE));
 }
 
@@ -61,10 +69,10 @@ __inline__ static uint16_t *get_framebuffer(uint8_t line, uint8_t column)
  * @param character The character to display on the screem.
  * @returns The error or success state.
  */
-static OS_RETURN_E print_char(const uint8_t line, const uint8_t column, 
-                       const char character)
+static OS_RETURN_E print_char(const uint8_t line, const uint8_t column,
+                              const char character)
 {
-    uint16_t *screen_mem;
+    uint16_t* screen_mem;
 
     if(line > SCREEN_LINE_SIZE - 1 || column > SCREEN_COL_SIZE - 1)
     {
@@ -88,12 +96,12 @@ static void process_char(const char character)
 {
     /* Write on serial */
     serial_write(COM1, character);
-    
+
     /* If character is a normal ASCII character */
     if(character > 31 && character < 127)
     {
         /* Display character and move cursor */
-        print_char(screen_cursor.y, screen_cursor.x++, 
+        print_char(screen_cursor.y, screen_cursor.x++,
                 character);
 
         /* Manage end of line cursor position */
@@ -107,7 +115,7 @@ static void process_char(const char character)
         if(screen_cursor.y >= SCREEN_LINE_SIZE)
         {
             scroll(SCROLL_DOWN, 1);
-            
+
         }
         else
         {
@@ -129,7 +137,7 @@ static void process_char(const char character)
                     {
                         put_cursor_at(screen_cursor.y, screen_cursor.x - 1);
                         last_columns[screen_cursor.y] = screen_cursor.x;
-                        print_char(screen_cursor.y, screen_cursor.x, ' '); 
+                        print_char(screen_cursor.y, screen_cursor.x, ' ');
                     }
                 }
                 else if(last_printed_cursor.y < screen_cursor.y)
@@ -138,18 +146,18 @@ static void process_char(const char character)
                     {
                         put_cursor_at(screen_cursor.y, screen_cursor.x - 1);
                         last_columns[screen_cursor.y] = screen_cursor.x;
-                        print_char(screen_cursor.y, screen_cursor.x, ' '); 
+                        print_char(screen_cursor.y, screen_cursor.x, ' ');
                     }
                     else
-                    {       
-                        if(last_columns[screen_cursor.y - 1] >= 
+                    {
+                        if(last_columns[screen_cursor.y - 1] >=
                                SCREEN_COL_SIZE)
                         {
                             last_columns[screen_cursor.y - 1] =
                                 SCREEN_COL_SIZE - 1;
                         }
-                                    
-                        put_cursor_at(screen_cursor.y - 1, 
+
+                        put_cursor_at(screen_cursor.y - 1,
                                       last_columns[screen_cursor.y - 1]);
                         print_char(screen_cursor.y, screen_cursor.x, ' ');
                     }
@@ -200,8 +208,10 @@ static void process_char(const char character)
 
 void clear_screen(void)
 {
-    uint32_t i, j;
+    uint32_t i;
+    uint32_t j;
     uint16_t blank = ' ' | (screen_scheme << 8);
+
     /* Clear all screen cases */
     for(i = 0; i < SCREEN_LINE_SIZE; ++i)
     {
@@ -213,8 +223,8 @@ void clear_screen(void)
     }
 }
 
-OS_RETURN_E put_cursor_at(uint8_t line, uint8_t column)
-{   
+OS_RETURN_E put_cursor_at(const uint8_t line, const uint8_t column)
+{
     int16_t cursor_position;
     /* Set new cursor position */
     screen_cursor.x = column;
@@ -228,12 +238,12 @@ OS_RETURN_E put_cursor_at(uint8_t line, uint8_t column)
 
     /* Send high part to the screen */
     outb(CURSOR_COMM_HIGH, SCREEN_COMM_PORT);
-    outb((int8_t)((cursor_position & 0xFF00) >> 8), SCREEN_DATA_PORT); 
+    outb((int8_t)((cursor_position & 0xFF00) >> 8), SCREEN_DATA_PORT);
 
     return OS_NO_ERR;
 }
 
-OS_RETURN_E save_cursor(cursor_t *buffer)
+OS_RETURN_E save_cursor(cursor_t* buffer)
 {
     if(buffer == NULL)
     {
@@ -283,7 +293,7 @@ void scroll(const SCROLL_DIRECTION_E direction, const uint8_t lines_count)
             /* Copy all the lines to the above one */
             for(i = 0; i < SCREEN_LINE_SIZE - 1; ++i)
             {
-                memmove(get_framebuffer(i, 0), get_framebuffer(i + 1, 0),  
+                memmove(get_framebuffer(i, 0), get_framebuffer(i + 1, 0),
                         sizeof(uint16_t) * SCREEN_COL_SIZE);
                 last_columns[i] = last_columns[i+1];
             }
@@ -315,7 +325,7 @@ void set_color_scheme(const colorscheme_t color_scheme)
     screen_scheme = color_scheme;
 }
 
-OS_RETURN_E save_color_scheme(colorscheme_t *buffer)
+OS_RETURN_E save_color_scheme(colorscheme_t* buffer)
 {
     if(buffer == NULL)
     {
@@ -328,7 +338,7 @@ OS_RETURN_E save_color_scheme(colorscheme_t *buffer)
     return OS_NO_ERR;
 }
 
-void console_putbytes(const char *string, const uint32_t size)
+void console_putbytes(const char* string, const uint32_t size)
 {
     /* Output each character of the string */
     uint32_t i;
@@ -339,7 +349,7 @@ void console_putbytes(const char *string, const uint32_t size)
     last_printed_cursor = screen_cursor;
 }
 
-void console_write_keyboard(const char *string, const uint32_t size)
+void console_write_keyboard(const char* string, const uint32_t size)
 {
     /* Output each character of the string */
     uint32_t i;

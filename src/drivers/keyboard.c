@@ -1,31 +1,33 @@
-/***************************************
+/*******************************************************************************
  *
- * File: keyboard_driver.c
+ * File: keyboard.c
  *
  * Author: Alexy Torres Aurora Dugo
  *
  * Date: 08/10/2017
  *
- * Version: 1.0
+ * Version: 1.5
  *
- * See: keyboard_driver.h
- *
- * Keyboard management for the kernel and the threads.
- */
-#include "pit.h"                   /* get_current_time */
+ * Keyboard driver (PS2/USB) for the kernel.
+ ******************************************************************************/
+
 #include "vga_text.h"              /* console_write_keyboard */
 #include "../cpu/cpu.h"            /* outb inb */
-#include "../core/interrupts.h"    /* register_interrupt, cpu_state, 
+#include "../core/interrupts.h"    /* register_interrupt, cpu_state,
                                     * stack_state, set_IRQ_mask, set_IRQ_EOI */
 #include "../core/scheduler.h"     /* lock_io, unlock_io */
 #include "../lib/stdint.h"         /* Generic int types */
 #include "../lib/stddef.h"         /* OS_RETURN_E, OS_EVENT_ID */
 #include "../lib/string.h"         /* memcpy */
 #include "../lib/stdio.h"          /* printf */
-#include "../sync/lock.h"          /* enable_interrupt, disable_interrupt */
+#include "../sync/lock.h"          /* spinlock */
 
 /* Header file */
 #include "keyboard.h"
+
+/*******************************************************************************
+ * GLOBAL VARIABLES
+ ******************************************************************************/
 
 /* Keyboard security */
 static uint8_t secure_input;
@@ -38,7 +40,7 @@ static uint8_t buffer_enabled;
 static uint32_t keyboard_flags;
 
 /* Keyboard buffer */
-static char keyboard_buffer;
+static char   keyboard_buffer;
 static lock_t buffer_lock;
 
 /* Keyboard map */
@@ -219,13 +221,20 @@ static const key_mapper_t qwerty_map =
     }
 };
 
+/*******************************************************************************
+ * FUNCTIONS
+ ******************************************************************************/
+
+/* Parse the keycode given as parameter and execute the corresponding action.
+ *
+ * @param keycode The keycode to parse.
+ */
 static void manage_keycode(const int8_t keycode)
 {
-
-    int8_t mod = 0;
-    int8_t shifted;
-    char character;
+    int8_t  shifted;
+    char    character;
     int32_t new_keycode;
+    int8_t  mod = 0;
 
     /* Manage push of release */
     if(keycode > 0)
@@ -247,23 +256,23 @@ static void manage_keycode(const int8_t keycode)
         /* Manage only set characters */
         if(!mod &&
            (qwerty_map.regular[keycode] || qwerty_map.shifted[keycode]))
-        {       
-            
+        {
+
             shifted = (keyboard_flags & KBD_LSHIFT) |
                       (keyboard_flags & KBD_RSHIFT);
-            character = (shifted > 0) ? 
+            character = (shifted > 0) ?
                          qwerty_map.shifted[keycode] :
                          qwerty_map.regular[keycode];
-            /* Save key */ 
+            /* Save key */
             if(buffer_enabled != 0)
             {
-                keyboard_buffer = character;                             
+                keyboard_buffer = character;
             }
 
-            /* Display character */  
+            /* Display character */
             if(display_keyboard)
-            {   
-                if(secure_input && 
+            {
+                if(secure_input &&
                     character != KEY_RETURN &&
                     character != KEY_BACKSPACE)
                 {
@@ -294,8 +303,14 @@ static void manage_keycode(const int8_t keycode)
     }
 }
 
-static void keyboard_interrupt_handler(cpu_state_t *cpu_state, uint32_t int_id, 
-                                       stack_state_t *stack_state)
+/* Keyboard IRQ handler, read the key value and manage thread blocked on IO.
+ *
+ * @param cpu_state The cpu registers before the interrupt.
+ * @param int_id The interrupt line that called the handler.
+ * @param stack_state The stack state before the interrupt.
+ */
+static void keyboard_interrupt_handler(cpu_state_t* cpu_state, uint32_t int_id,
+                                       stack_state_t* stack_state)
 {
     (void)cpu_state;
     (void)int_id;
@@ -317,7 +332,7 @@ static void keyboard_interrupt_handler(cpu_state_t *cpu_state, uint32_t int_id,
             /* Unlock threads waiting for keyboards */
             unlock_io(IO_KEYBOARD);
         }
-;    }
+    }
 
     set_IRQ_EOI(KEYBOARD_IRQ);
 }
@@ -335,7 +350,7 @@ OS_RETURN_E init_keyboard(void)
     spinlock_init(&buffer_lock);
 
     /* Init interuption settings */
-    err = register_interrupt_handler(KEYBOARD_INTERRUPT_LINE, 
+    err = register_interrupt_handler(KEYBOARD_INTERRUPT_LINE,
                                      keyboard_interrupt_handler);
     if(err != OS_NO_ERR)
     {
@@ -344,12 +359,12 @@ OS_RETURN_E init_keyboard(void)
 
     err = set_IRQ_mask(KEYBOARD_IRQ, 1);
 
-    return OS_NO_ERR;
+    return err;
 }
- 
-uint32_t read_keyboard(char *buffer, const uint32_t size)
+
+uint32_t read_keyboard(char* buffer, const uint32_t size)
 {
-    char read_char;
+    char     read_char;
     uint32_t read = 0;
 
     do
@@ -384,11 +399,11 @@ uint32_t read_keyboard(char *buffer, const uint32_t size)
     return read;
 }
 
-uint32_t secure_read_keyboard(char *buffer, const uint32_t size)
+uint32_t secure_read_keyboard(char* buffer, const uint32_t size)
 {
     /* Read string */
     uint32_t new_size = read_keyboard(buffer, size);
-    
+
     /* Secure output */
     if(new_size < size - 1)
     {
@@ -402,7 +417,7 @@ uint32_t secure_read_keyboard(char *buffer, const uint32_t size)
     return new_size;
 }
 
-void getch(char *character)
+void getch(char* character)
 {
     spinlock_lock(&buffer_lock);
 
@@ -419,14 +434,14 @@ void getch(char *character)
         lock_io(IO_KEYBOARD);
         spinlock_lock(&buffer_lock);
     }
-    
+
     *character = keyboard_buffer;
     keyboard_buffer = 0;
 
     /* Disable buffer */
     --buffer_enabled;
 
-    spinlock_unlock(&buffer_lock);    
+    spinlock_unlock(&buffer_lock);
 }
 
 void keyboard_enable_secure(void)

@@ -19,9 +19,10 @@
 #include "../lib/stddef.h"      /* OS_RETURN_E, NULL */
 #include "../core/interrupts.h" /* MIN_INTERRUPT_LINE */
 
-/**********************************
+/*******************************************************************************
  * CONSTANTS
- *********************************/
+ ******************************************************************************/
+
 #define IO_APIC_BASE_INTERRUPT_LINE MIN_INTERRUPT_LINE
 
 #define IO_APIC_MIN_IRQ_LINE 0
@@ -35,19 +36,29 @@
 #define IOAPICARB                       0x02
 #define IOREDTBL                        0x10
 
+/*******************************************************************************
+ * STRUCTURES
+ ******************************************************************************/
+
+
+/*******************************************************************************
+ * FUNCTIONS
+ ******************************************************************************/
 
 /* Init the IO-APIC by remapping the IRQ interrupts.
- * Disable all IRQ.
+ * Disables all IRQ.
+ *
  * @return The state or error code.
  */
 OS_RETURN_E init_io_apic(void);
 
-/* Set entry for the IO-APIC
+/* Set an entry for the IO-APIC vector.
+ *
  * @param irq_number The irq number to enable/disable.
  * @param enabled Must be set to 1 to enable the IRQ or 0 to disable the IRQ.
  * @return The state or error code.
  */
-OS_RETURN_E set_IRQ_IO_APIC_mask(const uint32_t irq_number, 
-	                             const uint8_t enabled);
+OS_RETURN_E set_IRQ_IO_APIC_mask(const uint32_t irq_number,
+                                 const uint8_t enabled);
 
 #endif /* __IO_APIC_H_ */

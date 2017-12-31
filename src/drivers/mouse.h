@@ -17,9 +17,9 @@
 #include "../lib/stdint.h"      /* Generic int types */
 #include "../lib/stddef.h"      /* OS_RETURN_E */
 
-/*********************************
- * CONSTANTS 
- ********************************/
+/*******************************************************************************
+ * CONSTANTS
+ ******************************************************************************/
 
 /* Mouse settings */
 #define MOUSE_COMM_PORT      0x64
@@ -42,15 +42,16 @@
 
 #define MOUSE_MAX_EVENT_COUNT 32
 
-/*********************************
+/*******************************************************************************
  * STRUCTURES
- ********************************/
+ ******************************************************************************/
+
 typedef struct mouse_state
 {
-	int32_t pos_x; /* Relative position compared to the previous position */
-	int32_t pos_y; /* Relative position compared to the previous position */
+    int32_t pos_x; /* Relative position compared to the previous position */
+    int32_t pos_y; /* Relative position compared to the previous position */
 
-	uint32_t flags;
+    uint32_t flags;
 } mouse_state_t;
 
 typedef struct mouse_event
@@ -61,9 +62,9 @@ typedef struct mouse_event
     uint8_t     enabled;
 } mouse_event_t;
 
-/********************************
+/*******************************************************************************
  * FUNCTIONS
- *******************************/
+ ******************************************************************************/
 
 /* Init mouse settings
  *
@@ -76,7 +77,7 @@ OS_RETURN_E init_mouse(void);
  * @param function The routine to execute when the period is reached.
  * @param event_id the OS_EVENT_ID buffer to receive the event id, may be -1 on
  * error.
- * @returns The error code. 
+ * @returns The error code.
  */
 OS_RETURN_E register_mouse_event(void (*function)(void),
                                  OS_EVENT_ID *event_id);
@@ -84,10 +85,15 @@ OS_RETURN_E register_mouse_event(void (*function)(void),
 /* Unregister a mouse event based on the event id given as parameter.
  *
  * @param event_id The even id to be unregistered.
- * @returns The error code. 
+ * @returns The error code.
  */
 OS_RETURN_E unregister_mouse_event(const OS_EVENT_ID event_id);
 
-OS_RETURN_E get_mouse_state(mouse_state_t *state);
+/* Copy the mouse state to the buffer given as parameter.
+ *
+ * @param state The buffer ready to receive the current mouse state.
+ * @return OS_NO_ERR on succes, an error is returned otherwise.
+ */
+OS_RETURN_E get_mouse_state(mouse_state_t* state);
 
 #endif /* __MOUSE_H_ */

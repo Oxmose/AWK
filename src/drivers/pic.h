@@ -10,7 +10,6 @@
  *
  * PIC (programmable interrupt controler) driver.
  * Allows to remmap the PIC IRQ, set the IRQs mask, manage EoI.
- *
  ******************************************************************************/
 
 #ifndef __PIC_H_
@@ -20,20 +19,21 @@
 #include "../lib/stddef.h"      /* OS_RETURN_E, NULL */
 #include "../core/interrupts.h" /* MIN_INTERRUPT_LINE */
 
-/**********************************
- * PIC constants
- *********************************/
+/*******************************************************************************
+ * CONSTANTS
+ ******************************************************************************/
+
 #define PIC_MASTER_COMM_PORT 0x20
 #define PIC_MASTER_DATA_PORT 0x21
 #define PIC_SLAVE_COMM_PORT  0xa0
 #define PIC_SLAVE_DATA_PORT  0xa1
 #define PIC_EOI              0x20
 
-#define PIC_ICW1_ICW4	    0x01
-#define PIC_ICW1_SINGLE	    0x02
-#define PIC_ICW1_INTERVAL4	0x04
-#define PIC_ICW1_LEVEL	    0x08
-#define PIC_ICW1_INIT	    0x10
+#define PIC_ICW1_ICW4        0x01
+#define PIC_ICW1_SINGLE      0x02
+#define PIC_ICW1_INTERVAL4   0x04
+#define PIC_ICW1_LEVEL       0x08
+#define PIC_ICW1_INIT        0x10
 
 #define PIC0_BASE_INTERRUPT_LINE MIN_INTERRUPT_LINE
 #define PIC1_BASE_INTERRUPT_LINE (MIN_INTERRUPT_LINE + 8)
@@ -43,6 +43,14 @@
 #define PIC_MAX_IRQ_LINE 15
 
 #define PIC_CASCADING_IRQ 2
+
+/*******************************************************************************
+ * STRUCTURES
+ ******************************************************************************/
+
+/*******************************************************************************
+ * FUNCTIONS
+ ******************************************************************************/
 
 /* Init the PIC by remapping the IRQ interrupts.
  * Disable al IRQ by reseting the IRQs mask.

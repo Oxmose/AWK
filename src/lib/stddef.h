@@ -16,22 +16,42 @@
 
 #include "stdint.h" /* Generic int types */
 
-#define NULL ((void *)0)
+/*******************************************************************************
+ * CONSTANTS
+ ******************************************************************************/
+ #define NULL ((void *)0)
+
+#ifdef NDEBUG
+
+#define assert(expr) ((void)0)
+
+#else
+
+#define assert(expr) \
+    ((void)((expr) ? 0 : \
+        (panic(__FILE__":%u: failed assertion `"#expr"'\n", \
+            __LINE__), 0)))
+
+#endif
+
+/*******************************************************************************
+ * STRUCTURES
+ ******************************************************************************/
 
 /* System return states */
-typedef enum __attribute__( ( packed, aligned( sizeof( uint16_t ) ) ) ) OS_RETURN 
+typedef enum __attribute__( ( packed, aligned( sizeof( uint16_t ) ) ) ) OS_RETURN
 {
     OS_NO_ERR                              = 0,
 
     OS_ERR_NULL_POINTER                    = 1,
     OS_ERR_OUT_OF_BOUND                    = 2,
-    
+
     OR_ERR_UNAUTHORIZED_INTERRUPT_LINE     = 3,
     OS_ERR_INTERRUPT_ALREADY_REGISTERED    = 4,
     OS_ERR_INTERRUPT_NOT_REGISTERED        = 5,
-    
+
     OS_ERR_NO_SUCH_IRQ_LINE                = 6,
-    
+
     OS_ERR_NO_MORE_FREE_EVENT              = 7,
     OS_ERR_NO_SUCH_ID                      = 8,
     OS_ERR_MALLOC                          = 9,
@@ -40,8 +60,8 @@ typedef enum __attribute__( ( packed, aligned( sizeof( uint16_t ) ) ) ) OS_RETUR
 
     OS_ERR_MUTEX_UNINITIALIZED             = 12,
     OS_ERR_SEM_UNINITIALIZED               = 13,
-    OS_ERR_MAILBOX_NON_INITIALIZED         = 14,                         
-    OS_ERR_QUEUE_NON_INITIALIZED           = 15, 
+    OS_ERR_MAILBOX_NON_INITIALIZED         = 14,
+    OS_ERR_QUEUE_NON_INITIALIZED           = 15,
 
     OS_ERR_NO_SEM_BLOCKED                  = 16,
     OS_ERR_NO_MUTEX_BLOCKED                = 17,
@@ -54,16 +74,16 @@ typedef enum __attribute__( ( packed, aligned( sizeof( uint16_t ) ) ) ) OS_RETUR
 
     OS_ERR_CHECKSUM_FAILED                 = 22,
     OS_ERR_ACPI_UNSUPPORTED                = 23,
+    OS_ACPI_NOT_INITIALIZED                = 24,
+    OS_ERR_NO_SUCH_LAPIC_ID                = 25,
 
-    OS_ERR_NO_SUCH_LAPIC_ID                = 24,
-    
-    OS_ERR_NO_SUCH_SERIAL_BAUDRATE         = 25,
-    OS_ERR_NO_SUCH_SERIAL_PARITY           = 26,
+    OS_ERR_NO_SUCH_SERIAL_BAUDRATE         = 26,
+    OS_ERR_NO_SUCH_SERIAL_PARITY           = 27,
 
-    OS_ERR_ATA_DEVICE_NOT_PRESENT          = 27,
-    OS_ERR_ATA_DEVICE_ERROR                = 28,
-    OS_ERR_ATA_BAD_SECTOR_NUMBER           = 29,
-    OS_ERR_ATA_SIZE_TO_HUGE                = 30,
+    OS_ERR_ATA_DEVICE_NOT_PRESENT          = 28,
+    OS_ERR_ATA_DEVICE_ERROR                = 29,
+    OS_ERR_ATA_BAD_SECTOR_NUMBER           = 30,
+    OS_ERR_ATA_SIZE_TO_HUGE                = 31,
 } OS_RETURN_E;
 
 typedef int32_t OS_EVENT_ID;
@@ -79,19 +99,5 @@ typedef __SIZE_TYPE__ size_t;
 #endif
 
 typedef __PTRDIFF_TYPE__ ptrdiff_t;
-
-#ifdef NDEBUG
-
-#define assert(expr) ((void)0)
-
-#else
-
-#define assert(expr) \
-	((void)((expr) ? 0 : \
-		(panic(__FILE__":%u: failed assertion `"#expr"'\n", \
-			__LINE__), 0)))
-
-#endif
-
 
 #endif /* __STDDEF_H_ */

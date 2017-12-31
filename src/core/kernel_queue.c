@@ -22,16 +22,24 @@
 /* Header include */
 #include "kernel_queue.h"
 
-OS_RETURN_E kernel_enqueue_thread(kernel_thread_t *thread, 
-                                  thread_queue_t *queue[2],
+/*******************************************************************************
+ * GLOBAL VARIABLES
+ ******************************************************************************/
+
+/*******************************************************************************
+ * FUNCTIONS
+ ******************************************************************************/
+
+OS_RETURN_E kernel_enqueue_thread(kernel_thread_t* thread,
+                                  thread_queue_t* queue[2],
                                   const uint32_t priority)
 {
-    thread_queue_t *node;
-    thread_queue_t *cursor;
+    thread_queue_t* node;
+    thread_queue_t* cursor;
 
     #ifdef DEBUG_KERNEL_QUEUE
-    kernel_serial_debug("Enqueue kernel thread 0x%08x in queue 0x%08x\n", 
-                        (uint32_t)thread, 
+    kernel_serial_debug("Enqueue kernel thread 0x%08x in queue 0x%08x\n",
+                        (uint32_t)thread,
                         (uint32_t)queue);
     #endif
 
@@ -89,14 +97,15 @@ OS_RETURN_E kernel_enqueue_thread(kernel_thread_t *thread,
             queue[1] = node;
         }
     }
+
     return OS_NO_ERR;
 }
 
-kernel_thread_t* kernel_dequeue_thread(thread_queue_t *queue[2],  
-                                       OS_RETURN_E *error)
+kernel_thread_t* kernel_dequeue_thread(thread_queue_t* queue[2],
+                                       OS_RETURN_E* error)
 {
-    thread_queue_t *node;
-    kernel_thread_t *thread;
+    thread_queue_t*  node;
+    kernel_thread_t* thread;
 
     #ifdef DEBUG_KERNEL_QUEUE
     kernel_serial_debug("Dequeue kernel thread in queue 0x%08x\n",
@@ -138,14 +147,14 @@ kernel_thread_t* kernel_dequeue_thread(thread_queue_t *queue[2],
     return thread;
 }
 
-OS_RETURN_E kernel_remove_thread(thread_queue_t *queue[2], 
-                                 kernel_thread_t *thread)
+OS_RETURN_E kernel_remove_thread(thread_queue_t* queue[2],
+                                 kernel_thread_t* thread)
 {
-    thread_queue_t *node;
-    
+    thread_queue_t* node;
+
     #ifdef DEBUG_KERNEL_QUEUE
-    kernel_serial_debug("Remove kernel thread 0x%08x in queue 0x%08x\n", 
-                        (uint32_t)thread, 
+    kernel_serial_debug("Remove kernel thread 0x%08x in queue 0x%08x\n",
+                        (uint32_t)thread,
                         (uint32_t)queue);
     #endif
 

@@ -17,31 +17,10 @@
 #include "../lib/stdint.h" /* Generic int types */
 #include "../lib/stddef.h" /* OS_RETURN_E */
 
-/******************************
- * CPU INFO STRUCTURE 
- *****************************/
-typedef struct cpu_info
-{
-    int32_t cpu_flags;
-} cpu_info_t;
-
-typedef enum cpuid_requests {
-  CPUID_GETVENDORSTRING,
-  CPUID_GETFEATURES,
-  CPUID_GETTLB,
-  CPUID_GETSERIAL,
- 
-  CPUID_INTELEXTENDED=0x80000000,
-  CPUID_INTELFEATURES,
-  CPUID_INTELBRANDSTRING,
-  CPUID_INTELBRANDSTRINGMORE,
-  CPUID_INTELBRANDSTRINGEND,
-} cpuid_requests;
-
-/******************************
+/*******************************************************************************
  * CONSTANTS
- *****************************/
-#define MAX_CPU_COUNT 16
+ ******************************************************************************/
+ #define MAX_CPU_COUNT 16
 
 #define CPU_FLAG_CPUID_CAPABLE 0x00200000
 
@@ -197,45 +176,56 @@ typedef enum cpuid_requests {
 #define SIG_VORTEX_ECX    0x436f5320
 #define SIG_VORTEX_EDX    0x36387865
 
-/******************************
+/*******************************************************************************
+ * STRUCTURES
+ ******************************************************************************/
+
+typedef struct cpu_info
+{
+    int32_t cpu_flags;
+} cpu_info_t;
+
+typedef enum cpuid_requests {
+  CPUID_GETVENDORSTRING,
+  CPUID_GETFEATURES,
+  CPUID_GETTLB,
+  CPUID_GETSERIAL,
+
+  CPUID_INTELEXTENDED=0x80000000,
+  CPUID_INTELFEATURES,
+  CPUID_INTELBRANDSTRING,
+  CPUID_INTELBRANDSTRINGMORE,
+  CPUID_INTELBRANDSTRINGEND,
+} cpuid_requests;
+
+
+/*******************************************************************************
  * FUNCTIONS
- *****************************/
-
-#define __MOVSB__(dest, src, n)                \
-    __asm__ __volatile__(                      \
-        "rep\n"                                \
-        "\tmovsb"                              \
-        : "=S" (src), "=D" (dest), "=c" (n)    \
-        : "0" (src), "1" (dest), "2" (n)       \
-        : "memory", "cc")
-
-#define __MOVSL__(dest, src, n)                \
-    __asm__ __volatile__(                      \
-        "rep\n"                                \
-        "\tmovsl"                              \
-        : "=S" (src), "=D" (dest), "=c" (n)    \
-        : "0" (src), "1" (dest), "2" (n)       \
-        : "memory", "cc")
+ ******************************************************************************/
 
 /* Fill the structure in parameters with the CPU information
  *
  * @returns The succes state or the error code.
  * @param info The pointer to the structure to receive the data.
  */
-OS_RETURN_E get_cpu_info(cpu_info_t *info);
+OS_RETURN_E get_cpu_info(cpu_info_t* info);
 
 /* Tell is the CPUID intruction is available on the CPU.
- * 
+ *
  * @returns 1 if the cpuid instruction is available, 0 otherwise.
  */
 int8_t cpuid_capable(void);
 
 /* Return highest supported input value for cpuid instruction.  ext can
-   be either 0x0 or 0x80000000 to return highest supported value for
-   basic or extended cpuid information.  Function returns 0 if cpuid
-   is not supported or whatever cpuid returns in eax register.  If sig
-   pointer is non-null, then first four bytes of the SIG
-   (as found in ebx register) are returned in location pointed by sig.  */
+ * be either 0x0 or 0x80000000 to return highest supported value for
+ * basic or extended cpuid information.  Function returns 0 if cpuid
+ * is not supported or whatever cpuid returns in eax register.  If sig
+ * pointer is non-null, then first four bytes of the SIG
+ * (as found in ebx register) are returned in location pointed by sig.
+ *
+ * @param ext The opperation code for the CPUID instruction.
+ * @returns The highest supported input value for cpuid instruction.
+ */
 __inline__ static uint32_t get_cpuid_max (uint32_t ext)
 {
     uint32_t regs[4];
@@ -252,9 +242,14 @@ __inline__ static uint32_t get_cpuid_max (uint32_t ext)
 }
 
 /* Return cpuid data for requested cpuid leaf, as found in returned
-   eax, ebx, ecx and edx registers.  The function checks if cpuid is
-   supported and returns 1 for valid cpuid information or 0 for
-   unsupported cpuid leaf.  All pointers are required to be non-null.  */
+ *  eax, ebx, ecx and edx registers.  The function checks if cpuid is
+ * supported and returns 1 for valid cpuid information or 0 for
+ * unsupported cpuid leaf.  All pointers are required to be non-null.
+ *
+ * @param code The opperation code for the CPUID instruction.
+ * @param regs The register used to store the CPUID instruction return.
+ * @returns 1 in case of succes, 0 otherwise.
+ */
 
 __inline__ static int32_t cpuid (uint32_t code,
                                  uint32_t regs[4])
@@ -294,7 +289,10 @@ __inline__ static void hlt(void)
 }
 
 
-/* Save CPU flags */
+/* Save CPU flags
+ *
+ * @returns The current flags that were saved.
+ */
 __inline__ static uint32_t save_flags(void)
 {
     uint32_t flags;
@@ -310,7 +308,10 @@ __inline__ static uint32_t save_flags(void)
     return flags;
 }
 
-/* Restore CPU flags */
+/* Restore CPU flags
+ *
+ * @param flags The flags to be restored.
+ */
 __inline__ static void restore_flags(uint32_t flags)
 {
     __asm__ __volatile__(
@@ -395,7 +396,7 @@ __inline__ static uint32_t inl(uint16_t port)
  * @param oldval The old value to swap.
  * @param newval The new value to be swapped.
  */
-__inline__ static uint32_t cpu_compare_and_swap(volatile uint32_t *p_val, 
+__inline__ static uint32_t cpu_compare_and_swap(volatile uint32_t* p_val,
         int oldval, int newval)
 {
     uint8_t prev;
@@ -412,14 +413,14 @@ __inline__ static uint32_t cpu_compare_and_swap(volatile uint32_t *p_val,
  *
  * @param lock The spinlock to apply the test on.
  */
-__inline__ static int cpu_test_and_set(volatile uint32_t *lock)
+__inline__ static int cpu_test_and_set(volatile uint32_t* lock)
 {
-    return cpu_compare_and_swap(lock, 0, 1); 
+        return cpu_compare_and_swap(lock, 0, 1);
 }
 
-/* Read the current value of the CPU's time-stamp counter and store into 
- * EDX:EAX. The time-stamp counter contains the amount of clock ticks that have 
- * elapsed since the last CPU reset. The value is stored in a 64-bit MSR and is 
+/* Read the current value of the CPU's time-stamp counter and store into
+ * EDX:EAX. The time-stamp counter contains the amount of clock ticks that have
+ * elapsed since the last CPU reset. The value is stored in a 64-bit MSR and is
  * incremented after each clock cycle.
  *
  * @return The CPU's time stampe
@@ -431,60 +432,64 @@ __inline__ static uint64_t rdtsc()
     return ret;
 }
 
-__inline__ static void mapped_io_write_8(void *addr, const uint8_t value)
+/*******************************************************************************
+ * Memory mapped IOs, avoid compilers to reorganize memory access
+ *
+ * So instead of doing : *addr = value, do
+ * mapped_io_write(addr, value)
+ ******************************************************************************/
+
+__inline__ static void mapped_io_write_8(void* addr, const uint8_t value)
 {
-  *(volatile uint8_t*)(addr) = value;
+    *(volatile uint8_t*)(addr) = value;
 }
 
-__inline__ static void mapped_io_write_16(void *addr, const uint16_t value)
+__inline__ static void mapped_io_write_16(void* addr, const uint16_t value)
 {
-  *(volatile uint16_t*)(addr) = value;
+    *(volatile uint16_t*)(addr) = value;
 }
 
-__inline__ static void mapped_io_write_32(void *addr, const uint32_t value)
+__inline__ static void mapped_io_write_32(void* addr, const uint32_t value)
 {
-  *(volatile uint32_t*)(addr) = value;
+    *(volatile uint32_t*)(addr) = value;
 }
 
-__inline__ static void mapped_io_write_64(void *addr, const uint64_t value)
+__inline__ static void mapped_io_write_64(void* addr, const uint64_t value)
 {
-  *(volatile uint64_t*)(addr) = value;
+    *(volatile uint64_t*)(addr) = value;
 }
 
-
-__inline__ static uint8_t mapped_io_read_8(const void *addr)
+__inline__ static uint8_t mapped_io_read_8(const void* addr)
 {
-  return *(volatile uint8_t*)(addr);
+    return *(volatile uint8_t*)(addr);
 }
 
-__inline__ static uint16_t mapped_io_read_16(const void *addr)
+__inline__ static uint16_t mapped_io_read_16(const void* addr)
 {
-  return *(volatile uint16_t*)(addr);
+    return *(volatile uint16_t*)(addr);
 }
 
-__inline__ static uint32_t mapped_io_read_32(const void *addr)
+__inline__ static uint32_t mapped_io_read_32(const void* addr)
 {
-  return *(volatile uint32_t*)(addr);
+    return *(volatile uint32_t*)(addr);
 }
 
-__inline__ static uint64_t mapped_io_read_64(const void *addr)
+__inline__ static uint64_t mapped_io_read_64(const void* addr)
 {
-  return *(volatile uint64_t*)(addr);
+    return *(volatile uint64_t*)(addr);
 }
 
-
-
-__inline__ static void mapped_io_read_sized(const volatile void *addr, 
-                                          void *value, 
+__inline__ static void mapped_io_read_sized(const volatile void* addr,
+                                          void* value,
                                           uint32_t size)
 {
-  volatile uint8_t *base = (volatile uint8_t*)addr;
-    uint8_t *dest = (uint8_t*)value;
-    
+    volatile uint8_t* base = (volatile uint8_t*)addr;
+    uint8_t* dest = (uint8_t*)value;
+
     /* Tranfert memory until size limit is reached */
     while (size > 0)
     {
-        *dest =  *base;
+        *dest = *base;
         ++base;
         ++dest;
         --size;

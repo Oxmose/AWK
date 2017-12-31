@@ -10,7 +10,7 @@ thread_t locked_th;
 
 void *locked_th_func(void *args)
 {
-	(void)args;
+    (void)args;
     printf("TH2 STARTS\n");
     printf("TH2 PRIo: %d\n", get_priority());
     spinlock_lock(&lock);
@@ -25,7 +25,7 @@ void *locked_th_func(void *args)
 void *launch_func_block(void*args)
 {
     (void)args;
-	printf("TH1 STARTS\n");
+    printf("TH1 STARTS\n");
     printf("TH1 PRIo: %d\n", get_priority());
     spinlock_lock(&lock);
 
@@ -42,7 +42,7 @@ void *launch_func_block(void*args)
 int test_dyn_sched(void)
 {
     spinlock_init(&lock);
-	if(create_thread(&launch, launch_func_block, 32, "thread_func", (void*)1) != OS_NO_ERR)
+    if(create_thread(&launch, launch_func_block, 32, "thread_func", (void*)1) != OS_NO_ERR)
     {
         set_color_scheme(FG_RED | BG_BLACK);
         printf("[RDLK]");
@@ -56,5 +56,5 @@ int test_dyn_sched(void)
         printf("Error while waiting thread! [%d]\n", err);
         perror(err);
     }
-	return 0;
+    return 0;
 }

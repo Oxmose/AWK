@@ -12,16 +12,16 @@
  * Used to set the GDT, IDT, TSS and other structures.
  ******************************************************************************/
 
-
-
 #include "../lib/string.h"         /* memset */
 #include "../lib/stdint.h"         /* Generic int types */
-#include "../core/kernel_output.h" /* kernel_success, 
-                                    * kernel_print_unsigned_hex 
-                                    */
+#include "../core/kernel_output.h" /* kernel_success */
 
 /* Header file */
 #include "cpu_settings.h"
+
+/*******************************************************************************
+ * GLOBAL VARIABLES
+ ******************************************************************************/
 
 /* Kernel GDT structure */
 extern uint64_t cpu_gdt[GDT_ENTRY_COUNT];
@@ -33,10 +33,17 @@ extern uint64_t cpu_idt[IDT_ENTRY_COUNT];
 extern uint16_t cpu_idt_size;
 extern uint32_t cpu_idt_base;
 
-/*************************************
- * Kernel assembly handlers selection
- ************************************/
-static uint32_t get_handler(unsigned int int_id)
+/*******************************************************************************
+ * FUNCTIONS
+ ******************************************************************************/
+
+/* Return the address of the handler attached to the interrupt ID given as
+ * parameter.
+ *
+ * @param int_id This interrupt ID to get the handler of.
+ * @returns The address of the interrupt handler.
+ */
+static uint32_t get_handler(const uint32_t int_id)
 {
     switch(int_id)
     {
@@ -558,21 +565,18 @@ static uint32_t get_handler(unsigned int int_id)
     }
 }
 
-/**********************************
- * Kernel CPU settings functions
- *********************************/
-
-/* Format data given as parameter into a standard GDT entry. The result is 
+/* Format data given as parameter into a standard GDT entry. The result is
  * directly written in the memory pointed by the entry parameter.
+ *
  * @param entry The pointer to the entry structure to format.
  * @param base  The base address of the segment for the GDT entry.
  * @param limit The limit address of the segment for the GDT entry.
  * @param type  The type of segment for the GDT entry.
  * @param flags The flags to be set for the GDT entry.
  */
-static void format_gdt_entry(uint64_t *entry, 
-                      const uint32_t base, const uint32_t limit,  
-                      const unsigned char type, const uint32_t flags)
+static void format_gdt_entry(uint64_t* entry,
+                             const uint32_t base, const uint32_t limit,
+                             const unsigned char type, const uint32_t flags)
 {
     uint32_t lo_part = 0;
     uint32_t hi_part = 0;
@@ -582,25 +586,25 @@ static void format_gdt_entry(uint64_t *entry,
      */
     lo_part = ((base & 0xFFFF) << 16) | (limit & 0xFFFF);
 
-    /* 
+    /*
      * High part[7;0] = Base[23;16]
      */
     hi_part = (base >> 16) & 0xFF;
-    /* 
+    /*
      * High part[11;8] = Type[3;0]
      */
     hi_part |= (type & 0xF) << 8;
-    /* 
+    /*
      * High part[15;12] = Seg_Present[1;0]Privilege[2;0]Descriptor_Type[1;0]
      * High part[23;20] = Granularity[1;0]Op_Size[1;0]L[1;0]AVL[1;0]
      */
     hi_part |= flags & 0x00F0F000;
-    
-    /* 
+
+    /*
      * High part[19;16] = Limit[19;16]
      */
     hi_part |= limit & 0xF0000;
-    /* 
+    /*
      * High part[31;24] = Base[31;24]
      */
     hi_part |= base & 0xFF000000;
@@ -609,15 +613,16 @@ static void format_gdt_entry(uint64_t *entry,
     *entry = lo_part | (((uint64_t) hi_part) << 32);
 }
 
-/* Format data given as parameter into a standard IDT entry. The result is 
+/* Format data given as parameter into a standard IDT entry. The result is
  * directly written in the memory pointed by the entry parameter.
+ *
  * @param entry The pointer to the entry structure to format.
  * @param handler The handler function for the IDT entry.
  * @param type  The type of segment for the IDT entry.
  * @param flags The flags to be set for the IDT entry.
  */
-static void format_idt_entry(uint64_t *entry, 
-                             uint32_t handler,
+static void format_idt_entry(uint64_t* entry,
+                             const uint32_t handler,
                              const unsigned char type, const uint32_t flags)
 {
     uint32_t lo_part = 0;
@@ -628,10 +633,10 @@ static void format_idt_entry(uint64_t *entry,
      */
     lo_part = (KERNEL_CS << 16) | (handler & 0x0000FFFF);
 
-    /* 
+    /*
      * High part[7;0] = Handler[31;16] Flags[4;0] Type[4;0] ZERO[7;0]
      */
-    hi_part = (handler & 0xFFFF0000) | 
+    hi_part = (handler & 0xFFFF0000) |
               ((flags & 0xF0) << 8) | ((type & 0x0F) << 8);
 
     /* Set the value of the entry */
@@ -641,34 +646,34 @@ static void format_idt_entry(uint64_t *entry,
 void setup_gdt(void)
 {
     /* Set the kernel code descriptor */
-    uint32_t kernel_code_seg_flags = GDT_FLAG_GRANULARITY_4K | 
+    uint32_t kernel_code_seg_flags = GDT_FLAG_GRANULARITY_4K |
                                      GDT_FLAG_32_BIT_SEGMENT |
-                                     GDT_FLAG_PL0 | 
+                                     GDT_FLAG_PL0 |
                                      GDT_FLAG_SEGMENT_PRESENT |
                                      GDT_FLAG_CODE_TYPE;
 
-    uint32_t kernel_code_seg_type =  GDT_TYPE_EXECUTABLE | 
-                                     GDT_TYPE_READABLE | 
+    uint32_t kernel_code_seg_type =  GDT_TYPE_EXECUTABLE |
+                                     GDT_TYPE_READABLE |
                                      GDT_TYPE_PROTECTED;
 
     /* Set the kernel data descriptor */
-    uint32_t kernel_data_seg_flags = GDT_FLAG_GRANULARITY_4K | 
+    uint32_t kernel_data_seg_flags = GDT_FLAG_GRANULARITY_4K |
                                      GDT_FLAG_32_BIT_SEGMENT |
-                                     GDT_FLAG_PL0 | 
+                                     GDT_FLAG_PL0 |
                                      GDT_FLAG_SEGMENT_PRESENT |
                                      GDT_FLAG_DATA_TYPE;
 
-    uint32_t kernel_data_seg_type =  GDT_TYPE_WRITABLE | 
+    uint32_t kernel_data_seg_type =  GDT_TYPE_WRITABLE |
                                      GDT_TYPE_GROW_DOWN;
 
     /* Blank the GDT, set the NULL descriptor */
     memset(cpu_gdt, 0, sizeof(uint64_t) * GDT_ENTRY_COUNT);
 
-    format_gdt_entry(&cpu_gdt[KERNEL_CS / 8], 
+    format_gdt_entry(&cpu_gdt[KERNEL_CS / 8],
                      KERNEL_CODE_SEGMENT_BASE, KERNEL_CODE_SEGMENT_LIMIT,
-                     kernel_code_seg_type, kernel_code_seg_flags);   
+                     kernel_code_seg_type, kernel_code_seg_flags);
 
-    format_gdt_entry(&cpu_gdt[KERNEL_DS / 8], 
+    format_gdt_entry(&cpu_gdt[KERNEL_DS / 8],
                      KERNEL_DATA_SEGMENT_BASE, KERNEL_DATA_SEGMENT_LIMIT,
                      kernel_data_seg_type, kernel_data_seg_flags);
 
@@ -699,7 +704,7 @@ void setup_idt(void)
 
     /* Set interrupt handlers for each interrupt
      * This allows to redirect all interrupts to a global handler in C
-     */    
+     */
     for(i = 0; i < IDT_ENTRY_COUNT; ++i)
     {
         format_idt_entry(&cpu_idt[i],

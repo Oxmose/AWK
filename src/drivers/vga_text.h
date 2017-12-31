@@ -9,8 +9,8 @@
  * Version: 1.0
  *
  * VGA text mode driver.
- * Allows the kernel to display text and general ASCII characters to be 
- * displayed on the screen. 
+ * Allows the kernel to display text and general ASCII characters to be
+ * displayed on the screen.
  * Includes cursor management, screen colors management and other fancy
  * screen driver things.
  *
@@ -21,6 +21,10 @@
 
 #include "../lib/stdint.h" /* Generic int types */
 #include "../lib/stddef.h" /* OS_RETURN_E, NULL */
+
+/*******************************************************************************
+ * CONSTANTS
+ ******************************************************************************/
 
 /* SCREEN SETTINGS */
 #define VGA_TEXT_FRAMEBUFFER   0xB8000
@@ -69,8 +73,12 @@
 #define FG_WHITE            0x0F
 /* COLOR DEFINITIONS END */
 
+/*******************************************************************************
+ * STRUCTURES
+ ******************************************************************************/
+
 /* Cursor structure */
-typedef struct cursor 
+typedef struct cursor
 {
     uint8_t x;
     uint8_t y;
@@ -86,6 +94,10 @@ typedef enum SCROLL_DIRECTION
 /* Screen color scheme typedef */
 typedef uint8_t colorscheme_t;
 
+/*******************************************************************************
+ * FUNCTIONS
+ ******************************************************************************/
+
 /* Clear the screen by printing space character on black background */
 void clear_screen(void);
 
@@ -99,20 +111,20 @@ OS_RETURN_E put_cursor_at(const uint8_t line, const uint8_t column);
 
 /* Save the cursor attributes in the buffer given as paramter
  *
- * @param buffer The cursor buffer in which the current cursor possition is 
+ * @param buffer The cursor buffer in which the current cursor possition is
  * going to be saved.
  */
-OS_RETURN_E save_cursor(cursor_t *buffer);
+OS_RETURN_E save_cursor(cursor_t* buffer);
 
 /* Restore The cursor attributes from the buffer given as parameter.
- * 
- * @param buffer The cursor buffer containing the new coordinates of the 
+ *
+ * @param buffer The cursor buffer containing the new coordinates of the
  * cursor.
  */
 OS_RETURN_E restore_cursor(const cursor_t buffer);
 
 /* Scroll in the desired direction of lines_count lines.
- * 
+ *
  * @param direction The direction to whoch the console should be scrolled.
  * @param lines_count The number of lines to scroll.
  */
@@ -129,20 +141,20 @@ void set_color_scheme(const colorscheme_t color_sheme);
  * @param buffer The buffer that will receive the current color scheme used by
  * the screen console.
  */
-OS_RETURN_E save_color_scheme(colorscheme_t *buffer);
+OS_RETURN_E save_color_scheme(colorscheme_t* buffer);
 
 /* Used by the kernel to display strings on the screen.
  *
  * @param str The string to display on the screen.
  * @param len The length of the string to display.
  */
-void console_putbytes(const char *str, const uint32_t len);
+void console_putbytes(const char* str, const uint32_t len);
 
 /* Used by the kernel to display strings on the screen from a keyboard input.
  *
  * @param str The string to display on the screen from a keybaord input.
  * @param len The length of the string to display.
  */
-void console_write_keyboard(const char *string, const uint32_t size);
+void console_write_keyboard(const char* str, const uint32_t len);
 
 #endif /* __VGA_TEXT_H_ */

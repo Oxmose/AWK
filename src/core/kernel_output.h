@@ -15,45 +15,64 @@
 #ifndef __KERNEL_OUTPUT_H_
 #define __KERNEL_OUTPUT_H_
 
-/* Print the desired string to the screen. Add a [SYS] tag at the 
- * beggining of the string before printing it.
- *
- * @param __format The format string to output.
- */
-void kernel_printf(const char *__format, ...) __attribute__((format (printf, 1, 2)));
+/*******************************************************************************
+ * CONSTANTS
+ ******************************************************************************/
 
-/* Print the desired string to the screen. Add a red [ERROR] tag at the 
- * beggining of the string before printing it.
- *
- * @param __format The format string to output.
- */
-void kernel_error(const char *__format, ...) __attribute__((format (printf, 1, 2)));
+/*******************************************************************************
+ * STRUCTURES
+ ******************************************************************************/
 
-/* Print the desired string to the screen. Add a green [OK] tag at the 
- * beggining of the string before printing it.
- *
- * @param __format The format string to output.
- */
-void kernel_success(const char *__format, ...) __attribute__((format (printf, 1, 2)));
+/*******************************************************************************
+ * FUNCTIONS
+ ******************************************************************************/
 
-/* Print the desired string to the screen. Add a cyan [INFO] tag at the 
+/* Print the desired string to the screen. Add a [SYS] tag at the
  * beggining of the string before printing it.
  *
  * @param __format The format string to output.
  */
-void kernel_info(const char *__format, ...) __attribute__((format (printf, 1, 2)));
+void kernel_printf(const char *__format, ...)
+	__attribute__((format (printf, 1, 2)));
 
-/* Print the desired string to the screen. Add a yellow [DEBUG] tag at the 
+/* Print the desired string to the screen. Add a red [ERROR] tag at the
  * beggining of the string before printing it.
  *
  * @param __format The format string to output.
  */
-void kernel_debug(const char *__format, ...) __attribute__((format (printf, 1, 2)));
+void kernel_error(const char *__format, ...)
+	__attribute__((format (printf, 1, 2)));
 
-/* Print the desired string to the serial port. Add a [DEBUG] tag at the 
+/* Print the desired string to the screen. Add a green [OK] tag at the
  * beggining of the string before printing it.
  *
  * @param __format The format string to output.
  */
-void kernel_serial_debug(const char *__format, ...) __attribute__((format (printf, 1, 2)));
+void kernel_success(const char *__format, ...)
+	__attribute__((format (printf, 1, 2)));
+
+/* Print the desired string to the screen. Add a cyan [INFO] tag at the
+ * beggining of the string before printing it.
+ *
+ * @param __format The format string to output.
+ */
+void kernel_info(const char *__format, ...)
+	__attribute__((format (printf, 1, 2)));
+
+/* Print the desired string to the screen. Add a yellow [DEBUG] tag at the
+ * beggining of the string before printing it.
+ *
+ * @param __format The format string to output.
+ */
+void kernel_debug(const char *__format, ...)
+	__attribute__((format (printf, 1, 2)));
+
+/* Print the desired string to the serial port. Add a [DEBUG] tag at the
+ * beggining of the string before printing it.
+ *
+ * @param __format The format string to output.
+ */
+void kernel_serial_debug(const char *__format, ...)
+	__attribute__((format (printf, 1, 2)));
+
 #endif /* __KERNEL_OUTPUT_H_ */

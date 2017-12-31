@@ -1,17 +1,15 @@
-/***************************************
+/*******************************************************************************
  *
- * File: semaphore.h
+ * File: semaphore.c
  *
  * Author: Alexy Torres Aurora Dugo
  *
- * Date: 06/10/2017
+ * Date: 17/12/2017
  *
- * Version: 1.0
- *
- * See: semaphore.c
+ * Version: 2.0
  *
  * Semaphore synchronization primitive implemantation.
- */
+ ******************************************************************************/
 
 #include "../lib/stddef.h"         /* OS_RETURN_E */
 #include "../lib/stdint.h"         /* Generic int types */
@@ -21,11 +19,18 @@
 #include "../core/scheduler.h"     /* lock_thread, unlock_thread */
 #include "lock.h"                  /* lock_t */
 
-
 /* Header include */
 #include "semaphore.h"
 
-OS_RETURN_E sem_init(semaphore_t *sem, const int32_t init_level)
+/*******************************************************************************
+ * GLOBAL VARIABLES
+ ******************************************************************************/
+
+/*******************************************************************************
+ * FUNCTIONS
+ ******************************************************************************/
+
+OS_RETURN_E sem_init(semaphore_t* sem, const int32_t init_level)
 {
     if(sem == NULL)
     {
@@ -45,10 +50,10 @@ OS_RETURN_E sem_init(semaphore_t *sem, const int32_t init_level)
     return OS_NO_ERR;
 }
 
-OS_RETURN_E sem_destroy(semaphore_t *sem)
+OS_RETURN_E sem_destroy(semaphore_t* sem)
 {
-    kernel_thread_t *thread;
-    OS_RETURN_E err;
+    kernel_thread_t* thread;
+    OS_RETURN_E      err;
 
     /* Check if semaphore is initialized */
     if(sem == NULL)
@@ -89,11 +94,11 @@ OS_RETURN_E sem_destroy(semaphore_t *sem)
     }
 
     spinlock_unlock(&sem->lock);
-    
+
     return OS_NO_ERR;
 }
 
-OS_RETURN_E sem_pend(semaphore_t *sem)
+OS_RETURN_E sem_pend(semaphore_t* sem)
 {
     OS_RETURN_E err;
 
@@ -118,16 +123,16 @@ OS_RETURN_E sem_pend(semaphore_t *sem)
     while(sem != NULL &&
           sem->init == 1 &&
           sem->sem_level < 1)
-    {   
-        err = kernel_enqueue_thread(get_active_thread(), 
+    {
+        err = kernel_enqueue_thread(get_active_thread(),
                                     sem->waiting_threads, 0);
-                
+
         if(err != OS_NO_ERR)
         {
             kernel_error("Could not enqueue thread from semaphore[%d]\n", err);
             kernel_panic();
         }
-        
+
         spinlock_unlock(&sem->lock);
 
         err = lock_thread(SEM);
@@ -136,7 +141,7 @@ OS_RETURN_E sem_pend(semaphore_t *sem)
             kernel_error("Could not lock thread from semaphore[%d]\n", err);
             kernel_panic();
         }
-        
+
         spinlock_lock(&sem->lock);
     }
 
@@ -155,11 +160,11 @@ OS_RETURN_E sem_pend(semaphore_t *sem)
     return OS_NO_ERR;
 }
 
-OS_RETURN_E sem_post(semaphore_t *sem)
+OS_RETURN_E sem_post(semaphore_t* sem)
 {
-    kernel_thread_t *thread;
-    OS_RETURN_E err;
-    
+    kernel_thread_t* thread;
+    OS_RETURN_E      err;
+
     /* Check if semaphore is initialized */
     if(sem == NULL)
     {
@@ -181,7 +186,7 @@ OS_RETURN_E sem_post(semaphore_t *sem)
     /* Check if we can unlock a blocked thread on the semaphore */
     if(sem->sem_level > 0)
     {
-        if((thread = kernel_dequeue_thread(sem->waiting_threads, &err)) 
+        if((thread = kernel_dequeue_thread(sem->waiting_threads, &err))
             != NULL)
         {
             if(err != OS_NO_ERR)
@@ -215,7 +220,7 @@ OS_RETURN_E sem_post(semaphore_t *sem)
     return OS_NO_ERR;
 }
 
-OS_RETURN_E sem_try_pend(semaphore_t *sem, int8_t *value)
+OS_RETURN_E sem_try_pend(semaphore_t* sem, int8_t* value)
 {
     /* Check if semaphore is initialized */
     if(sem == NULL || value == NULL)
@@ -237,7 +242,7 @@ OS_RETURN_E sem_try_pend(semaphore_t *sem, int8_t *value)
      */
     if(sem != NULL &&
        sem->sem_level < 1)
-    {   
+    {
         *value = sem->sem_level;
 
         spinlock_unlock(&sem->lock);
@@ -248,7 +253,7 @@ OS_RETURN_E sem_try_pend(semaphore_t *sem, int8_t *value)
     {
         *value = --sem->sem_level;
     }
-    else 
+    else
     {
         spinlock_unlock(&sem->lock);
 

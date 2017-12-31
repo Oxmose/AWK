@@ -8,10 +8,7 @@
  *
  * Version: 1.0
  *
- * PIT (Programmable interval timer) driver
- * System main timer management. Allows to define system ticks.
- * The PIT is only used to call the scheduler.
- *
+ * PIT (Programmable interval timer) driver.
  ******************************************************************************/
 
 #ifndef __PIT_H_
@@ -22,9 +19,9 @@
 #include "../core/interrupts.h"       /* SCHED_TIMER_INTERRUPT_LINE,
                                          MIN_INTERRUPT_LINE */
 
-/*****************************************
+/*******************************************************************************
  * CONSTANTS
- ****************************************/
+ ******************************************************************************/
 
 /* System pit settings */
 #define PIT_QUARTZ_FREQ    0x1234DD
@@ -34,9 +31,14 @@
 #define PIT_FREQ           100
 #define PIT_IRQ            0
 
-/************************************
- * FUNCTIONS 
- ***********************************/
+/*******************************************************************************
+ * STRUCTURES
+ ******************************************************************************/
+
+/*******************************************************************************
+ * FUNCTIONS
+ ******************************************************************************/
+
 /* Init pit settings
  *
  * @returns The error or success state.

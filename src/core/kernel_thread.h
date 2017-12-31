@@ -6,9 +6,9 @@
  *
  * Date: 03/10/2017
  *
- * Version: 1.0
+ * Version: 1.5
  *
- * Kernel thread structure definitions 
+ * Kernel thread structure definitions
  ******************************************************************************/
 
 #ifndef __KERNEL_THREAD_H_
@@ -20,11 +20,13 @@
 /* Forward declaration */
 struct thread_queue;
 
+/*******************************************************************************
+ * CONSTANTS
+ ******************************************************************************/
+
 /* Thread settings */
 #define THREAD_MAX_NAME_LENGTH  64
 #define THREAD_STACK_SIZE       8192 /* 32 Kb */
-#define THREAD_MEMORY_SIZE      sizeof(scheduler_thread_t);
-#define THREAD_MAX_STATE_LENGTH 10
 
 /* Thread init values */
 #define THREAD_INIT_EFLAGS 0x202 // INT | PARITY
@@ -40,6 +42,10 @@ struct thread_queue;
 #define THREAD_INIT_ES     KERNEL_DS
 #define THREAD_INIT_FS     KERNEL_DS
 #define THREAD_INIT_GS     KERNEL_DS
+
+/*******************************************************************************
+ * STRUCTURES
+ ******************************************************************************/
 
 /* Thread states */
 typedef enum THREAD_STATE
@@ -62,44 +68,57 @@ typedef enum BLOCK_TYPE
     IO_KEYBOARD
 } BLOCK_TYPE_E;
 
+/* Kernel thread structure */
 typedef struct kernel_thread
 {
+    /* General thread's settings */
     int32_t          pid;
     int32_t          ppid;
     char             name[THREAD_MAX_NAME_LENGTH];
-
     uint32_t         priority;
 
-    void             *args;
-    void             *(*function)(void*);
-    void             *ret_val;
+    /* Thread routine, arguments and return value */
+    void*            args;
+    void*            (*function)(void*);
+    void*            ret_val;
 
     THREAD_STATE_E   state;
 
+    /* Thread specific registers */
     uint32_t         esp;
     uint32_t         ebp;
     uint32_t         eip;
 
+    /* Thread kernel stack */
     uint32_t         stack[THREAD_STACK_SIZE];
 
+    /* Wake up time for the sleeping thread */
     uint32_t         wakeup_time;
 
+    /* Thread block management */
     BLOCK_TYPE_E     block_type;
     uint32_t         io_req_time;
 
-    struct kernel_thread *joining_thread;
+    /* Thread pointer that is joining the thread */
+    struct kernel_thread* joining_thread;
 
-    struct thread_queue *children[2]; 
+    /* Thread's children */
+    struct thread_queue* children[2];
 
+    /* Statistics (scheduler) */
     uint32_t         last_sched;
     uint32_t         full_consume;
 
-    /* Stats  TODO GETTERS */
+    /* Statistics */
     uint32_t start_time;
     uint32_t end_time;
     uint32_t exec_time;
 } kernel_thread_t;
 
 typedef kernel_thread_t* thread_t;
+
+/*******************************************************************************
+ * FUNCTIONS
+ ******************************************************************************/
 
 #endif /* __THREAD_H_ */

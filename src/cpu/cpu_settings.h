@@ -17,9 +17,9 @@
 
 #include "../lib/stdint.h" /* Generic int types */
 
-/**********************************
- * Kernel CPU constants
- *********************************/
+/*******************************************************************************
+ * CONSTANTS
+ ******************************************************************************/
 
 /* GDT Settings */
 #define GDT_ENTRY_COUNT 3
@@ -71,6 +71,14 @@
 #define IDT_TYPE_TASK_GATE 0x05
 #define IDT_TYPE_INT_GATE  0x0E
 #define IDT_TYPE_TRAP_GATE 0x0F
+
+/*******************************************************************************
+ * STRUCTURES
+ ******************************************************************************/
+
+/*******************************************************************************
+ * FUNCTIONS
+ ******************************************************************************/
 
 /**************************************
  * Kernel assembly interrupt handlers
@@ -331,10 +339,6 @@ extern void interrupt_handler_252(void);
 extern void interrupt_handler_253(void);
 extern void interrupt_handler_254(void);
 extern void interrupt_handler_255(void);
-
-/**********************************
- * Kernel CPU functions 
- *********************************/
 
 /* Setup a flat GDT for the kernel. Fills the entries in the GDT table and load
  * the new GDT. Set the segment registers (CS, DS, ES, FS, GS, SS).
