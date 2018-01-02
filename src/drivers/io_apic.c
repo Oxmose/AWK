@@ -14,7 +14,7 @@
 
 #include "../lib/stdint.h"      /* Generic int types */
 #include "../lib/stddef.h"      /* OS_RETURN_E, NULL */
-#include "../core/interrupts.h" /* MIN_INTERRUPT_LINE */
+#include "../core/interrupts.h" /* INT_IRQ_OFFSET */
 #include "../core/acpi.h"       /* acpi_get_io_apic_address */
 #include "../cpu/cpu.h"         /* mapped_io_read_32, mapped_io_write_32 */
 
@@ -72,7 +72,7 @@ OS_RETURN_E set_IRQ_IO_APIC_mask(const uint32_t irq_number, const uint8_t enable
     actual_irq = acpi_get_remmaped_irq(irq_number);
 
     /* Set the interrupt line */
-    entry_lo |= irq_number + MIN_INTERRUPT_LINE;
+    entry_lo |= irq_number + INT_IRQ_OFFSET;
 
     /* Set enable mask */
     entry_lo |= (~enabled & 0x1) << 16;

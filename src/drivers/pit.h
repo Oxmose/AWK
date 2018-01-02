@@ -16,8 +16,6 @@
 
 #include "../lib/stdint.h"            /* Generioc int types */
 #include "../lib/stddef.h"            /* OS_RETURN_E, OS_EVENT_ID*/
-#include "../core/interrupts.h"       /* SCHED_TIMER_INTERRUPT_LINE,
-                                         MIN_INTERRUPT_LINE */
 
 /*******************************************************************************
  * CONSTANTS
@@ -28,8 +26,9 @@
 #define PIT_COMM_PORT      0x34
 #define PIT_DATA_PORT      0x40
 #define PIT_COMM_SET_FREQ  0x43
-#define PIT_FREQ           100
-#define PIT_IRQ            0
+#define PIT_INIT_FREQ      100
+#define PIT_MIN_FREQ       20
+#define PIT_MAX_FREQ       8000
 
 /*******************************************************************************
  * STRUCTURES
@@ -39,7 +38,7 @@
  * FUNCTIONS
  ******************************************************************************/
 
-/* Init pit settings
+/* Init PIT settings and disable interrupts for the PIT.
  *
  * @returns The error or success state.
  */
@@ -60,10 +59,40 @@ uint32_t get_pit_current_uptime(void);
  */
 uint32_t get_pit_tick_count(void);
 
-/* Returns tick count since the last call to this function
+/* Enables PIT ticks by clearing the IRQ mask.
  *
- * @returns Tick count since the last call to this function
+ * @return OS_NO_ERR is returned is successful, an error is returned otherwise.
  */
-uint32_t get_pit_cpu_tick_count(void);
+OS_RETURN_E enable_pit(void);
+
+/* Disables PIT ticks by seting the IRQ mask
+ *
+ * @return OS_NO_ERR is returned is successful, an error is returned otherwise.
+ */
+OS_RETURN_E disable_pit(void);
+
+/* Set the PIT tick frequency, the value must be between 20Hz and 8000Hz
+ *
+ * @param freq The new frequency to set to the PIT.
+ * @return OS_NO_ERR is returned is successful, an error is returned otherwise.
+ */
+OS_RETURN_E set_pit_freq(const uint32_t freq);
+
+/* Set the PIT tick handler.
+ *
+ * @param handler The handler for the PIT interrupt.
+ * @return OS_NO_ERR is returned is successful, an error is returned otherwise.
+ */
+OS_RETURN_E set_pit_handler(void(*handler)(
+                                 cpu_state_t*,
+                                 uint32_t,
+                                 stack_state_t*
+                                 ));
+
+/* Remove the current PIT interrupt handler.
+ *
+ * @return OS_NO_ERR is returned is successful, an error is returned otherwise.
+ */
+OS_RETURN_E remove_pit_handler(void);
 
 #endif /* __PIT_H_ */

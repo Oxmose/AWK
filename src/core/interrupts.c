@@ -120,8 +120,7 @@ OS_RETURN_E init_kernel_interrupt(void)
     #endif
 
     /* Get LAPIC availability */
-    /* TODO */
-    lapic_capable = 0;
+    lapic_capable = acpi_get_lapic_available();
 
     #ifdef DEBUG_INTERRUPT
     kernel_serial_debug("Interrupt LAPIC TIMER available: %d\n", lapic_capable);
@@ -278,7 +277,7 @@ void update_tick(void)
 {
     if(lapic_capable == 1)
     {
-        /* TODO */
+        update_lapic_tick();
     }
     else
     {
@@ -315,8 +314,7 @@ uint32_t get_current_uptime(void)
 {
     if(lapic_capable == 1)
     {
-        /* TODO */
-        return 0;
+        return get_lapic_current_uptime();
     }
     else
     {
@@ -328,8 +326,7 @@ uint32_t get_tick_count(void)
 {
     if(lapic_capable == 1)
     {
-        /* TODO */
-        return 0;
+        return get_lapic_tick_count();
     }
     else
     {

@@ -163,6 +163,12 @@ static void* idle_sys(void* args)
     kernel_serial_debug("IDLE Started\n");
     #endif
 
+    kernel_info("Interrupts unleached\n");
+    kernel_printf("=================================== Welcome! ===============\
+====================\n");
+
+    sti();
+
     /* We create the init thread */
     err = create_thread(&init_thread, init_func,
                         KERNEL_HIGHEST_PRIORITY, "init\0", args);
@@ -171,10 +177,6 @@ static void* idle_sys(void* args)
         kernel_error("Error while creating INIT thread [%d]\n", err);
         kernel_panic();
     }
-
-    kernel_info("Interrupts unleached\n");
-    kernel_printf("=================================== Welcome! ===============\
-====================\n");
 
     /* Halt forever, hlt for energy consumption */
     while(1 < 2)
@@ -394,9 +396,6 @@ static void schedule_int(cpu_state_t *cpu_state, uint32_t int_id,
     OS_RETURN_E err;
     (void) stack_state;
 
-    /* Update TIMER tick count */
-    update_tick();
-
 #if SCHEDULE_DYN_PRIORITY
 
     if(active_thread != &idle_thread && active_thread != init_thread)
@@ -468,6 +467,10 @@ static void schedule_int(cpu_state_t *cpu_state, uint32_t int_id,
 
     if(int_id == sched_hw_int_line)
     {
+
+        /* Update TIMER tick count */
+        update_tick();
+
         /* Send EOI signal */
         err = set_IRQ_EOI(sched_irq);
         if(err != OS_NO_ERR)
@@ -642,7 +645,8 @@ OS_RETURN_E sleep(const unsigned int time_ms)
     active_thread->state = SLEEPING;
 
     #ifdef DEBUG_SCHED
-    //kernel_serial_debug("Thread %d asleep\n", active_thread->pid);
+   // kernel_serial_debug("Thread %d asleep until %d\n", active_thread->pid,
+     //  active_thread->wakeup_time );
     #endif
 
     schedule();

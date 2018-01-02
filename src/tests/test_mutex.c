@@ -18,7 +18,7 @@ uint32_t lock_res;
 
 void *mutex_thread_1(void *args)
 {
-    for(int i = 0; i < 100000; ++i)
+    for(int i = 0; i < 10000000; ++i)
     {
         if(mutex_pend(&mutex1))
         {
@@ -36,7 +36,6 @@ void *mutex_thread_1(void *args)
             printf("Failed to post mutex1 1\n");
             return NULL;
         }
-        sleep(1);
     }
     printf(" (T1 END) ");
     (void )args;
@@ -44,7 +43,7 @@ void *mutex_thread_1(void *args)
 }
 void *mutex_thread_2(void *args)
 {
-    for(int i = 0; i < 100000; ++i)
+    for(int i = 0; i < 10000000; ++i)
     {
         if(mutex_pend(&mutex1))
         {
@@ -63,7 +62,6 @@ void *mutex_thread_2(void *args)
             printf("Failed to post mutex1 2\n");
             return NULL;
         }
-        sleep(1);
     }
     printf(" (T2 END) ");
     (void )args;
@@ -178,6 +176,6 @@ int test_mutex(void)
         printf("Error while waiting thread! [%d]\n", err);
         return -1;
     }
-    printf("\n");
-    return lock_res != 200000;
+    printf("Lock res = %d\n", lock_res);
+    return lock_res != 20000000;
 }

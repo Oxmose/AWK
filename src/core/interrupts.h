@@ -24,18 +24,25 @@
  * CONSTANTS
  ******************************************************************************/
 
-#define MIN_INTERRUPT_LINE 0x20
-#define MAX_INTERRUPT_LINE (IDT_ENTRY_COUNT - 2)
+#define INT_IRQ_OFFSET      0x30
+#define MIN_INTERRUPT_LINE  0x20
+#define MAX_INTERRUPT_LINE  (IDT_ENTRY_COUNT - 2)
 
 #define SPURIOUS_INTERRUPT_LINE (IDT_ENTRY_COUNT - 1)
 
-#define PIT_IRQ_LINE       0
-#define PIT_INTERRUPT_LINE MIN_INTERRUPT_LINE
-#define RTC_IRQ_LINE       8
-#define RTC_INTERRUPT_LINE (MIN_INTERRUPT_LINE + RTC_IRQ_LINE)
+#define PIT_IRQ_LINE         0
+#define PIT_INTERRUPT_LINE   (INT_IRQ_OFFSET + PIT_IRQ_LINE)
+#define KBD_IRQ_LINE         1
+#define KBD_INTERRUPT_LINE   (INT_IRQ_OFFSET + KBD_IRQ_LINE)
+#define RTC_IRQ_LINE         8
+#define RTC_INTERRUPT_LINE   (INT_IRQ_OFFSET + RTC_IRQ_LINE)
+#define MOUSE_IRQ_LINE       12
+#define MOUSE_INTERRUPT_LINE (INT_IRQ_OFFSET + MOUSE_IRQ_LINE)
 
-#define LAPIC_TIMER_INTERRUPT_LINE  0x30
-#define SCHEDULER_SW_INT_LINE       0x31
+
+#define LAPIC_TIMER_INTERRUPT_LINE  0x20
+#define SCHEDULER_SW_INT_LINE       0x21
+#define PANIC_INT_LINE              0x2A
 
 /*******************************************************************************
  * STRUCTURES

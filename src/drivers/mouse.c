@@ -212,9 +212,9 @@ static void mouse_interrupt_handler(cpu_state_t* cpu_state, uint32_t int_id,
         }
     }
 
-    if(int_id == MOUSE_INTERRUPT_LINE_PS2)
+    if(int_id == MOUSE_INTERRUPT_LINE)
     {
-        set_IRQ_EOI(MOUSE_IRQ_PS2);
+        set_IRQ_EOI(MOUSE_IRQ_LINE);
     }
 }
 
@@ -253,7 +253,7 @@ OS_RETURN_E init_mouse(void)
     }
 
     /* Set PS2 interrupt handler */
-    err = register_interrupt_handler(MOUSE_INTERRUPT_LINE_PS2,
+    err = register_interrupt_handler(MOUSE_INTERRUPT_LINE,
                                      mouse_interrupt_handler);
     if(err != OS_NO_ERR)
     {
@@ -261,7 +261,7 @@ OS_RETURN_E init_mouse(void)
     }
 
     /* Set PS2 IRQ */
-    err = set_IRQ_mask(MOUSE_IRQ_PS2, 1);
+    err = set_IRQ_mask(MOUSE_IRQ_LINE, 1);
 
     return err;
 }

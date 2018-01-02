@@ -17,7 +17,7 @@
 
 #include "../lib/stdint.h"      /* Generic int types */
 #include "../lib/stddef.h"      /* OS_RETURN_E, NULL */
-#include "../core/interrupts.h" /* MIN_INTERRUPT_LINE */
+#include "../core/interrupts.h" /* INT_IRQ_OFFSET */
 
 /*******************************************************************************
  * CONSTANTS
@@ -35,8 +35,8 @@
 #define PIC_ICW1_LEVEL       0x08
 #define PIC_ICW1_INIT        0x10
 
-#define PIC0_BASE_INTERRUPT_LINE MIN_INTERRUPT_LINE
-#define PIC1_BASE_INTERRUPT_LINE (MIN_INTERRUPT_LINE + 8)
+#define PIC0_BASE_INTERRUPT_LINE INT_IRQ_OFFSET
+#define PIC1_BASE_INTERRUPT_LINE (INT_IRQ_OFFSET + 8)
 
 
 #define PIC_MIN_IRQ_LINE 0

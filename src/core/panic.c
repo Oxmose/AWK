@@ -12,7 +12,7 @@
  * and the interrupt ID and cause.
  ******************************************************************************/
 
-#include "interrupts.h"    /* cpu_state_t, stack_state_t */
+#include "interrupts.h"    /* cpu_state_t, stack_state_t, PANIC_INT_LINE */
 #include "kernel_output.h" /* kernel_printf */
 #include "../lib/stdint.h" /* Generic int types */
 #include "../cpu/cpu.h"    /* hlt cli */

@@ -25,9 +25,6 @@
 #define MOUSE_COMM_PORT      0x64
 #define MOUSE_DATA_PORT      0x60
 
-#define MOUSE_INTERRUPT_LINE_PS2 44
-#define MOUSE_IRQ_PS2            12
-
 #define MOUSE_ABIT   0x02
 #define MOUSE_BBIT   0x01
 #define MOUSE_WRITE  0xD4

@@ -109,7 +109,7 @@ void* draw_logo(void *args)
 	            }
 	            if(j % 5 == 0)
 	                limit -= 8;
-	            sleep(20);
+	            sleep(1);
 	        }
 
 	    }
@@ -129,7 +129,7 @@ void* draw_logo(void *args)
 	            }
 	            if(j % 5 == 0)
 	                limit -= 8;
-	            sleep(20);
+	            sleep(1);
 	        }
 
 	    }

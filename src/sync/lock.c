@@ -11,8 +11,10 @@
  * Basic lock and synchronization primitives
  ******************************************************************************/
 
-#include "../cpu/cpu.h"    /* cpu_test_and_set */
-#include "../lib/stddef.h" /* OS_RETURN_E */
+#include "../cpu/cpu.h"         /* cpu_test_and_set */
+#include "../lib/stdint.h"      /* Generic int types */
+#include "../lib/stddef.h"      /* OS_RETURN_E */
+#include "../core/interrupts.h" /* enable_interrupt, disable_interrupt */
 
 /* Header file */
 #include "lock.h"
@@ -32,13 +34,19 @@ OS_RETURN_E spinlock_lock(lock_t* lock)
         return OS_ERR_NULL_POINTER;
     }
 
+#ifdef KERNEL_MONOCORE
+    disable_interrupt();
+    *lock = 1;
+#else
     while(cpu_test_and_set(lock) == 1);
+#endif
 
     return OS_NO_ERR;
 }
 
 OS_RETURN_E spinlock_unlock(lock_t* lock)
 {
+
     if(lock == NULL)
     {
         return OS_ERR_NULL_POINTER;
@@ -46,10 +54,24 @@ OS_RETURN_E spinlock_unlock(lock_t* lock)
 
     *lock = 0;
 
+#ifdef KERNEL_MONOCORE
+    enable_interrupt();
+#endif
+
     return OS_NO_ERR;
 }
 
 OS_RETURN_E spinlock_init(lock_t* lock)
 {
+    if(lock == NULL)
+    {
+        return OS_ERR_NULL_POINTER;
+    }
+
+#ifdef KERNEL_MONOCORE
+    *lock = 0;
+    return OS_NO_ERR;
+#else
     return spinlock_unlock(lock);
+#endif
 }

@@ -27,8 +27,6 @@
 /* Keyboard settings */
 #define KEYBOARD_COMM_PORT      0x64
 #define KEYBOARD_DATA_PORT      0x60
-#define KEYBOARD_INTERRUPT_LINE 33
-#define KEYBOARD_IRQ            1
 
 #define KEYBOARD_BUFFER_SIZE 512
 

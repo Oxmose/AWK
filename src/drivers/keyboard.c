@@ -334,7 +334,7 @@ static void keyboard_interrupt_handler(cpu_state_t* cpu_state, uint32_t int_id,
         }
     }
 
-    set_IRQ_EOI(KEYBOARD_IRQ);
+    set_IRQ_EOI(KBD_IRQ_LINE);
 }
 
 OS_RETURN_E init_keyboard(void)
@@ -350,14 +350,14 @@ OS_RETURN_E init_keyboard(void)
     spinlock_init(&buffer_lock);
 
     /* Init interuption settings */
-    err = register_interrupt_handler(KEYBOARD_INTERRUPT_LINE,
+    err = register_interrupt_handler(KBD_INTERRUPT_LINE,
                                      keyboard_interrupt_handler);
     if(err != OS_NO_ERR)
     {
         return err;
     }
 
-    err = set_IRQ_mask(KEYBOARD_IRQ, 1);
+    err = set_IRQ_mask(KBD_IRQ_LINE, 1);
 
     return err;
 }

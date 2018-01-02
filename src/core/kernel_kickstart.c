@@ -118,14 +118,6 @@ void kernel_kickstart(void)
         kernel_panic();
     }
 
-    /* Register SERIAL */
-    err = register_driver(init_serial, "SERIAL");
-    if(err != OS_NO_ERR)
-    {
-        kernel_error("SERIAL driver registration error [%d]\n", err);
-        kernel_panic();
-    }
-
     /* Register PIC */
     err = register_driver(init_pic, "PIC");
     if(err != OS_NO_ERR)
@@ -134,15 +126,12 @@ void kernel_kickstart(void)
         kernel_panic();
     }
 
-    if(acpi_get_lapic_available() == 1)
+    /* Register PIT */
+    err = register_driver(init_pit, "PIT");
+    if(err != OS_NO_ERR)
     {
-        /* Init Local APIC */
-        err = register_driver(init_lapic, "LAPIC");
-        if(err != OS_NO_ERR)
-        {
-            kernel_error("LAPIC driver registration error [%d]\n", err);
-            kernel_panic();
-        }
+        kernel_error("PIT driver registration error [%d]\n", err);
+        kernel_panic();
     }
 
     if(acpi_get_io_apic_available() == 1)
@@ -158,12 +147,15 @@ void kernel_kickstart(void)
         }
     }
 
-    /* Register PIT */
-    err = register_driver(init_pit, "PIT");
-    if(err != OS_NO_ERR)
+    if(acpi_get_lapic_available() == 1)
     {
-        kernel_error("PIT driver registration error [%d]\n", err);
-        kernel_panic();
+        /* Init Local APIC */
+        err = register_driver(init_lapic, "LAPIC");
+        if(err != OS_NO_ERR)
+        {
+            kernel_error("LAPIC driver registration error [%d]\n", err);
+            kernel_panic();
+        }
     }
 
     /* Register RTC */
@@ -171,6 +163,14 @@ void kernel_kickstart(void)
     if(err != OS_NO_ERR)
     {
         kernel_error("RTC driver registration error [%d]\n", err);
+        kernel_panic();
+    }
+
+     /* Register SERIAL */
+    err = register_driver(init_serial, "SERIAL");
+    if(err != OS_NO_ERR)
+    {
+        kernel_error("SERIAL driver registration error [%d]\n", err);
         kernel_panic();
     }
 
@@ -206,9 +206,10 @@ void kernel_kickstart(void)
         kernel_panic();
     }
 
+    //enable_pit();
+
     /* Init scheduler, should never come back */
     err = init_scheduler();
-
     kernel_error("SCHED Initialization error [%d]\n", err);
     kernel_panic();
 }

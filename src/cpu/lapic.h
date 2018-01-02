@@ -80,6 +80,11 @@
 /* Destination Field */
 #define ICR_DESTINATION_SHIFT           24
 
+#define LAPIC_TIMER_MODE_PERIODIC       0x20000
+#define LAPIC_DIVIDER_16                0x3
+#define LAPIC_TIMER_SCHED_FREQUENCY     1000
+#define APIC_LVT_INT_MASKED             0x10000
+
 /*******************************************************************************
  * STRUCTURES
  ******************************************************************************/
@@ -124,5 +129,20 @@ OS_RETURN_E lapic_send_ipi_startup(const uint32_t lapic_id,
  * @return OS_NO_ERR on success, an error otherwise.
  */
 OS_RETURN_E set_INT_LAPIC_EOI(const uint32_t interrupt_line);
+
+/* Uptade tick count and uptime */
+void update_lapic_tick(void);
+
+/* Return current uptime
+ *
+ * @returns The current uptime in seconds.
+ */
+uint32_t get_lapic_current_uptime(void);
+
+/* Return tick count since the system started
+ *
+ * @returns Tick count since the system started
+ */
+uint32_t get_lapic_tick_count(void);
 
 #endif /* __LAPIC_H_ */
