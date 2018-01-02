@@ -54,7 +54,6 @@ static void dummy_handler(cpu_state_t* cpu_state, uint32_t int_id,
     (void)int_id;
     (void)stack_state;
 
-    kernel_serial_debug("TICK");
     /* DUMMY */
     set_IRQ_EOI(PIT_IRQ_LINE);
 }

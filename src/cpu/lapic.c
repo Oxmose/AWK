@@ -266,8 +266,6 @@ void update_lapic_tick(void)
 {
     ++tick_count;
     uptime += 1000 / LAPIC_TIMER_SCHED_FREQUENCY;
-    if(uptime % 1000 == 0)
-        kernel_serial_debug("UPTIME %d\n", uptime);
 }
 
 uint32_t get_lapic_tick_count(void)

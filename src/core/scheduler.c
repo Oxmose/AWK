@@ -205,9 +205,6 @@ static void thread_exit(void)
 
     spinlock_lock(&sched_lock);
 
-    /* Set new thread state */
-    active_thread->state = ZOMBIE;
-
     #ifdef DEBUG_SCHED
     kernel_serial_debug("Exit thread %d\n", active_thread->pid);
     #endif
@@ -218,11 +215,17 @@ static void thread_exit(void)
 
         /* Schedule thread, should never return since the state is zombie */
         schedule();
+
+        return;
     }
 
     if(active_thread->joining_thread != NULL &&
        active_thread->joining_thread->state == JOINING)
     {
+        #ifdef DEBUG_SCHED
+        kernel_serial_debug("Woke up joining thread %d\n",
+            active_thread->joining_thread->pid);
+        #endif
         active_thread->joining_thread->state = READY;
 
         err = kernel_enqueue_thread(active_thread->joining_thread,
@@ -234,6 +237,9 @@ static void thread_exit(void)
             kernel_panic();
         }
     }
+
+    /* Set new thread state */
+    active_thread->state = ZOMBIE;
 
     err = kernel_enqueue_thread(active_thread, zombie_threads_table, 0);
     if(err != OS_NO_ERR)
@@ -467,7 +473,6 @@ static void schedule_int(cpu_state_t *cpu_state, uint32_t int_id,
 
     if(int_id == sched_hw_int_line)
     {
-
         /* Update TIMER tick count */
         update_tick();
 
@@ -808,6 +813,8 @@ OS_RETURN_E wait_thread(thread_t thread, void** ret_val)
         return OS_ERR_NO_SUCH_ID;
     }
 
+    spinlock_lock(&sched_lock);
+
     #ifdef DEBUG_SCHED
     kernel_serial_debug("Thread %d waiting for thread %d\n",
                          active_thread->pid,
@@ -822,8 +829,6 @@ OS_RETURN_E wait_thread(thread_t thread, void** ret_val)
         {
             *ret_val = thread->ret_val;
         }
-
-        spinlock_lock(&sched_lock);
 
         kernel_remove_thread(active_thread->children, thread);
         kernel_remove_thread(zombie_threads_table, thread);
@@ -847,15 +852,17 @@ OS_RETURN_E wait_thread(thread_t thread, void** ret_val)
     thread->joining_thread = active_thread;
     active_thread->state   = JOINING;
 
+    spinlock_unlock(&sched_lock);
+
     /* Schedule thread */
     schedule();
+
+    spinlock_lock(&sched_lock);
 
     if(ret_val != NULL)
     {
         *ret_val = thread->ret_val;
     }
-
-    spinlock_lock(&sched_lock);
 
     kernel_remove_thread(active_thread->children, thread);
     kernel_remove_thread(zombie_threads_table, thread);
