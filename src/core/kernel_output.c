@@ -13,8 +13,10 @@
  ******************************************************************************/
 
 #include "../lib/stdio.h"        /* vprintf, sprintf */
+#include "../lib/string.h"       /* memset */
 #include "../drivers/vga_text.h" /* save_color_scheme, set_color_sheme */
 #include "../drivers/serial.h"   /* serial_write */
+#include "interrupts.h"          /* get_current_uptime */
 
 /* Header file */
 #include "kernel_output.h"
@@ -139,15 +141,13 @@ void kernel_serial_debug(const char* fmt, ...)
     uint32_t          i;
     char              char_buffer[2048] = {0};
 
-    /* Print tag */
-    serial_write(SERIAL_DEBUG_PORT, '[');
-    serial_write(SERIAL_DEBUG_PORT, 'D');
-    serial_write(SERIAL_DEBUG_PORT, 'E');
-    serial_write(SERIAL_DEBUG_PORT, 'B');
-    serial_write(SERIAL_DEBUG_PORT, 'U');
-    serial_write(SERIAL_DEBUG_PORT, 'G');
-    serial_write(SERIAL_DEBUG_PORT, ']');
-    serial_write(SERIAL_DEBUG_PORT, ' ');
+    sprintf(char_buffer, "[DEBUG %d]", get_current_uptime());
+    for(i = 0; i < 2048 && char_buffer[i] != 0; ++i)
+    {
+        serial_write(SERIAL_DEBUG_PORT, char_buffer[i]);
+    }
+
+    memset(char_buffer, 0, 2048 * sizeof(char));
 
     /* Print format string in buffer */
     __builtin_va_start(args, fmt);
