@@ -53,11 +53,10 @@ endstruc
 ;-----------------------------------------------------------
 %define STACK_16 (CODE_LOCATION - regs16_t_size)
 
+
 section .text
     bios_int:
-    	use32
-
-        call disable_interrupt      ; Disable interrupts
+        use32
         pusha                       ; Save context
 
         ; RELOCATE THE CODE TO LOW MEMORY SPACE
@@ -79,7 +78,7 @@ section .text
         sidt [OFFSET_ADDR(idt32_ptr)]        ; Save 32bit IDT pointer
         sgdt [OFFSET_ADDR(gdt32_ptr)]        ; Save 32bit GDT pointer
 
-    load_cpu_struct:
+        load_cpu_struct:
         lgdt [OFFSET_ADDR(gdt16_ptr)]        ; Load 16bit GDT pointer
 
         ; GET THE INT NUMBER
@@ -104,7 +103,7 @@ section .text
         jmp  word CODE16:OFFSET_ADDR(rm_bootstrap)  ; Jumpt to RM RM bootstrap
 
     rm_bootstrap:
-    	use16
+        use16
 
         ; LOAD SEGMENT REGISTERS
 
@@ -163,8 +162,6 @@ section .text
         inc  eax
         mov  cr0, eax
 
-
-
         jmp  dword CODE32:OFFSET_ADDR(pm_mode)  ; Jump to PM mode
 
     pm_mode:
@@ -179,13 +176,13 @@ section .text
         mov  gs, ax
         mov  ss, ax
 
-    restore_cpu_struct:
+
+        restore_cpu_struct:
         lgdt [OFFSET_ADDR(gdt32_ptr)]        ; Restore 32bit GDT pointer
         lidt [OFFSET_ADDR(idt32_ptr)]        ; restore 32bit IDT pointer
         mov  esp, [OFFSET_ADDR(stack32_ptr)] ; Restore 32bit stack pointer
 
         ; SAVE DATA TO 32 BITS STACK (into regs parameter)
-
         mov  esi, STACK_16                     ; Source address
         lea  edi, [esp+0x28]                   ; Destination address
         mov  edi, [edi]                        ; Destination address
@@ -196,7 +193,6 @@ section .text
 
         popa
 
-        call enable_interrupt
         ret
 
 ;---------------------------------------------------------
