@@ -38,7 +38,7 @@
  * FUNCTIONS
  ******************************************************************************/
 
-/* Init PIT settings and disable interrupts for the PIT.
+/* Init PIT settings and enable interrupts for the PIT.
  *
  * @returns The error or success state.
  */

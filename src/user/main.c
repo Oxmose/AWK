@@ -1,4 +1,5 @@
 #include "../lib/stdio.h"
+#include "../lib/string.h"
 #include "../core/scheduler.h"
 
 #include "../drivers/vga_graphic.h"
@@ -8,6 +9,7 @@
 #include "../sync/semaphore.h"
 
 #include "../core/kernel_output.h"
+#include "../cpu/bios_call.h"
 
 extern void* launch_tests(void*);
 extern int test_dyn_sched(void);
@@ -139,15 +141,12 @@ void* draw_logo(void *args)
     return NULL;
 }
 
+
+
 int main(int argc, char** argv)
 {
-    for(int i = 0; i < argc; ++i)
-    {
-        printf("Arg %d: %s\n", i, argv[i]);
-    }
-
-
-
+	(void)argc;
+	(void)argv;
     thread_t test_th;
     create_thread(&test_th, launch_tests, 64, "tests\0", NULL);
 

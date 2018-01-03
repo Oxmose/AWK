@@ -46,7 +46,6 @@ static uint32_t disabled_nesting;
  * @param int_id The interrupt line that called the handler.
  * @param stack_state The stack state before the interrupt.
  */
-#include "../core/kernel_output.h"
 static void dummy_handler(cpu_state_t* cpu_state, uint32_t int_id,
                           stack_state_t* stack_state)
 {
@@ -67,7 +66,7 @@ OS_RETURN_E init_pit(void)
     tick_count = 0;
     tick_freq  = PIT_INIT_FREQ;
 
-    disabled_nesting = 0;
+    disabled_nesting = 1;
 
     err = set_pit_freq(PIT_INIT_FREQ);
     if(err != OS_NO_ERR)

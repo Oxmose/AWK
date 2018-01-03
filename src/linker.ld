@@ -1,8 +1,8 @@
 ENTRY(loader)                /* the name of the entry label */
 SECTIONS
 {
-    /* Kernel starts at 1M */
-    . = 0x100000;
+    /* Kernel starts at 2M */
+    . = 0x200000;
 
     _start = .;
 
@@ -13,26 +13,26 @@ SECTIONS
     {
         *(.multiboot)
     }
- 
+
     /* Executable code */
     .text BLOCK(4K) : ALIGN(4K)
     {
         *(.text)
     }
- 
+
     /* Read-only data. */
     .rodata BLOCK(4K) : ALIGN(4K)
     {
         *(.rodata)
     }
- 
+
     /* Read-write data */
     .data BLOCK(4K) : ALIGN(4K)
     {
         *(.data)
         _edata  =  .;
     }
- 
+
     /* Read-write data and stack */
     .bss BLOCK(4K) : ALIGN(4K)
     {
@@ -44,19 +44,18 @@ SECTIONS
 
     _end = .;
 
-    /* CPU structure placed in lower memory */
-    cpu_idt_size = 0x01000; /* SIZE = 16384bits */
-    cpu_idt_base = 0x01002; /* SIZE = 16384bits */
-    cpu_idt      = 0x01006; /* SIZE = 16384bits */
+    /* CPU structure placed in between 1M and 2M */
+    cpu_idt_size = 0x100000; /* 16 bit */
+    cpu_idt_base = 0x100002; /* 32 bits*/
+    cpu_idt      = 0x100006; /* SIZE = 16384bits, ends at 0x100806 */
 
-    cpu_gdt_size = 0x10000; /* 16 bits */
-    cpu_gdt_base = 0x10002; /* 32 bits */    
-    cpu_gdt      = 0x10006; /* SIZE = SHOULD BE LESS THAN 65488Bits */
+    cpu_gdt_size = 0x100806; /* 16 bits */
+    cpu_gdt_base = 0x100808; /* 32 bits */
+    cpu_gdt      = 0x10080C; /* SIZE = 16384bits, ends at 0x10100C */
 
-
-    /* Beginning of kernel memory heap */
+    /* Beginning of kernel memory heap 16Mb */
     mem_heap = 0x1000000;
 
-    /* End of kernel memory heap */
+    /* End of kernel memory heap 32Mb */
     mem_heap_end = 0x2000000;
 }

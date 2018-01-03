@@ -154,7 +154,7 @@ static void rtc_interrupt_handler(cpu_state_t *cpu_state, uint32_t int_id,
     ++tick_count;
 
     /* Send EOI signal */
-    set_IRQ_EOI(RTC_IRQ);
+    set_IRQ_EOI(RTC_IRQ_LINE);
 }
 
 OS_RETURN_E init_rtc(void)
@@ -202,7 +202,7 @@ OS_RETURN_E init_rtc(void)
         return err;
     }
 
-    err = set_IRQ_mask(RTC_IRQ, 1);
+    err = set_IRQ_mask(RTC_IRQ_LINE, 1);
 
     return err;
 }

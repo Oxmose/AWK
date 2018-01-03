@@ -30,6 +30,10 @@
 #include "driver_manager.h"      /* load_drivers, register_driver,
                                   * init_driver_manager*/
 
+#include "../cpu/bios_call.h"
+
+#include "../lib/string.h"
+
 /*******************************************************************************
  * GLOBAL VARIABLES
  ******************************************************************************/
@@ -149,8 +153,10 @@ void kernel_kickstart(void)
 
     if(acpi_get_lapic_available() == 1)
     {
+        kernel_info("LAPIC TIMER present, PIT will be initialized but not used for scheduling\n");
+
         /* Init Local APIC */
-        err = register_driver(init_lapic, "LAPIC");
+        err = register_driver(init_lapic, "Local APIC");
         if(err != OS_NO_ERR)
         {
             kernel_error("LAPIC driver registration error [%d]\n", err);
@@ -205,8 +211,6 @@ void kernel_kickstart(void)
         kernel_error("Drivers loading failed [%d]\n", err);
         kernel_panic();
     }
-
-    //enable_pit();
 
     /* Init scheduler, should never come back */
     err = init_scheduler();

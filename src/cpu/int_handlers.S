@@ -1,4 +1,4 @@
-;----------------------------------------------
+;-------------------------------------------------------------------------------
 ;
 ; File: int_handlers.S
 ;
@@ -11,23 +11,23 @@
 ; Global handlers for the 256 interrupts of the CPU.
 ; Setup the stack and call the C kernel general interrupt dispatcher.
 ;
-;---------------------------------------------
+;-------------------------------------------------------------------------------
 
 extern kernel_interrupt_handler
 
 section .text:
-    %macro noerr_code_interrupt_handler 1 ; Interrupt that do not come with an err
-                                            ; code.
+    %macro noerr_code_interrupt_handler 1 ; Interrupt that do not come with an
+                                          ; err code.
 
     global interrupt_handler_%1
     interrupt_handler_%1:
         push    dword 0                     ; push 0 as dummy error code
         push    dword %1                    ; push the interrupt number
-        jmp     generic_interrupt_handler    ; jump to the common handler
+        jmp     generic_interrupt_handler   ; jump to the common handler
     %endmacro
 
-    %macro err_code_interrupt_handler 1    ; Interrupt that do not come with an err
-                                            ; code.
+    %macro err_code_interrupt_handler 1    ; Interrupt that do not come with an
+                                           ; err code.
 
     global interrupt_handler_%1
     interrupt_handler_%1:
@@ -63,7 +63,7 @@ section .text:
         pop     edi
         pop     esi
         pop     edx
-        pop     ecx  
+        pop     ecx
         pop     ebx
         pop     eax
 

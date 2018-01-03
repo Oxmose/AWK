@@ -30,6 +30,7 @@ void *launch_tests(void*args)
     //while(1);
 
     (void)args;
+#ifdef TESTS
 #ifdef TEST_SEM
     printf("1/%d\n", tests_count);
     if(test_sem())
@@ -119,6 +120,6 @@ void *launch_tests(void*args)
         printf(" Test ATA passed\n");
     }
 #endif
-
+#endif
     return NULL;
 }

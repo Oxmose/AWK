@@ -22,7 +22,6 @@
  ******************************************************************************/
 
 /* RTC clock settings */
-#define RTC_IRQ             8
 #define RTC_RATE            15
 #define RTC_MAX_EVENT_COUNT 20
 
