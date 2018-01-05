@@ -1,8 +1,7 @@
 #include "../core/scheduler.h"
 #include "../sync/semaphore.h"
-
+#include "../core/kernel_output.h"
 #include "../lib/stdio.h"
-#include "../drivers/vga_text.h"
 
 thread_t thread_sem1;
 thread_t thread_sem2;
@@ -194,101 +193,86 @@ int test_sem(void)
 
     if(create_thread(&thread_sem1, sem_thread_1, 1, "thread1", NULL) != OS_NO_ERR)
     {
-        set_color_scheme(FG_RED | BG_BLACK);
-        printf("[RDLK]");
-        set_color_scheme(FG_WHITE | BG_BLACK);
-        printf(" Error while creating the main thread!\n");
+        kernel_error(" Error while creating the main thread!\n");
         return -1;
     }
     if(create_thread(&thread_sem2, sem_thread_2, 2, "thread1", NULL) != OS_NO_ERR)
     {
-        set_color_scheme(FG_RED | BG_BLACK);
-        printf("[RDLK]");
-        set_color_scheme(FG_WHITE | BG_BLACK);
-        printf(" Error while creating the main thread!\n");
+        kernel_error(" Error while creating the main thread!\n");
         return -1;
     }
     if(create_thread(&thread_sem3, sem_thread_3, 3, "thread1", NULL) != OS_NO_ERR)
     {
-        set_color_scheme(FG_RED | BG_BLACK);
-        printf("[RDLK]");
-        set_color_scheme(FG_WHITE | BG_BLACK);
-        printf(" Error while creating the main thread!\n");
+        kernel_error(" Error while creating the main thread!\n");
         return -1;
     }
     if(create_thread(&thread_sem4, sem_thread_4, 4, "thread1", NULL) != OS_NO_ERR)
     {
-        set_color_scheme(FG_RED | BG_BLACK);
-        printf("[RDLK]");
-        set_color_scheme(FG_WHITE | BG_BLACK);
-        printf(" Error while creating the main thread!\n");
+        kernel_error(" Error while creating the main thread!\n");
         return -1;
     }
     if(create_thread(&thread_sem5, sem_thread_5, 5, "thread1", NULL) != OS_NO_ERR)
     {
-        set_color_scheme(FG_RED | BG_BLACK);
-        printf("[RDLK]");
-        set_color_scheme(FG_WHITE | BG_BLACK);
-        printf(" Error while creating the main thread!\n");
+        kernel_error(" Error while creating the main thread!\n");
         return -1;
     }
 
 
     if(sem_pend(&sem_end) != OS_NO_ERR)
     {
-        printf("Failed to pend sem_end\n");
+        kernel_error("Failed to pend sem_end\n");
         return -1;
     }
 
     if(sem_destroy(&sem1) != OS_NO_ERR)
     {
-        printf("Failed to destroy sem1\n");
+        kernel_error("Failed to destroy sem1\n");
         return -1;
     }
     if(sem_destroy(&sem2) != OS_NO_ERR)
     {
-        printf("Failed to destroy sem2\n");
+        kernel_error("Failed to destroy sem2\n");
         return -1;
     }
     if(sem_destroy(&sem3) != OS_NO_ERR)
     {
-        printf("Failed to destroy sem3\n");
+        kernel_error("Failed to destroy sem3\n");
         return -1;
     }
     if(sem_destroy(&sem4) != OS_NO_ERR)
     {
-        printf("Failed to destroy sem4\n");
+        kernel_error("Failed to destroy sem4\n");
         return -1;
     }
     if(sem_destroy(&sem_end) != OS_NO_ERR)
     {
-        printf("Failed to destroy sem_end\n");
+        kernel_error("Failed to destroy sem_end\n");
         return -1;
     }
     OS_RETURN_E err;
     if((err = wait_thread(thread_sem1, NULL)) != OS_NO_ERR)
     {
-        printf("Error while waiting thread! [%d]\n", err);
+        kernel_error("Error while waiting thread! [%d]\n", err);
         return -1;
     }
     if(wait_thread(thread_sem2, NULL) != OS_NO_ERR)
     {
-        printf("Error while waiting thread! [%d]\n", err);
+        kernel_error("Error while waiting thread! [%d]\n", err);
         return -1;
     }
     if(wait_thread(thread_sem3, NULL) != OS_NO_ERR)
     {
-        printf("Error while waiting thread! [%d]\n", err);
+        kernel_error("Error while waiting thread! [%d]\n", err);
         return -1;
     }
     if(wait_thread(thread_sem4, NULL) != OS_NO_ERR)
     {
-        printf("Error while waiting thread! [%d]\n", err);
+        kernel_error("Error while waiting thread! [%d]\n", err);
         return -1;
     }
      if(wait_thread(thread_sem5, NULL) != OS_NO_ERR)
     {
-        printf("Error while waiting thread! [%d]\n", err);
+        kernel_error("Error while waiting thread! [%d]\n", err);
         return -1;
     }
 

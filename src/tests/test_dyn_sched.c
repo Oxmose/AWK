@@ -1,7 +1,7 @@
 #include "../core/scheduler.h"
 #include "../sync/lock.h"
 #include "../lib/stdio.h"
-#include "../drivers/vga_text.h"
+#include "../core/kernel_output.h"
 
 lock_t lock;
 
@@ -40,10 +40,8 @@ int test_dyn_sched(void)
     spinlock_init(&lock);
     if(create_thread(&launch, launch_func_block, 32, "thread_func", (void*)1) != OS_NO_ERR)
     {
-        set_color_scheme(FG_RED | BG_BLACK);
-        printf("[RDLK]");
-        set_color_scheme(FG_WHITE | BG_BLACK);
-        printf(" Error while creating the main thread!\n");
+
+        kernel_error("Error while creating the main thread!\n");
         return -1;
     }
     OS_RETURN_E err;

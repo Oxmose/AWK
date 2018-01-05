@@ -44,7 +44,15 @@ SECTIONS
 
     _end = .;
 
-    /* CPU structure placed in between 1M and 2M */
+    /**********************************************
+     * SPECIFIC DATA STRUCTURES BASE ADDRESS
+     *********************************************/
+
+    /* VESA Structures, must be placed in lower memory */
+    vbe_info_base      = 0x2000; /* SIZE = 4096bits, ends at 0x2200 */
+    vbe_mode_info_base = 0x2300; /* SIZE = 2048bits, ends at 0x2400 */
+
+    /* CPU structures placed in between 1M and 2M */
     cpu_idt_size = 0x100000; /* 16 bit */
     cpu_idt_base = 0x100002; /* 32 bits*/
     cpu_idt      = 0x100006; /* SIZE = 16384bits, ends at 0x100806 */

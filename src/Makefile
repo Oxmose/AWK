@@ -24,7 +24,7 @@ QEMU = /usr/bin/qemu-system-i386
 CFLAGS = -m32 -g -gstabs -O0 -std=c99 -nostdinc -fno-builtin -nostdlib -fno-stack-protector -nostartfiles -nodefaultlibs -Wall -Wextra -Werror -Wimplicit-fallthrough=0 -c
 ASFLAGS = -f elf -w+gnu-elf-extensions
 LDFLAGS = -e loader -T linker.ld -melf_i386
-QEMUOPTS = -cpu core2duo -rtc base=localtime -m 64M -hda ATA_PRIMARY_MASTER.raw -m 128 -gdb tcp::1234 -vga cirrus -serial stdio -kernel
+QEMUOPTS = -cpu core2duo -rtc base=localtime -m 64M -hda ATA_PRIMARY_MASTER.raw -m 128 -gdb tcp::1234 -vga std -serial stdio -kernel
 
 # cible principale, on nettoie systematiquement le repertoire avant
 .PHONY: all
@@ -54,3 +54,5 @@ bootable: all
 	cp $(KERNEL) ../iso/boot/
 	rm ../iso/bootable.iso
 	grub2-mkrescue -o ../iso/bootable.iso ../iso
+	rm vmdkname.vmdk
+	qemu-img convert -O vmdk ATA_PRIMARY_MASTER.raw vmdkname.vmdk

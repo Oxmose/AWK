@@ -210,7 +210,7 @@ void enable_interrupt(void)
     if(int_lock_nesting == 0)
     {
         #ifdef DEBUG_INTERRUPT
-        kernel_serial_debug("Enabled INT\n");
+        kernel_serial_debug("----------------------- Enabled INT (%d)\n", int_lock_nesting);
         #endif
 
         sti();
@@ -219,14 +219,11 @@ void enable_interrupt(void)
 
 void disable_interrupt(void)
 {
-    if(int_lock_nesting == 0)
-    {
-        #ifdef DEBUG_INTERRUPT
-        kernel_serial_debug("Disabled INT\n");
-        #endif
 
-        cli();
-    }
+    cli();
+    #ifdef DEBUG_INTERRUPT
+    kernel_serial_debug("---------------------- Disabled INT (%d)\n", int_lock_nesting + 1);
+    #endif
     ++int_lock_nesting;
 }
 

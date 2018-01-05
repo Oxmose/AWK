@@ -11,7 +11,7 @@
  * Keyboard driver (PS2/USB) for the kernel.
  ******************************************************************************/
 
-#include "vga_text.h"              /* console_write_keyboard */
+#include "graphic.h"              /* console_write_keyboard */
 #include "../cpu/cpu.h"            /* outb inb */
 #include "../core/interrupts.h"    /* register_interrupt, cpu_state,
                                     * stack_state, set_IRQ_mask, set_IRQ_EOI */

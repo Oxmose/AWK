@@ -28,7 +28,7 @@
 //#define DEBUG_KERNEL_QUEUE
 #define DEBUG_SCHED
 //#define DEBUG_ATA
-#define DEBUG_LAPIC
+//#define DEBUG_LAPIC
 
 #endif /* DEBUG */
 

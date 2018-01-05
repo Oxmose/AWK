@@ -20,19 +20,18 @@
 #include "../drivers/mouse.h"    /* init_mouse */
 #include "../drivers/keyboard.h" /* init_keyboard */
 #include "../drivers/ata.h"      /* init_ata */
+#include "../drivers/vesa.h"     /* init_vesa */
 #include "../cpu/cpu.h"          /* get_cpu_info */
 #include "../cpu/lapic.h"        /* init_lapic */
 #include "../lib/stdio.h"        /* printf */
+#include "../lib/stdint.h"       /* Generic int types */
+#include "../lib/stddef.h"       /* OS_RETURN_E */
 #include "kernel_output.h"       /* kernel_succes, kernel_error, kernell_info */
 #include "scheduler.h"           /* init_scheduler */
-#include "panic.h"                 /* kernel_panic */
+#include "panic.h"               /* kernel_panic */
 #include "acpi.h"                /* init_acpi */
 #include "driver_manager.h"      /* load_drivers, register_driver,
                                   * init_driver_manager*/
-
-#include "../cpu/bios_call.h"
-
-#include "../lib/string.h"
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -41,9 +40,13 @@
 /*******************************************************************************
  * FUNCTIONS
  ******************************************************************************/
+extern void test_param(void);
 
 void kernel_kickstart(void)
 {
+
+
+
     OS_RETURN_E err;
     cpu_info_t cpu_info;
 
@@ -119,6 +122,22 @@ void kernel_kickstart(void)
     else
     {
         kernel_error("Driver Manager  Initialization error [%d]\n", err);
+        kernel_panic();
+    }
+
+    /* Register VESA */
+    err = register_driver(init_vesa, "VESA");
+    if(err != OS_NO_ERR)
+    {
+        kernel_error("VESA driver registration error [%d]\n", err);
+        kernel_panic();
+    }
+
+    /* Register VGA to VESA transitionner */
+    err = register_driver(text_vga_to_vesa, "VGA to VESA switch");
+    if(err != OS_NO_ERR)
+    {
+        kernel_error("VGA to VESA switch registration error [%d]\n", err);
         kernel_panic();
     }
 

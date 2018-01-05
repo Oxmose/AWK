@@ -1,4 +1,4 @@
-#include "../drivers/vga_graphic.h"
+#include "../drivers/vesa.h"
 #include "../lib/stdio.h"
 #include "../drivers/mouse.h"
 #include "../core/scheduler.h"
@@ -35,6 +35,7 @@ void test_mouse_event(void)
 
 void draw_mouse(void)
 {
+    #if 0
     if(current_state.flags & MOUSE_LEFT_CLICK)
         draw_rectangle(0, 0, 320, 200, 0xFF, 0xFF, 0xFF);
 
@@ -58,15 +59,12 @@ void draw_mouse(void)
                    9, 3, (color >> 5) & 0x7, (color >> 2) & 0x7, color & 0x3);
     draw_rectangle(current_state.pos_x - 1, current_state.pos_y - 4,
                    3, 9, (color >> 5) & 0x7, (color >> 2) & 0x7, color & 0x3);
+                   #endif
 }
 
 void *test_mouse(void*args)
 {
     (void)args;
-    init_vga();
-
-    draw_rectangle(0, 0,
-                   320, 200, 0xFF, 0xFF, 0xFF);
 
     sem_init(&sem_wait, 0);
     current_state.pos_x = 160;

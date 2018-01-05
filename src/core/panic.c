@@ -51,8 +51,8 @@ void panic(cpu_state_t* cpu_state, uint32_t int_id, stack_state_t* stack_state)
     int8_t vip_f = (stack_state->eflags & 0x100000) >> 20;
 
 
-    kernel_printf("#=============================      OS PANIC      =============================#");
-    kernel_printf("|                                                                              |");
+    kernel_printf("#=============================      OS PANIC      ============================#\n");
+    kernel_printf("|                                                                             |\n");
     kernel_printf("| Reason: ");
     switch(int_id)
     {
@@ -125,28 +125,28 @@ void panic(cpu_state_t* cpu_state, uint32_t int_id, stack_state_t* stack_state)
         default:
             kernel_printf("Unknown                                 ");
     }
-    kernel_printf("INT ID: 0x%02x                 |", int_id);
-    kernel_printf("|                                                                              |");
-    kernel_printf("| Instruction [EIP]: 0x%08x                                                |", stack_state->eip);
-    kernel_printf("|                                                                              |");
-    kernel_printf("|================================= CPU STATE ==================================|");
-    kernel_printf("|                                                                              |");
-    kernel_printf("| EAX: 0x%08x  |  EBX: 0x%08x  |  ECX: 0x%08x  |  EDX: 0x%08x  |", cpu_state->eax, cpu_state->ebx, cpu_state->ecx, cpu_state->edx);
-    kernel_printf("| ESI: 0x%08x  |  EDI: 0x%08x  |  EBP: 0x%08x  |  ESP: 0x%08x  |", cpu_state->esi, cpu_state->edi, cpu_state->ebp, cpu_state->esp);
-    kernel_printf("|                                                                              |");
-    kernel_printf("|============================= SEGMENT REGISTERS ==============================|");
-    kernel_printf("|                                                                              |");
-    kernel_printf("| CS: 0x%04x  |  DS: 0x%04x  |  SS: 0x%04x                                     |", stack_state->cs & 0xFFFF, cpu_state->ds & 0xFFFF, cpu_state->ss & 0xFFFF);
-    kernel_printf("| ES: 0x%04x  |  FS: 0x%04x  |  GS: 0x%04x                                     |", cpu_state->es & 0xFFFF , cpu_state->fs & 0xFFFF , cpu_state->gs & 0xFFFF);
-    kernel_printf("|                                                                              |");
-    kernel_printf("|================================= EFLAGS REG =================================|");
-    kernel_printf("|                                                                              |");
-    kernel_printf("| CF: %d  |  PF: %d  |  AF: %d  |  ZF: %d  |  SF: %d  |  TF: %d  |  IF: %d  |  DF: %d  |", cf_f, pf_f, af_f, zf_f, sf_f, tf_f, if_f, df_f);
-    kernel_printf("| OF: %d  |  NT: %d  |  RF: %d  |  VM: %d  |  AC: %d  |  ID: %d                      |", of_f, nt_f, rf_f, vm_f, ac_f, id_f);
-    kernel_printf("| IOPL: %d  |  VIF: %d  |  VIP: %d                                                |", (iopl0_f | iopl1_f << 1), vif_f, vip_f);
-    kernel_printf("|                                                                              |");
-    kernel_printf("|                         LET'S HOPE IT WON'T EXPLODE                          |");
-    kernel_printf("#==============================================================================");
+    kernel_printf("INT ID: 0x%02x                |\n", int_id);
+    kernel_printf("|                                                                             |\n");
+    kernel_printf("| Instruction [EIP]: 0x%08x                                               |\n", stack_state->eip);
+    kernel_printf("|                                                                             |\n");
+    kernel_printf("|================================= CPU STATE =================================|\n");
+    kernel_printf("|                                                                             |\n");
+    kernel_printf("| EAX: 0x%08x  |  EBX: 0x%08x  |  ECX: 0x%08x  |  EDX: 0x%08x |\n", cpu_state->eax, cpu_state->ebx, cpu_state->ecx, cpu_state->edx);
+    kernel_printf("| ESI: 0x%08x  |  EDI: 0x%08x  |  EBP: 0x%08x  |  ESP: 0x%08x |\n", cpu_state->esi, cpu_state->edi, cpu_state->ebp, cpu_state->esp);
+    kernel_printf("|                                                                             |\n");
+    kernel_printf("|============================= SEGMENT REGISTERS =============================|\n");
+    kernel_printf("|                                                                             |\n");
+    kernel_printf("| CS: 0x%04x  |  DS: 0x%04x  |  SS: 0x%04x                                    |\n", stack_state->cs & 0xFFFF, cpu_state->ds & 0xFFFF, cpu_state->ss & 0xFFFF);
+    kernel_printf("| ES: 0x%04x  |  FS: 0x%04x  |  GS: 0x%04x                                    |\n", cpu_state->es & 0xFFFF , cpu_state->fs & 0xFFFF , cpu_state->gs & 0xFFFF);
+    kernel_printf("|                                                                             |\n");
+    kernel_printf("|================================= EFLAGS REG ================================|\n");
+    kernel_printf("|                                                                             |\n");
+    kernel_printf("| CF: %d  |  PF: %d  |  AF: %d  |  ZF: %d  |  SF: %d  |  TF: %d  |  IF: %d  |  DF: %d |\n", cf_f, pf_f, af_f, zf_f, sf_f, tf_f, if_f, df_f);
+    kernel_printf("| OF: %d  |  NT: %d  |  RF: %d  |  VM: %d  |  AC: %d  |  ID: %d                     |\n", of_f, nt_f, rf_f, vm_f, ac_f, id_f);
+    kernel_printf("| IOPL: %d  |  VIF: %d  |  VIP: %d                                               |\n", (iopl0_f | iopl1_f << 1), vif_f, vip_f);
+    kernel_printf("|                                                                             |\n");
+    kernel_printf("|                         LET'S HOPE IT WON'T EXPLODE                         |\n");
+    kernel_printf("#=============================================================================");
 
     /* We will never return from interrupt */
     while(1)

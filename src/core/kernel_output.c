@@ -14,7 +14,7 @@
 
 #include "../lib/stdio.h"        /* vprintf, sprintf */
 #include "../lib/string.h"       /* memset */
-#include "../drivers/vga_text.h" /* save_color_scheme, set_color_sheme */
+#include "../drivers/graphic.h" /* save_color_scheme, set_color_sheme */
 #include "../drivers/serial.h"   /* serial_write */
 #include "interrupts.h"          /* get_current_uptime */
 
@@ -43,7 +43,10 @@ void kernel_error(const char* fmt, ...)
 {
     __builtin_va_list args;
     colorscheme_t     buffer;
-    colorscheme_t     new_scheme = FG_RED | BG_BLACK;
+    colorscheme_t     new_scheme;
+    new_scheme.foreground = FG_RED;
+    new_scheme.background = BG_BLACK;
+    new_scheme.vga_color  = 1;
 
     /* No need to test return value */
     save_color_scheme(&buffer);
@@ -65,9 +68,12 @@ void kernel_error(const char* fmt, ...)
 
 void kernel_success(const char* fmt, ...)
 {
-    colorscheme_t buffer;
-    colorscheme_t new_scheme = FG_GREEN | BG_BLACK;
     __builtin_va_list    args;
+    colorscheme_t buffer;
+    colorscheme_t     new_scheme;
+    new_scheme.foreground = FG_GREEN;
+    new_scheme.background = BG_BLACK;
+    new_scheme.vga_color  = 1;
 
     /* No need to test return value */
     save_color_scheme(&buffer);
@@ -89,9 +95,12 @@ void kernel_success(const char* fmt, ...)
 
 void kernel_info(const char* fmt, ...)
 {
-    colorscheme_t buffer;
-    colorscheme_t new_scheme = FG_CYAN | BG_BLACK;
     __builtin_va_list    args;
+    colorscheme_t buffer;
+    colorscheme_t     new_scheme;
+    new_scheme.foreground = FG_CYAN;
+    new_scheme.background = BG_BLACK;
+    new_scheme.vga_color  = 1;
 
     /* No need to test return value */
     save_color_scheme(&buffer);
@@ -113,9 +122,12 @@ void kernel_info(const char* fmt, ...)
 
 void kernel_debug(const char* fmt, ...)
 {
-    colorscheme_t buffer;
-    colorscheme_t new_scheme = FG_YELLOW | BG_BLACK;
     __builtin_va_list    args;
+    colorscheme_t buffer;
+    colorscheme_t     new_scheme;
+    new_scheme.foreground = FG_YELLOW;
+    new_scheme.background = BG_BLACK;
+    new_scheme.vga_color  = 1;
 
     /* No need to test return value */
     save_color_scheme(&buffer);

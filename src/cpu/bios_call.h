@@ -15,7 +15,6 @@
 #define __BIOS_CALL_H_
 
 #include "../lib/stdint.h" /* Generic int types */
-#include "../lib/stddef.h" /* OS_RETURN_E */
 
 /*******************************************************************************
  * CONSTANTS
@@ -52,6 +51,6 @@ typedef struct bios_int_regs
  * @param intnum The interrupt to raise.
  * @param regs The array containing the registers values for the call.
  */
-void bios_int(const uint8_t intnum, bios_int_regs_t *regs);
+void bios_int(const uint8_t intnum, bios_int_regs_t* regs);
 
 #endif /* __BIOS_CALL_H_  */

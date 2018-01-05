@@ -2,8 +2,8 @@
 #include "../sync/semaphore.h"
 
 #include "../lib/stdio.h"
-#include "../drivers/vga_text.h"
 
+#include "../core/kernel_output.h"
 #include "test_multithread.h"
 
 thread_t thread1;
@@ -38,52 +38,31 @@ void *launch_func(void*args)
     (void)args;
     if(create_thread(&thread1, test_func, 1, "thread1", (void*) 1) != OS_NO_ERR)
     {
-        set_color_scheme(FG_RED | BG_BLACK);
-        printf("[RDLK]");
-        set_color_scheme(FG_WHITE | BG_BLACK);
-        printf(" Error while creating the main thread!\n");
+        kernel_error("Error while creating the main thread!\n");
     }
     if(create_thread(&thread2, test_func, 1, "thread2", (void*) 2) != OS_NO_ERR)
     {
-        set_color_scheme(FG_RED | BG_BLACK);
-        printf("[RDLK]");
-        set_color_scheme(FG_WHITE | BG_BLACK);
-        printf(" Error while creating the main thread!\n");
+        kernel_error("Error while creating the main thread!\n");
     }
     if(create_thread(&thread3, test_func, 1, "thread3", (void*) 3) != OS_NO_ERR)
     {
-        set_color_scheme(FG_RED | BG_BLACK);
-        printf("[RDLK]");
-        set_color_scheme(FG_WHITE | BG_BLACK);
-        printf(" Error while creating the main thread!\n");
+        kernel_error("Error while creating the main thread!\n");
     }
     if(create_thread(&thread4, test_func, 4, "thread4",(void*) 4) != OS_NO_ERR)
     {
-        set_color_scheme(FG_RED | BG_BLACK);
-        printf("[RDLK]");
-        set_color_scheme(FG_WHITE | BG_BLACK);
-        printf(" Error while creating the main thread!\n");
+        kernel_error("Error while creating the main thread!\n");
     }
     if(create_thread(&thread5, test_func, 4, "thread5", (void*) 5) != OS_NO_ERR)
     {
-        set_color_scheme(FG_RED | BG_BLACK);
-        printf("[RDLK]");
-        set_color_scheme(FG_WHITE | BG_BLACK);
-        printf(" Error while creating the main thread!\n");
+        kernel_error("Error while creating the main thread!\n");
     }
     if(create_thread(&thread6, test_func, 4, "thread6", (void*) 6) != OS_NO_ERR)
     {
-        set_color_scheme(FG_RED | BG_BLACK);
-        printf("[RDLK]");
-        set_color_scheme(FG_WHITE | BG_BLACK);
-        printf(" Error while creating the main thread!\n");
+        kernel_error("Error while creating the main thread!\n");
     }
     if(create_thread(&thread7, test_func, 10, "thread7", (void*) 7) != OS_NO_ERR)
     {
-        set_color_scheme(FG_RED | BG_BLACK);
-        printf("[RDLK]");
-        set_color_scheme(FG_WHITE | BG_BLACK);
-        printf(" Error while creating the main thread!\n");
+        kernel_error("Error while creating the main thread!\n");
     }
 
     sleep(15000);
@@ -91,37 +70,37 @@ void *launch_func(void*args)
     OS_RETURN_E err;
     if((err = wait_thread(thread1, NULL)) != OS_NO_ERR)
     {
-        printf("Error while waiting thread! [%d]\n", err);
+        kernel_error("Error while waiting thread! [%d]\n", err);
         perror(err);
     }
     if((err = wait_thread(thread2, NULL)) != OS_NO_ERR)
     {
-        printf("Error while waiting thread! [%d]\n", err);
+        kernel_error("Error while waiting thread! [%d]\n", err);
         perror(err);
     }
     if((err = wait_thread(thread3, NULL)) != OS_NO_ERR)
     {
-        printf("Error while waiting thread! [%d]\n", err);
+        kernel_error("Error while waiting thread! [%d]\n", err);
         perror(err);
     }
     if((err = wait_thread(thread4, NULL)) != OS_NO_ERR)
     {
-        printf("Error while waiting thread! [%d]\n", err);
+        kernel_error("Error while waiting thread! [%d]\n", err);
         perror(err);
     }
      if((err = wait_thread(thread5, NULL)) != OS_NO_ERR)
     {
-        printf("Error while waiting thread! [%d]\n", err);
+        kernel_error("Error while waiting thread! [%d]\n", err);
         perror(err);
     }
     if((err = wait_thread(thread6, NULL)) != OS_NO_ERR)
     {
-        printf("Error while waiting thread! [%d]\n", err);
+        kernel_error("Error while waiting thread! [%d]\n", err);
         perror(err);
     }
     if((err = wait_thread(thread7, NULL)) != OS_NO_ERR)
     {
-        printf("Error while waiting thread! [%d]\n", err);
+        kernel_error("Error while waiting thread! [%d]\n", err);
         perror(err);
     }
     printf("\n");
@@ -132,16 +111,13 @@ int test_multithread(void)
 {
     if(create_thread(&launch, launch_func, 0, "thread_func", (void*)1) != OS_NO_ERR)
     {
-        set_color_scheme(FG_RED | BG_BLACK);
-        printf("[RDLK]");
-        set_color_scheme(FG_WHITE | BG_BLACK);
-        printf(" Error while creating the main thread!\n");
+        kernel_error(" Error while creating the main thread!\n");
         return -1;
     }
     OS_RETURN_E err;
     if((err = wait_thread(launch, NULL)) != OS_NO_ERR)
     {
-        printf("Error while waiting thread! [%d]\n", err);
+        kernel_error("Error while waiting thread! [%d]\n", err);
         perror(err);
     }
     return 0;

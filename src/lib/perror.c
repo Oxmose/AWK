@@ -27,7 +27,7 @@ int perror(const int error)
             break;
         case OS_ERR_NO_MORE_FREE_EVENT:
             printf("No more free event to allocate");
-            break;            
+            break;
         case OS_ERR_NULL_POINTER:
             printf("Null pointer used");
             break;
@@ -112,6 +112,15 @@ int perror(const int error)
         case OS_ERR_ATA_SIZE_TO_HUGE:
             printf("ATA driver do not support this read/write size, try to \
 divide your request into mulstiple read/write");
+            break;
+        case OS_ERR_VESA_NOT_SUPPORTED:
+            printf("VESA is not supported");
+            break;
+        case OS_ERR_VESA_MODE_NOT_SUPPORTED:
+            printf("VESA mode not supported");
+            break;
+        case OS_ERR_VESA_NOT_INIT:
+            printf("VESA driver non initialized");
             break;
         default:
             printf("Unknown error");

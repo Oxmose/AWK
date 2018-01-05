@@ -1,8 +1,7 @@
 #include "../core/scheduler.h"
 #include "../sync/mutex.h"
-
+#include "../core/kernel_output.h"
 #include "../lib/stdio.h"
-#include "../drivers/vga_text.h"
 
 
 thread_t thread_mutex2;
@@ -124,49 +123,40 @@ int test_mutex(void)
 
     if(create_thread(&thread_mutex1, mutex_thread_1, 1, "thread1", NULL) != OS_NO_ERR)
     {
-        set_color_scheme(FG_RED | BG_BLACK);
-        printf("[RDLK]");
-        set_color_scheme(FG_WHITE | BG_BLACK);
-        printf(" Error while creating the main thread!\n");
+        kernel_error(" Error while creating the main thread!\n");
         return -1;
     }
     if(create_thread(&thread_mutex2, mutex_thread_2, 2, "thread1", NULL) != OS_NO_ERR)
     {
-        set_color_scheme(FG_RED | BG_BLACK);
-        printf("[RDLK]");
-        set_color_scheme(FG_WHITE | BG_BLACK);
-        printf(" Error while creating the main thread!\n");
+        kernel_error(" Error while creating the main thread!\n");
         return -1;
     }
     if(create_thread(&thread_mutex3, mutex_thread_3, 3, "thread1", NULL) != OS_NO_ERR)
     {
-        set_color_scheme(FG_RED | BG_BLACK);
-        printf("[RDLK]");
-        set_color_scheme(FG_WHITE | BG_BLACK);
-        printf(" Error while creating the main thread!\n");
+        kernel_error(" Error while creating the main thread!\n");
         return -1;
     }
 
     OS_RETURN_E err;
     if((err = wait_thread(thread_mutex1, NULL)) != OS_NO_ERR)
     {
-        printf("Error while waiting thread! [%d]\n", err);
+        kernel_error("Error while waiting thread! [%d]\n", err);
         return -1;
     }
     if(wait_thread(thread_mutex2, NULL) != OS_NO_ERR)
     {
-        printf("Error while waiting thread! [%d]\n", err);
+        kernel_error("Error while waiting thread! [%d]\n", err);
         return -1;
     }
 
     if(mutex_destroy(&mutex1) != OS_NO_ERR)
     {
-        printf("Failed to destroy mutex1\n");
+        kernel_error("Failed to destroy mutex1\n");
         return -1;
     }
     if(mutex_destroy(&mutex2) != OS_NO_ERR)
     {
-        printf("Failed to destroy mutex2\n");
+        kernel_error("Failed to destroy mutex2\n");
         return -1;
     }
 
