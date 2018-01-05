@@ -17,17 +17,20 @@ int main(int argc, char** argv)
 {
 	(void)argc;
 	(void)argv;
-    //thread_t test_th;
-    //create_thread(&test_th, launch_tests, 64, "tests\0", NULL);
+    thread_t test_th;
+    create_thread(&test_th, launch_tests, 64, "tests\0", NULL);
 
 
 
-    //wait_thread(test_th, NULL);
+    wait_thread(test_th, NULL);
 
+    while(1);
     printf("\nPress enter key to start demo");
     char t;
     getch(&t);
 
-    //test_vesa();
+
+
+    test_vesa();
     return 0;
 }

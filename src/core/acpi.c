@@ -615,11 +615,11 @@ static OS_RETURN_E acpi_parse_rsdp(rsdp_descriptor_t* rsdp_desc)
 
 OS_RETURN_E init_acpi(void)
 {
-    OS_RETURN_E err;
     uint8_t* range_begin;
     uint8_t* range_end;
     uint64_t signature;
     uint8_t  i;
+    OS_RETURN_E err = OS_NO_ERR;
 
     /* Init pointers */
     has_xsdt = 0;

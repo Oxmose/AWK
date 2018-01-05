@@ -244,10 +244,10 @@ OS_RETURN_E set_IRQ_mask(const uint32_t irq_number, const uint8_t enabled)
         if(irq_number > 7 && enabled == 1)
         {
             err = set_IRQ_mask(PIC_CASCADING_IRQ, 1);
-        }
-        if(err != OS_NO_ERR)
-        {
-            return err;
+            if(err != OS_NO_ERR)
+            {
+                return err;
+            }
         }
 
         #ifdef DEBUG_INTERRUPT

@@ -11,7 +11,7 @@
 
 #include "../sync/lock.h"
 #include "../core/scheduler.h"
-
+#include "../core/kernel_output.h"
 #ifdef TESTS
 static const int32_t tests_count = 5;
 #endif
