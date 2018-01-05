@@ -167,7 +167,7 @@ static void* idle_sys(void* args)
     kernel_printf("=================================== Welcome! ===============\
 ====================\n");
 
-    sti();
+    enable_interrupt();
 
     /* We create the init thread */
     err = create_thread(&init_thread, init_func,
@@ -211,6 +211,7 @@ static void thread_exit(void)
 
     if(active_thread == init_thread)
     {
+        active_thread->state = ZOMBIE;
         spinlock_unlock(&sched_lock);
 
         /* Schedule thread, should never return since the state is zombie */
