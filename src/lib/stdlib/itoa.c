@@ -1,34 +1,45 @@
 /*******************************************************************************
  *
- * File: tests.h
+ * File: iota.c
  *
  * Author: Alexy Torres Aurora Dugo
  *
- * Date: 09/01/2018
+ * Date: 08/01/2018
  *
  * Version: 1.0
  *
- * Kernel tests bank
+ * itoa function. To be used with stdlib.h header.
+ *
  ******************************************************************************/
 
-#ifndef __TESTS_H_
-#define __TESTS_H_
+#include "../stddef.h" /* Generic int types */
+
+/* Header include */
+#include "../stdlib.h"
 
 /*******************************************************************************
- * CONSTANTS
- ******************************************************************************/
-
-#define TESTS 1
-
-/*******************************************************************************
- * STRUCTURES
+ * GLOBAL VARIABLES
  ******************************************************************************/
 
 /*******************************************************************************
  * FUNCTIONS
  ******************************************************************************/
 
-extern void test_sw_interupts(void);
+ void itoa(int32_t i, char* buf, uint32_t base)
+ {
+     /* If base is unknown just return */
+     if (base > 16)
+     {
+         return;
+     }
 
+     /* Check sign */
+     if (base == 10 && i < 0)
+     {
+        *buf++ = '-';
+        i *= -1;
+     }
 
- #endif /* __TESTS_H_ */
+     /* To the job */
+     uitoa(i, buf, base);
+ }

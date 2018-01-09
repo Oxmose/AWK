@@ -8,30 +8,15 @@
  *
  * Version: 1.0
  *
- * Init the rest of the kernel after GDT, IDT and PIC have been initialized.
+ * Init the rest of the kernel after GDT and IDT
  * AT THIS POINT INTERRUPT SHOULD BE DISABLED
  ******************************************************************************/
 
-#include "../drivers/serial.h"   /* init_serial */
-#include "../drivers/io_apic.h"  /* init_io_apic */
-#include "../drivers/pic.h"      /* init_pic */
-#include "../drivers/pit.h"      /* init_pit */
-#include "../drivers/rtc.h"      /* init_rtc */
-#include "../drivers/mouse.h"    /* init_mouse */
-#include "../drivers/keyboard.h" /* init_keyboard */
-#include "../drivers/ata.h"      /* init_ata */
-#include "../drivers/vesa.h"     /* init_vesa */
+#include "../tests/tests.h"      /* test_bank */
 #include "../cpu/cpu.h"          /* get_cpu_info */
-#include "../cpu/lapic.h"        /* init_lapic */
-#include "../lib/stdio.h"        /* printf */
-#include "../lib/stdint.h"       /* Generic int types */
-#include "../lib/stddef.h"       /* OS_RETURN_E */
-#include "kernel_output.h"       /* kernel_succes, kernel_error, kernell_info */
-#include "scheduler.h"           /* init_scheduler */
+#include "kernel_output.h"       /* kernel_success, kernel_error, kernel_info */
+#include "interrupts.h"          /* init_kernel_interrupt */
 #include "panic.h"               /* kernel_panic */
-#include "acpi.h"                /* init_acpi */
-#include "driver_manager.h"      /* load_drivers, register_driver,
-                                  * init_driver_manager*/
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -40,13 +25,9 @@
 /*******************************************************************************
  * FUNCTIONS
  ******************************************************************************/
-extern void test_param(void);
 
 void kernel_kickstart(void)
 {
-
-
-
     OS_RETURN_E err;
     cpu_info_t cpu_info;
 
@@ -90,17 +71,6 @@ void kernel_kickstart(void)
         kernel_panic();
     }
 
-    /* Init ACPI */
-    err = init_acpi();
-    if(err == OS_NO_ERR)
-    {
-        kernel_success("ACPI Initialized\n");
-    }
-    else
-    {
-        kernel_error("ACPI Initialization error [%d]\n", err);
-    }
-
     /* Init kernel interrupt handlers */
     err = init_kernel_interrupt();
     if(err == OS_NO_ERR)
@@ -113,126 +83,9 @@ void kernel_kickstart(void)
         kernel_panic();
     }
 
-    /* Init driver manager */
-    err = init_driver_manager();
-    if(err == OS_NO_ERR)
-    {
-        kernel_success("Driver Manager Initialized\n");
-    }
-    else
-    {
-        kernel_error("Driver Manager  Initialization error [%d]\n", err);
-        kernel_panic();
-    }
+#ifdef TESTS
+    /* Test insterrupts */
+    test_sw_interupts();
+#endif
 
-    /* Register VESA */
-    err = register_driver(init_vesa, "VESA");
-    if(err != OS_NO_ERR)
-    {
-        kernel_error("VESA driver registration error [%d]\n", err);
-        kernel_panic();
-    }
-
-    /* Register VGA to VESA transitionner */
-    err = register_driver(text_vga_to_vesa, "VGA to VESA switch");
-    if(err != OS_NO_ERR)
-    {
-        kernel_error("VGA to VESA switch registration error [%d]\n", err);
-        kernel_panic();
-    }
-
-    /* Register PIC */
-    err = register_driver(init_pic, "PIC");
-    if(err != OS_NO_ERR)
-    {
-        kernel_error("PIC driver registration error [%d]\n", err);
-        kernel_panic();
-    }
-
-    /* Register PIT */
-    err = register_driver(init_pit, "PIT");
-    if(err != OS_NO_ERR)
-    {
-        kernel_error("PIT driver registration error [%d]\n", err);
-        kernel_panic();
-    }
-
-    if(acpi_get_io_apic_available() == 1)
-    {
-        kernel_info("IO-APIC present, PIC will be initialized but not used\n");
-
-        /* Register IO APIC */
-        err = register_driver(init_io_apic, "IO-APIC");
-        if(err != OS_NO_ERR)
-        {
-            kernel_error("IO-APIC registration error [%d]\n", err);
-            kernel_panic();
-        }
-    }
-
-    if(acpi_get_lapic_available() == 1)
-    {
-        kernel_info("LAPIC TIMER present, PIT will be initialized but not used for scheduling\n");
-
-        /* Init Local APIC */
-        err = register_driver(init_lapic, "Local APIC");
-        if(err != OS_NO_ERR)
-        {
-            kernel_error("LAPIC driver registration error [%d]\n", err);
-            kernel_panic();
-        }
-    }
-
-    /* Register RTC */
-    err = register_driver(init_rtc, "RTC");
-    if(err != OS_NO_ERR)
-    {
-        kernel_error("RTC driver registration error [%d]\n", err);
-        kernel_panic();
-    }
-
-     /* Register SERIAL */
-    err = register_driver(init_serial, "SERIAL");
-    if(err != OS_NO_ERR)
-    {
-        kernel_error("SERIAL driver registration error [%d]\n", err);
-        kernel_panic();
-    }
-
-    /* Register mouse */
-    err = register_driver(init_mouse, "MOUSE");
-    if(err != OS_NO_ERR)
-    {
-        kernel_error("MOUSE driver registration error [%d]\n", err);
-        kernel_panic();
-    }
-
-    /* Register keyboard */
-    err = register_driver(init_keyboard, "KEYBOARD");
-    if(err != OS_NO_ERR)
-    {
-        kernel_error("KEYBOARD driver registration error [%d]\n", err);
-        kernel_panic();
-    }
-
-    /* Register ATA */
-    err = register_driver(init_ata, "ATA");
-    if(err != OS_NO_ERR)
-    {
-        kernel_error("ATA driver registration error [%d]\n", err);
-        kernel_panic();
-    }
-
-    /* Load drivers */
-    err = load_drivers();
-    if(err != OS_NO_ERR)
-    {
-        kernel_error("Drivers loading failed [%d]\n", err);
-        kernel_panic();
-    }
-
-    /* Init scheduler, should never come back */
-    err = init_scheduler();
-    kernel_error("SCHED Initialization error [%d]\n", err);
-    kernel_panic();
 }

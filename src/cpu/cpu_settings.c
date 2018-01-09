@@ -621,8 +621,8 @@ static void format_gdt_entry(uint64_t* entry,
  * @param type  The type of segment for the IDT entry.
  * @param flags The flags to be set for the IDT entry.
  */
-static void format_idt_entry(uint64_t* entry,
-                             const uint32_t handler,
+static void format_idt_entry(volatile uint64_t* entry,
+                             volatile uint32_t handler,
                              const unsigned char type, const uint32_t flags)
 {
     uint32_t lo_part = 0;
@@ -721,7 +721,7 @@ void setup_gdt(void)
     __asm__ __volatile__("movw %w0,%%ss" :: "r" (KERNEL_DS));
     __asm__ __volatile__("ljmp %0, $flab \n\t flab: \n\t" :: "i" (KERNEL_CS));
 
-    kernel_success("GDT Initialized at 0x%x\n",cpu_gdt_base);;
+    kernel_success("GDT Initialized at 0x%08x\n",cpu_gdt_base);;
 }
 
 void setup_idt(void)
@@ -748,5 +748,5 @@ void setup_idt(void)
     /* Load the GDT */
     __asm__ __volatile__("lidt %0" :: "m" (cpu_idt_size), "m" (cpu_idt_base));
 
-    kernel_success("IDT Initialized at 0x%x\n", cpu_idt_base);
+    kernel_success("IDT Initialized at 0x%08x\n", cpu_idt_base);
 }

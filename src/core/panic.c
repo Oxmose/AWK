@@ -146,7 +146,7 @@ void panic(cpu_state_t* cpu_state, uint32_t int_id, stack_state_t* stack_state)
     kernel_printf("| IOPL: %d  |  VIF: %d  |  VIP: %d                                               |\n", (iopl0_f | iopl1_f << 1), vif_f, vip_f);
     kernel_printf("|                                                                             |\n");
     kernel_printf("|                         LET'S HOPE IT WON'T EXPLODE                         |\n");
-    kernel_printf("#=============================================================================");
+    kernel_printf("#=============================================================================#");
 
     /* We will never return from interrupt */
     while(1)

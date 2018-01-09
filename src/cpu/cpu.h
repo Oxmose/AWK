@@ -439,49 +439,53 @@ __inline__ static uint64_t rdtsc()
  * mapped_io_write(addr, value)
  ******************************************************************************/
 
-__inline__ static void mapped_io_write_8(void* addr, const uint8_t value)
+__inline__ static void mapped_io_write_8(void* volatile addr,
+                                         const uint8_t value)
 {
     *(volatile uint8_t*)(addr) = value;
 }
 
-__inline__ static void mapped_io_write_16(void* addr, const uint16_t value)
+__inline__ static void mapped_io_write_16(void* volatile addr,
+                                          const uint16_t value)
 {
     *(volatile uint16_t*)(addr) = value;
 }
 
-__inline__ static void mapped_io_write_32(void* addr, const uint32_t value)
+__inline__ static void mapped_io_write_32(void* volatile addr,
+                                          const uint32_t value)
 {
     *(volatile uint32_t*)(addr) = value;
 }
 
-__inline__ static void mapped_io_write_64(void* addr, const uint64_t value)
+__inline__ static void mapped_io_write_64(void* volatile addr,
+                                          const uint64_t value)
 {
     *(volatile uint64_t*)(addr) = value;
 }
 
-__inline__ static uint8_t mapped_io_read_8(const void* addr)
+__inline__ static uint8_t mapped_io_read_8(const volatile void* addr)
 {
     return *(volatile uint8_t*)(addr);
 }
 
-__inline__ static uint16_t mapped_io_read_16(const void* addr)
+__inline__ static uint16_t mapped_io_read_16(const volatile void* addr)
 {
     return *(volatile uint16_t*)(addr);
 }
 
-__inline__ static uint32_t mapped_io_read_32(const void* addr)
+__inline__ static uint32_t mapped_io_read_32(const volatile void* addr)
 {
     return *(volatile uint32_t*)(addr);
 }
 
-__inline__ static uint64_t mapped_io_read_64(const void* addr)
+__inline__ static uint64_t mapped_io_read_64(const volatile void* addr)
 {
     return *(volatile uint64_t*)(addr);
 }
 
 __inline__ static void mapped_io_read_sized(const volatile void* addr,
-                                          void* value,
-                                          uint32_t size)
+                                            void* value,
+                                            uint32_t size)
 {
     volatile uint8_t* base = (volatile uint8_t*)addr;
     uint8_t* dest = (uint8_t*)value;

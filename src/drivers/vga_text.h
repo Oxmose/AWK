@@ -6,7 +6,7 @@
  *
  * Date: 03/10/2017
  *
- * Version: 1.0
+ * Version: 1.5
  *
  * VGA text mode driver.
  * Allows the kernel to display text and general ASCII characters to be
@@ -103,10 +103,15 @@ OS_RETURN_E vga_save_color_scheme(colorscheme_t* buffer);
 
 /* Used by the kernel to display strings on the screen.
  *
- * @param str The string to display on the screen.
- * @param len The length of the string to display.
+ * @param string The string to display on the screen.
  */
-void vga_console_putbytes(const char* str, const uint32_t len);
+void vga_put_string(const char* string);
+
+/* Used by the kernel to display character on the screen.
+ *
+ * @param charater The char to display on the screen.
+ */
+void vga_put_char(const char character);
 
 /* Used by the kernel to display strings on the screen from a keyboard input.
  *

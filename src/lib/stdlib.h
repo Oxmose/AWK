@@ -1,25 +1,25 @@
 /*******************************************************************************
  *
- * File: tests.h
+ * File: stdlib.h
  *
  * Author: Alexy Torres Aurora Dugo
  *
- * Date: 09/01/2018
+ * Date: 08/01/2018
  *
  * Version: 1.0
  *
- * Kernel tests bank
+ * Standard lib functions.
  ******************************************************************************/
 
-#ifndef __TESTS_H_
-#define __TESTS_H_
+#ifndef __STDLIB_H_
+#define __STDLIB_H_
+
+#include "stddef.h" /* Generic int types */
 
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
-
-#define TESTS 1
-
+ 
 /*******************************************************************************
  * STRUCTURES
  ******************************************************************************/
@@ -28,7 +28,7 @@
  * FUNCTIONS
  ******************************************************************************/
 
-extern void test_sw_interupts(void);
+extern void itoa(int32_t i, char* buf, uint32_t base);
+extern void uitoa(int32_t i, char* buf, uint32_t base);
 
-
- #endif /* __TESTS_H_ */
+#endif /* __STDLIB_H_ */
