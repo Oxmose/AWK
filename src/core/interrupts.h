@@ -19,7 +19,6 @@
 #include "../lib/stdint.h"       /* Generic int types */
 #include "../lib/stddef.h"       /* OS_RETURN_E */
 #include "../cpu/cpu_settings.h" /* IDT_ENTRY_COUNT */
-#include "../sync/lock.h"        /* spinlock */
 
 /*******************************************************************************
  * CONSTANTS
@@ -151,7 +150,6 @@ void enable_interrupt(void);
  */
 void disable_interrupt(void);
 
-#if 0
 /* Set the IRQ mask for the IRQ number given as parameter.
  *
  * @param irq_number The irq number to enable/disable.
@@ -193,7 +191,5 @@ uint32_t get_current_uptime(void);
  * @returns Tick count since the system started
  */
 uint32_t get_tick_count(void);
-
-#endif
 
 #endif /* __INTERRUPTS_H_ */

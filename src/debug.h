@@ -29,6 +29,8 @@
 //#define DEBUG_SCHED
 //#define DEBUG_ATA
 //#define DEBUG_LAPIC
+#define DEBUG_PIC
+#define DEBUG_PIT
 
 #endif /* DEBUG */
 

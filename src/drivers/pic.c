@@ -17,6 +17,8 @@
 #include "../lib/stddef.h"         /* OS_RETURN_E, NULL */
 #include "../core/kernel_output.h" /* kernel_success */
 
+#include "../debug.h"      /* kernel_serial_debug */
+
 /* Header file */
 #include "pic.h"
 
@@ -53,18 +55,18 @@ OS_RETURN_E init_pic(void)
     return OS_NO_ERR;
 }
 
-OS_RETURN_E set_IRQ_PIC_mask(const uint32_t IRQ_number, const uint8_t enabled)
+OS_RETURN_E set_IRQ_PIC_mask(const uint32_t irq_number, const uint8_t enabled)
 {
     uint8_t  init_mask;
     uint32_t cascading_number;
 
-    if(IRQ_number > PIC_MAX_IRQ_LINE)
+    if(irq_number > PIC_MAX_IRQ_LINE)
     {
         return OS_ERR_NO_SUCH_IRQ_LINE;
     }
 
     /* Manage master PIC */
-    if(IRQ_number < 8)
+    if(irq_number < 8)
     {
         /* Retrieve initial mask */
         init_mask = inb(PIC_MASTER_DATA_PORT);
@@ -72,11 +74,11 @@ OS_RETURN_E set_IRQ_PIC_mask(const uint32_t IRQ_number, const uint8_t enabled)
         /* Set new mask value */
         if(!enabled)
         {
-            init_mask |= 1 << IRQ_number;
+            init_mask |= 1 << irq_number;
         }
         else
         {
-            init_mask &= ~(1 << IRQ_number);
+            init_mask &= ~(1 << irq_number);
         }
 
         /* Set new mask */
@@ -84,10 +86,10 @@ OS_RETURN_E set_IRQ_PIC_mask(const uint32_t IRQ_number, const uint8_t enabled)
     }
 
     /* Manage slave PIC. WARNING, cascading has to be enabled */
-    if(IRQ_number > 7)
+    if(irq_number > 7)
     {
         /* Set new IRQ number */
-        cascading_number = IRQ_number - 8;
+        cascading_number = irq_number - 8;
 
         /* Retrieve initial mask */
         init_mask = inb(PIC_SLAVE_DATA_PORT);
@@ -106,22 +108,30 @@ OS_RETURN_E set_IRQ_PIC_mask(const uint32_t IRQ_number, const uint8_t enabled)
         outb(init_mask, PIC_SLAVE_DATA_PORT);
     }
 
+    #ifdef DEBUG_PIC
+    kernel_serial_debug("PIC mask INT %d: %d\n", irq_number, enabled);
+    #endif
+
     return OS_NO_ERR;
 }
 
-OS_RETURN_E set_IRQ_PIC_EOI(const uint32_t IRQ_number)
+OS_RETURN_E set_IRQ_PIC_EOI(const uint32_t irq_number)
 {
-    if(IRQ_number > PIC_MAX_IRQ_LINE)
+    if(irq_number > PIC_MAX_IRQ_LINE)
     {
         return OS_ERR_NO_SUCH_IRQ_LINE;
     }
 
     /* End of interrupt signal */
-    if(IRQ_number > 7)
+    if(irq_number > 7)
     {
         outb(PIC_EOI, PIC_SLAVE_COMM_PORT);
     }
     outb(PIC_EOI, PIC_MASTER_COMM_PORT);
+
+    #ifdef DEBUG_PIC
+    kernel_serial_debug("PIC EOI INT %d: %d\n", irq_number);
+    #endif
 
     return OS_NO_ERR;
 }

@@ -17,6 +17,8 @@
 #include "../lib/stdint.h"         /* Generioc int types */
 #include "../lib/stddef.h"         /* OS_RETURN_E */
 
+#include "../debug.h"      /* kernel_serial_debug */
+
 /* Header include */
 #include "pit.h"
 
@@ -25,16 +27,16 @@
  ******************************************************************************/
 
 /* Uptime in miliseconds */
-static uint32_t uptime;
+static volatile uint32_t uptime;
 
 /* Tick counter, circular when reaching overflow */
-static uint32_t tick_count;
+static volatile uint32_t tick_count;
 
 /* Keep track on the frequency */
-static uint32_t tick_freq;
+static volatile uint32_t tick_freq;
 
 /* Keep track on the PIT state */
-static uint32_t disabled_nesting;
+static volatile uint32_t disabled_nesting;
 
 /*******************************************************************************
  * FUNCTIONS
@@ -110,6 +112,9 @@ OS_RETURN_E enable_pit(void)
     }
     if(disabled_nesting == 0)
     {
+        #ifdef DEBUG_PIT
+        kernel_serial_debug("Enable PIT\n");
+        #endif
         return set_IRQ_mask(PIT_IRQ_LINE, 1);
     }
 
@@ -123,6 +128,9 @@ OS_RETURN_E disable_pit(void)
         ++disabled_nesting;
     }
 
+    #ifdef DEBUG_PIT
+    kernel_serial_debug("Disable PIT (%d)\n", disabled_nesting);
+    #endif
     return set_IRQ_mask(PIT_IRQ_LINE, 0);
 }
 
@@ -149,6 +157,10 @@ OS_RETURN_E set_pit_freq(const uint32_t freq)
     outb(PIT_COMM_SET_FREQ, PIT_COMM_PORT);
     outb(tick_freq & 0x00FF, PIT_DATA_PORT);
     outb(tick_freq >> 8, PIT_DATA_PORT);
+
+    #ifdef DEBUG_PIT
+    kernel_serial_debug("New PIT frequency set (%d)\n", freq);
+    #endif
 
     /* Enable PIT IRQ */
     return enable_pit();
@@ -177,19 +189,28 @@ OS_RETURN_E set_pit_handler(void(*handler)(
     err = remove_interrupt_handler(PIT_INTERRUPT_LINE);
     if(err != OS_NO_ERR)
     {
+        enable_pit();
         return err;
     }
 
     err = register_interrupt_handler(PIT_INTERRUPT_LINE, handler);
     if(err != OS_NO_ERR)
     {
+        enable_pit();
         return err;
     }
+
+    #ifdef DEBUG_PIT
+    kernel_serial_debug("New PIT handler set (0x%08x)\n", handler);
+    #endif
 
     return enable_pit();
 }
 
 OS_RETURN_E remove_pit_handler(void)
 {
+    #ifdef DEBUG_PIT
+    kernel_serial_debug("Default PIT handler set\n");
+    #endif
     return set_pit_handler(dummy_handler);
 }

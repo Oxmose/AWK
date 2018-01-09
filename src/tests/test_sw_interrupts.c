@@ -154,8 +154,6 @@ static void test_sw_interupts_lock(void)
         kernel_error("TEST_SW_INT_LOCK 7 %d != %d\n", cnt_val, counter);
         kernel_panic();
     }
-
-    kernel_debug("Software interrupt lock tests passed\n");
 }
 
 void test_sw_interupts(void)

@@ -12,6 +12,7 @@
  * AT THIS POINT INTERRUPT SHOULD BE DISABLED
  ******************************************************************************/
 
+#include "../drivers/pit.h"      /* init_pit */
 #include "../drivers/pic.h"      /* init_pic */
 #include "../drivers/acpi.h"     /* init_acpi */
 #include "../cpu/cpu.h"          /* get_cpu_info */
@@ -51,7 +52,6 @@ void kernel_kickstart(void)
 
                 for(int8_t j = 0; j < 4; ++j)
                 {
-
                     kernel_printf("%c", (char)((regs[1] >> (j * 8)) & 0xFF));
                 }
                 for(int8_t j = 0; j < 4; ++j)
@@ -76,6 +76,17 @@ void kernel_kickstart(void)
         kernel_panic();
     }
 
+    /* Init ACPI */
+    err = init_acpi();
+    if(err == OS_NO_ERR)
+    {
+        kernel_success("ACPI Initialized\n");
+    }
+    else
+    {
+        kernel_error("ACPI Initialization error [%d]\n", err);
+    }
+
     /* Init kernel interrupt handlers */
     err = init_kernel_interrupt();
     if(err == OS_NO_ERR)
@@ -93,17 +104,6 @@ void kernel_kickstart(void)
     test_sw_interupts();
 #endif
 
-    /* Init ACPI */
-    err = init_acpi();
-    if(err == OS_NO_ERR)
-    {
-        kernel_success("ACPI Initialized\n");
-    }
-    else
-    {
-        kernel_error("ACPI Initialization error [%d]\n", err);
-    }
-
     /* Init PIC */
     err = init_pic();
     if(err == OS_NO_ERR)
@@ -115,5 +115,26 @@ void kernel_kickstart(void)
         kernel_error("PIC Initialization error [%d]\n", err);
         kernel_panic();
     }
+
+#ifdef TESTS
+    /* Test insterrupts */
+    test_pic();
+#endif
+
+    /* Init PIT */
+    err = init_pit();
+    if(err == OS_NO_ERR)
+    {
+        kernel_success("PIT Initialized\n");
+    }
+    else
+    {
+        kernel_error("PIT Initialization error [%d]\n", err);
+        kernel_panic();
+    }
+#ifdef TESTS
+    /* Test insterrupts */
+    test_pit();
+#endif
 
 }
