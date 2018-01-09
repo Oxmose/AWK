@@ -12,6 +12,7 @@
  * AT THIS POINT INTERRUPT SHOULD BE DISABLED
  ******************************************************************************/
 
+#include "../drivers/pic.h"      /* init_pic */
 #include "../drivers/acpi.h"     /* init_acpi */
 #include "../cpu/cpu.h"          /* get_cpu_info */
 #include "kernel_output.h"       /* kernel_success, kernel_error, kernel_info */
@@ -101,6 +102,18 @@ void kernel_kickstart(void)
     else
     {
         kernel_error("ACPI Initialization error [%d]\n", err);
+    }
+
+    /* Init PIC */
+    err = init_pic();
+    if(err == OS_NO_ERR)
+    {
+        kernel_success("PIC Initialized\n");
+    }
+    else
+    {
+        kernel_error("PIC Initialization error [%d]\n", err);
+        kernel_panic();
     }
 
 }
