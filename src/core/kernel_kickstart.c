@@ -12,11 +12,15 @@
  * AT THIS POINT INTERRUPT SHOULD BE DISABLED
  ******************************************************************************/
 
-#include "../tests/tests.h"      /* test_bank */
+#include "../drivers/acpi.h"     /* init_acpi */
 #include "../cpu/cpu.h"          /* get_cpu_info */
 #include "kernel_output.h"       /* kernel_success, kernel_error, kernel_info */
 #include "interrupts.h"          /* init_kernel_interrupt */
 #include "panic.h"               /* kernel_panic */
+
+#include "../tests/tests.h"      /* test_bank */
+
+#include "../debug.h"            /* DEBUG */
 
 /*******************************************************************************
  * GLOBAL VARIABLES
@@ -87,5 +91,16 @@ void kernel_kickstart(void)
     /* Test insterrupts */
     test_sw_interupts();
 #endif
+
+    /* Init ACPI */
+    err = init_acpi();
+    if(err == OS_NO_ERR)
+    {
+        kernel_success("ACPI Initialized\n");
+    }
+    else
+    {
+        kernel_error("ACPI Initialization error [%d]\n", err);
+    }
 
 }
