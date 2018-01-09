@@ -12,6 +12,7 @@
  * Allows to remmap the PIC IRQ, set the IRQs mask, manage EoI.
  ******************************************************************************/
 
+#include "../sync/lock.h"          /* spinlock */
 #include "../cpu/cpu.h"            /* outb */
 #include "../lib/stdint.h"         /* Generic int types */
 #include "../lib/stddef.h"         /* OS_RETURN_E, NULL */
@@ -25,6 +26,8 @@
 /*******************************************************************************
  * GLOBAL VARIABLES
  ******************************************************************************/
+
+static lock_t pic_lock;
 
 /*******************************************************************************
  * FUNCTIONS
@@ -52,6 +55,8 @@ OS_RETURN_E init_pic(void)
     outb(0xFF, PIC_MASTER_DATA_PORT);
     outb(0xFF, PIC_SLAVE_DATA_PORT);
 
+    spinlock_init(&pic_lock);
+
     return OS_NO_ERR;
 }
 
@@ -64,6 +69,8 @@ OS_RETURN_E set_IRQ_PIC_mask(const uint32_t irq_number, const uint8_t enabled)
     {
         return OS_ERR_NO_SUCH_IRQ_LINE;
     }
+
+    spinlock_lock(&pic_lock);
 
     /* Manage master PIC */
     if(irq_number < 8)
@@ -112,6 +119,8 @@ OS_RETURN_E set_IRQ_PIC_mask(const uint32_t irq_number, const uint8_t enabled)
     kernel_serial_debug("PIC mask INT %d: %d\n", irq_number, enabled);
     #endif
 
+    spinlock_unlock(&pic_lock);
+
     return OS_NO_ERR;
 }
 
@@ -121,6 +130,8 @@ OS_RETURN_E set_IRQ_PIC_EOI(const uint32_t irq_number)
     {
         return OS_ERR_NO_SUCH_IRQ_LINE;
     }
+
+    spinlock_lock(&pic_lock);
 
     /* End of interrupt signal */
     if(irq_number > 7)
@@ -132,6 +143,8 @@ OS_RETURN_E set_IRQ_PIC_EOI(const uint32_t irq_number)
     #ifdef DEBUG_PIC
     kernel_serial_debug("PIC EOI INT %d: %d\n", irq_number);
     #endif
+
+    spinlock_unlock(&pic_lock);
 
     return OS_NO_ERR;
 }

@@ -16,6 +16,7 @@
                                     * stack_state, set_IRQ_mask, set_IRQ_EOI */
 #include "../lib/stdint.h"         /* Generioc int types */
 #include "../lib/stddef.h"         /* OS_RETURN_E */
+#include "../sync/lock.h"          /* spinlock */
 
 #include "../debug.h"      /* kernel_serial_debug */
 
@@ -37,6 +38,8 @@ static volatile uint32_t tick_freq;
 
 /* Keep track on the PIT state */
 static volatile uint32_t disabled_nesting;
+
+static lock_t pit_lock;
 
 /*******************************************************************************
  * FUNCTIONS
@@ -83,6 +86,8 @@ OS_RETURN_E init_pit(void)
         return err;
     }
 
+    spinlock_init(&pit_lock);
+
     /* Enable PIT IRQ */
     return enable_pit();
 }
@@ -105,7 +110,8 @@ uint32_t get_pit_current_uptime(void)
 
 OS_RETURN_E enable_pit(void)
 {
-    /* Check if we can enable */
+    spinlock_lock(&pit_lock);
+
     if(disabled_nesting > 0)
     {
         --disabled_nesting;
@@ -115,14 +121,21 @@ OS_RETURN_E enable_pit(void)
         #ifdef DEBUG_PIT
         kernel_serial_debug("Enable PIT\n");
         #endif
+
+        spinlock_unlock(&pit_lock);
         return set_IRQ_mask(PIT_IRQ_LINE, 1);
     }
 
+    spinlock_unlock(&pit_lock);
     return OS_NO_ERR;
 }
 
 OS_RETURN_E disable_pit(void)
 {
+    OS_RETURN_E err;
+
+    spinlock_lock(&pit_lock);
+
     if(disabled_nesting < UINT32_MAX)
     {
         ++disabled_nesting;
@@ -131,7 +144,11 @@ OS_RETURN_E disable_pit(void)
     #ifdef DEBUG_PIT
     kernel_serial_debug("Disable PIT (%d)\n", disabled_nesting);
     #endif
-    return set_IRQ_mask(PIT_IRQ_LINE, 0);
+    err = set_IRQ_mask(PIT_IRQ_LINE, 0);
+
+    spinlock_unlock(&pit_lock);
+
+    return err;
 }
 
 OS_RETURN_E set_pit_freq(const uint32_t freq)
@@ -150,6 +167,8 @@ OS_RETURN_E set_pit_freq(const uint32_t freq)
         return err;
     }
 
+    spinlock_lock(&pit_lock);
+
     tick_freq  = freq;
 
     /* Set clock frequency */
@@ -161,6 +180,8 @@ OS_RETURN_E set_pit_freq(const uint32_t freq)
     #ifdef DEBUG_PIT
     kernel_serial_debug("New PIT frequency set (%d)\n", freq);
     #endif
+
+    spinlock_unlock(&pit_lock);
 
     /* Enable PIT IRQ */
     return enable_pit();
@@ -185,10 +206,13 @@ OS_RETURN_E set_pit_handler(void(*handler)(
         return err;
     }
 
+    spinlock_lock(&pit_lock);
+
     /* Remove the current handler */
     err = remove_interrupt_handler(PIT_INTERRUPT_LINE);
     if(err != OS_NO_ERR)
     {
+        spinlock_unlock(&pit_lock);
         enable_pit();
         return err;
     }
@@ -196,6 +220,7 @@ OS_RETURN_E set_pit_handler(void(*handler)(
     err = register_interrupt_handler(PIT_INTERRUPT_LINE, handler);
     if(err != OS_NO_ERR)
     {
+        spinlock_unlock(&pit_lock);
         enable_pit();
         return err;
     }
@@ -204,6 +229,7 @@ OS_RETURN_E set_pit_handler(void(*handler)(
     kernel_serial_debug("New PIT handler set (0x%08x)\n", handler);
     #endif
 
+    spinlock_unlock(&pit_lock);
     return enable_pit();
 }
 

@@ -34,7 +34,7 @@ OS_RETURN_E spinlock_lock(lock_t* lock)
         return OS_ERR_NULL_POINTER;
     }
 
-#ifdef KERNEL_MONOCORE
+#ifdef KERNEL_MONOCORE_SYNC
     disable_interrupt();
     *lock = 1;
 #else
@@ -54,7 +54,7 @@ OS_RETURN_E spinlock_unlock(lock_t* lock)
 
     *lock = 0;
 
-#ifdef KERNEL_MONOCORE
+#ifdef KERNEL_MONOCORE_SYNC
     enable_interrupt();
 #endif
 

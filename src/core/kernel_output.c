@@ -25,7 +25,7 @@
  * GLOBAL VARIABLES
  ******************************************************************************/
 
-static output_t current_output;
+static volatile output_t current_output;
 
 /*******************************************************************************
  * FUNCTIONS
@@ -63,7 +63,7 @@ static void kprint_fmt(const char* str, __builtin_va_list args)
     char     tmp[32];
     int32_t  str_size;
     uint32_t offset;
-    char     char_padding = ' ';    
+    char     char_padding = ' ';
     int32_t  padding = -1;
 
 	for(i = 0; i < strlen(str); ++i)
