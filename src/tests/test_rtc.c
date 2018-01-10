@@ -91,8 +91,9 @@ void test_rtc(void)
             kernel_panic();
         }
     }
-    
-    for(volatile int32_t j = 0; j < 100000000; ++j);
+
+    /* Wait for event, the test will never pass if not event is detected */
+    while(counter == 0);
 
     for(i = 0; i < RTC_MAX_EVENT_COUNT; ++i)
     {
