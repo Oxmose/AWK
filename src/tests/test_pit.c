@@ -31,9 +31,7 @@ static void pit_handler(cpu_state_t* cpu, uint32_t id, stack_state_t* stack)
     (void)id;
     (void)stack;
 
-
-    update_pit_tick();
-    counter = get_pit_tick_count();
+    counter++;
     set_IRQ_EOI(PIT_IRQ_LINE);
 }
 
@@ -146,7 +144,6 @@ void test_pit(void)
 
     /* Check if the PIT did not erenabled itself between */
     for(i = 0; i < 10000000; ++i);
-    counter = get_pit_tick_count();
     if(counter != cnt_val)
     {
         kernel_error("TEST_PIT 9\n");
@@ -161,6 +158,6 @@ void test_pit(void)
     }
 
     kernel_debug("PIT tests passed\n");
-
+    enable_pit();
     disable_interrupt();
 }

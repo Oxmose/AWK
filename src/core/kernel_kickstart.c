@@ -12,6 +12,7 @@
  * AT THIS POINT INTERRUPT SHOULD BE DISABLED
  ******************************************************************************/
 
+#include "../drivers/rtc.h"      /* init_rtc */
 #include "../drivers/pit.h"      /* init_pit */
 #include "../drivers/pic.h"      /* init_pic */
 #include "../drivers/acpi.h"     /* init_acpi */
@@ -100,7 +101,6 @@ void kernel_kickstart(void)
     }
 
 #ifdef TESTS
-    /* Test insterrupts */
     test_sw_interupts();
 #endif
 
@@ -117,7 +117,6 @@ void kernel_kickstart(void)
     }
 
 #ifdef TESTS
-    /* Test insterrupts */
     test_pic();
 #endif
 
@@ -133,8 +132,26 @@ void kernel_kickstart(void)
         kernel_panic();
     }
 #ifdef TESTS
-    /* Test insterrupts */
     test_pit();
 #endif
 
+    /* Init RTC */
+    err = init_rtc();
+    if(err == OS_NO_ERR)
+    {
+        kernel_success("RTC Initialized\n");
+    }
+    else
+    {
+        kernel_error("RTC Initialization error [%d]\n", err);
+        kernel_panic();
+    }
+#ifdef TESTS
+    test_rtc();
+#endif
+
+
+    enable_interrupt();
+
+    while(1);
 }

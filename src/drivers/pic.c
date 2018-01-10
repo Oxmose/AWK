@@ -116,7 +116,7 @@ OS_RETURN_E set_IRQ_PIC_mask(const uint32_t irq_number, const uint8_t enabled)
     }
 
     #ifdef DEBUG_PIC
-    kernel_serial_debug("PIC mask INT %d: %d\n", irq_number, enabled);
+    kernel_serial_debug("PIC mask IRQ %d: %d\n", irq_number, enabled);
     #endif
 
     spinlock_unlock(&pic_lock);
@@ -131,8 +131,6 @@ OS_RETURN_E set_IRQ_PIC_EOI(const uint32_t irq_number)
         return OS_ERR_NO_SUCH_IRQ_LINE;
     }
 
-    spinlock_lock(&pic_lock);
-
     /* End of interrupt signal */
     if(irq_number > 7)
     {
@@ -141,10 +139,8 @@ OS_RETURN_E set_IRQ_PIC_EOI(const uint32_t irq_number)
     outb(PIC_EOI, PIC_MASTER_COMM_PORT);
 
     #ifdef DEBUG_PIC
-    kernel_serial_debug("PIC EOI INT %d: %d\n", irq_number);
+    kernel_serial_debug("PIC EOI IRQ %d\n", irq_number);
     #endif
-
-    spinlock_unlock(&pic_lock);
 
     return OS_NO_ERR;
 }

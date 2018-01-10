@@ -31,5 +31,6 @@
 extern void test_sw_interupts(void);
 extern void test_pic(void);
 extern void test_pit(void);
+extern void test_rtc(void);
 
  #endif /* __TESTS_H_ */

@@ -27,7 +27,7 @@
 #define PIT_COMM_PORT      0x34
 #define PIT_DATA_PORT      0x40
 #define PIT_COMM_SET_FREQ  0x43
-#define PIT_INIT_FREQ      100
+#define PIT_INIT_FREQ      20
 #define PIT_MIN_FREQ       20
 #define PIT_MAX_FREQ       8000
 
