@@ -266,6 +266,11 @@ OS_RETURN_E register_rtc_event(void (*function)(void),
         *event_id = i;
     }
 
+    #ifdef DEBUG_RTC
+    kernel_serial_debug("Registered RTC event id %d, handler 0x%08x\n",
+                         i, (uint32_t)function);
+    #endif
+
     spinlock_unlock(&clock_events_lock);
 
     return OS_NO_ERR;
@@ -290,6 +295,10 @@ OS_RETURN_E unregister_rtc_event(const OS_EVENT_ID event_id)
     clock_events[event_id].enabled = 0;
     clock_events[event_id].execute = NULL;
     clock_events[event_id].period  = 0;
+
+    #ifdef DEBUG_RTC
+    kernel_serial_debug("Unregistered RTC event id %d\n", event_id);
+    #endif
 
     spinlock_unlock(&clock_events_lock);
 
