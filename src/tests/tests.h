@@ -9,6 +9,10 @@
  * Version: 1.0
  *
  * Kernel tests bank
+ *
+ * !!! WHEN TESTS ARE ENABLED PLEASE DONT USE KEYBOARD OR MOUSE BEFORE THE !!!
+ * !!! KERNEL HAS FINISHED ITS INITIALIZATION, THE IRQs ARE NOT HANDLED    !!!
+ * !!! PROPERLY DURING THE TEST PHASE                                      !!!
  ******************************************************************************/
 
 #ifndef __TESTS_H_
@@ -32,5 +36,7 @@ extern void test_sw_interupts(void);
 extern void test_pic(void);
 extern void test_pit(void);
 extern void test_rtc(void);
+extern void test_keyboard(void);
+extern void test_mouse(void);
 
  #endif /* __TESTS_H_ */

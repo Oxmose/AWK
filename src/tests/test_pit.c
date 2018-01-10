@@ -49,8 +49,6 @@ void test_pit(void)
         kernel_panic();
     }
 
-
-
     /* REGISTER OUR HANNDLER */
     if(set_pit_handler(pit_handler) != OS_NO_ERR)
     {
@@ -58,16 +56,12 @@ void test_pit(void)
         kernel_panic();
     }
 
-
-
     /* REMOVE */
     if(remove_pit_handler() != OS_NO_ERR)
     {
         kernel_error("TEST_PIT 2\n");
         kernel_panic();
     }
-
-
 
     /* REGISTER OUR HANNDLER */
     if(set_pit_handler(pit_handler) != OS_NO_ERR)

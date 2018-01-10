@@ -12,6 +12,8 @@
  * AT THIS POINT INTERRUPT SHOULD BE DISABLED
  ******************************************************************************/
 
+#include "../drivers/keyboard.h"    /* init_keyboard */
+#include "../drivers/mouse.h"    /* init_mouse */
 #include "../drivers/rtc.h"      /* init_rtc */
 #include "../drivers/pit.h"      /* init_pit */
 #include "../drivers/pic.h"      /* init_pic */
@@ -150,6 +152,36 @@ void kernel_kickstart(void)
     test_rtc();
 #endif
 
+    /* Init MOUSE */
+    err = init_keyboard();
+    if(err == OS_NO_ERR)
+    {
+        kernel_success("KEYBOARD Initialized\n");
+    }
+    else
+    {
+        kernel_error("KEYBOARD Initialization error [%d]\n", err);
+        kernel_panic();
+    }
+#ifdef TESTS
+    test_keyboard();
+#endif
+
+
+    /* Init MOUSE */
+    err = init_mouse();
+    if(err == OS_NO_ERR)
+    {
+        kernel_success("MOUSE Initialized\n");
+    }
+    else
+    {
+        kernel_error("MOUSE Initialization error [%d]\n", err);
+        kernel_panic();
+    }
+#ifdef TESTS
+    test_mouse();
+#endif
 
     enable_interrupt();
 
