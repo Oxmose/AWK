@@ -1,6 +1,6 @@
 /*******************************************************************************
  *
- * File: test_io_apic.c
+ * File: test_lapic.c
  *
  * Author: Alexy Torres Aurora Dugo
  *
@@ -8,7 +8,7 @@
  *
  * Version: 1.0
  *
- * Kernel tests bank: IO Advanced programmable interrupt controler tests
+ * Kernel tests bank: Local Advanced programmable interrupt controler tests
  ******************************************************************************/
 
 

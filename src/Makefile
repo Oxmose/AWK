@@ -1,6 +1,7 @@
 # Noyau
 KERNEL = kernel.bin
 
+BIOS_DIR = $(wildcard bios/*.c bios/*.S)
 CORE_DIR = $(wildcard core/*.c core/*.S)
 CPU_DIR = $(wildcard cpu/*.c cpu/*.S)
 DRIVERS_DIR = $(wildcard drivers/*.c drivers/*.S)
@@ -12,7 +13,7 @@ COMM_DIR = $(wildcard comm/*.c comm/*.S)
 TESTS_DIR = $(wildcard tests/*.c tests/*.S)
 USER_DIR = $(wildcard user/*.c user/*.S)
 # on compile tous les fichiers assembleur et c du repertoire
-SRCS = $(CORE_DIR) $(CPU_DIR) $(DRIVERS_DIR) $(LIB_DIR) $(STDLIB_DIR) $(STRLIB_DIR) $(SYNC_DIR) $(COMM_DIR) $(TESTS_DIR) $(USER_DIR)
+SRCS = $(BIOS_DIR) $(CORE_DIR) $(CPU_DIR) $(DRIVERS_DIR) $(LIB_DIR) $(STDLIB_DIR) $(STRLIB_DIR) $(SYNC_DIR) $(COMM_DIR) $(TESTS_DIR) $(USER_DIR)
 
 # crt0.o doit etre linke en premier
 OBJS = $(patsubst %.S,%.o,$(patsubst %.c,%.o,$(SRCS)))

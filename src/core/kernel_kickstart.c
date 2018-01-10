@@ -81,6 +81,8 @@ void kernel_kickstart(void)
         kernel_panic();
     }
 
+    test_bios_call();
+
     /* Init ACPI */
     err = init_acpi();
     if(err == OS_NO_ERR)
