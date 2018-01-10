@@ -12,7 +12,9 @@
  * AT THIS POINT INTERRUPT SHOULD BE DISABLED
  ******************************************************************************/
 
-#include "../drivers/keyboard.h"    /* init_keyboard */
+#include "../drivers/lapic.h"    /* init_lapic */
+#include "../drivers/io_apic.h"  /* init_ioapic */
+#include "../drivers/keyboard.h" /* init_keyboard */
 #include "../drivers/mouse.h"    /* init_mouse */
 #include "../drivers/rtc.h"      /* init_rtc */
 #include "../drivers/pit.h"      /* init_pit */
@@ -122,6 +124,43 @@ void kernel_kickstart(void)
     test_pic();
 #endif
 
+    /* Init IOAPIC */
+    if(acpi_get_io_apic_available() == 1)
+    {
+        kernel_info("IO-APIC detected, PIC will be desactivated.\n");
+        err = init_io_apic();
+        if(err == OS_NO_ERR)
+        {
+            kernel_success("IO-APIC Initialized\n");
+        }
+        else
+        {
+            kernel_error("IO-APIC Initialization error [%d]\n", err);
+            kernel_panic();
+        }
+    #ifdef TESTS
+        test_io_apic();
+    #endif
+    }
+
+    /* Init LAPIC */
+    if(acpi_get_lapic_available() == 1)
+    {
+        err = init_lapic();
+        if(err == OS_NO_ERR)
+        {
+            kernel_success("Local APIC Initialized\n");
+        }
+        else
+        {
+            kernel_error("Local APIC Initialization error [%d]\n", err);
+            kernel_panic();
+        }
+    #ifdef TESTS
+        test_lapic();
+    #endif
+    }
+
     /* Init PIT */
     err = init_pit();
     if(err == OS_NO_ERR)
@@ -136,6 +175,24 @@ void kernel_kickstart(void)
 #ifdef TESTS
     test_pit();
 #endif
+
+    /* Init LAPIC TIMER */
+    if(acpi_get_lapic_available() == 1)
+    {
+        err = init_lapic_timer();
+        if(err == OS_NO_ERR)
+        {
+            kernel_success("Local APIC TIMER Initialized\n");
+        }
+        else
+        {
+            kernel_error("Local APIC TIMER Initialization error [%d]\n", err);
+            kernel_panic();
+        }
+    #ifdef TESTS
+        test_lapic_timer();
+    #endif
+    }
 
     /* Init RTC */
     err = init_rtc();

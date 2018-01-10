@@ -77,7 +77,6 @@ void test_pit(void)
     enable_pit();
 
     for(i = 0; i < 10000000; ++i);
-
     disable_pit();
     cnt_val = counter;
     if(counter == 0)
@@ -104,7 +103,7 @@ void test_pit(void)
     cnt_val = counter;
     if(counter == 0)
     {
-        kernel_error("TEST_PIT 4\n");
+        kernel_error("TEST_PIT 6\n");
         kernel_panic();
     }
 
@@ -113,26 +112,26 @@ void test_pit(void)
     for(i = 0; i < 10000000; ++i);
     if(counter != cnt_val)
     {
-        kernel_error("TEST_PIT 5\n");
+        kernel_error("TEST_PIT 7\n");
         kernel_panic();
     }
 
 
     if(set_pit_freq(PIT_INIT_FREQ) != OS_NO_ERR)
     {
-        kernel_error("TEST_PIT 6\n");
+        kernel_error("TEST_PIT 8\n");
         kernel_panic();
     }
 
     if(set_pit_freq(PIT_MIN_FREQ - 1) != OS_ERR_OUT_OF_BOUND)
     {
-        kernel_error("TEST_PIT 7\n");
+        kernel_error("TEST_PIT 9\n");
         kernel_panic();
     }
 
     if(set_pit_freq(PIT_MAX_FREQ + 1) != OS_ERR_OUT_OF_BOUND)
     {
-        kernel_error("TEST_PIT 8\n");
+        kernel_error("TEST_PIT 10\n");
         kernel_panic();
     }
 
@@ -140,18 +139,19 @@ void test_pit(void)
     for(i = 0; i < 10000000; ++i);
     if(counter != cnt_val)
     {
-        kernel_error("TEST_PIT 9\n");
+        kernel_error("TEST_PIT 11\n");
         kernel_panic();
     }
 
     /* REMOVE */
     if(remove_pit_handler() != OS_NO_ERR)
     {
-        kernel_error("TEST_PIT 10\n");
+        kernel_error("TEST_PIT 12\n");
         kernel_panic();
     }
 
     kernel_debug("PIT tests passed\n");
+    
     enable_pit();
     disable_interrupt();
 }

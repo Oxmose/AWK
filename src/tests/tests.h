@@ -34,7 +34,10 @@
 
 extern void test_sw_interupts(void);
 extern void test_pic(void);
+extern void test_io_apic(void);
 extern void test_pit(void);
+extern void test_lapic(void);
+extern void test_lapic_timer(void);
 extern void test_rtc(void);
 extern void test_keyboard(void);
 extern void test_mouse(void);

@@ -24,13 +24,14 @@
 //#define DEBUG_ACPI
 //#define DEBUG_DRIVER_MANAGER
 //#define DEBUG_INTERRUPT
-//define DEBUG_KERNEL_QUEUE
+//#define DEBUG_KERNEL_QUEUE
 //#define DEBUG_SCHED
 //#define DEBUG_ATA
-//#define DEBUG_LAPIC
+#define DEBUG_LAPIC
 #define DEBUG_PIC
-//#define DEBUG_PIT
-#define DEBUG_MOUSE
+#define DEBUG_IOAPIC
+#define DEBUG_PIT
+//#define DEBUG_MOUSE
 
 #endif /* DEBUG */
 

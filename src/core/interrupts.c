@@ -18,17 +18,12 @@
 #include "../lib/string.h"       /* memset */
 #include "../sync/lock.h"        /* spinlock */
 #include "../drivers/pic.h"      /* set_IRQ_PIC_EOI, set_IRQ_PIC_mask */
-#include "../drivers/acpi.h"                /* acpi_get_io_apic_available */
-#include "../drivers/pit.h"      /* upadte_pit_tick */
-#if 0
 #include "../drivers/io_apic.h"  /* set_IRQ_IO_APIC_mask */
-#endif
-
+#include "../drivers/acpi.h"     /* acpi_get_io_apic_available */
+#include "../drivers/pit.h"      /* upadte_pit_tick */
+#include "../drivers/lapic.h"    /* set_INT_LAPIC_EOI */
 #include "../cpu/cpu_settings.h" /* IDT_ENTRY_COUNT */
 #include "../cpu/cpu.h"          /* sti cli */
-#if 0
-#include "../cpu/lapic.h"        /* set_INT_LAPIC_EOI */
-#endif
 #include "kernel_output.h"       /* kernel_success */
 #include "panic.h"               /* panic, interrupt */
 
@@ -278,7 +273,7 @@ void disable_interrupt(void)
     #endif
 }
 
-#if 0
+
 OS_RETURN_E set_IRQ_mask(const uint32_t irq_number, const uint8_t enabled)
 {
 
@@ -286,12 +281,11 @@ OS_RETURN_E set_IRQ_mask(const uint32_t irq_number, const uint8_t enabled)
 
     if(io_apic_capable == 1)
     {
-
-
         return set_IRQ_IO_APIC_mask(irq_number, enabled);
     }
     else
     {
+        /* Make sure the cascading PIC IRQ is unmasked */
         if(irq_number > 7 && enabled == 1)
         {
             err = set_IRQ_mask(PIC_CASCADING_IRQ, 1);
@@ -301,15 +295,13 @@ OS_RETURN_E set_IRQ_mask(const uint32_t irq_number, const uint8_t enabled)
             }
         }
 
-
-
         return set_IRQ_PIC_mask(irq_number, enabled);
     }
 }
 
 OS_RETURN_E set_IRQ_EOI(const uint32_t irq_number)
 {
-    if(io_apic_capable == 1)
+    if(lapic_capable == 1)
     {
         return set_INT_LAPIC_EOI(irq_number);
     }
@@ -379,55 +371,3 @@ uint32_t get_tick_count(void)
         return get_pit_tick_count();
     }
 }
-#else
-
-OS_RETURN_E set_IRQ_mask(const uint32_t irq_number, const uint8_t enabled)
-{
-    OS_RETURN_E err;
-
-    /* Make sure the cascading PIC IRQ is unmasked */
-    if(irq_number > 7 && enabled == 1)
-    {
-        err = set_IRQ_mask(PIC_CASCADING_IRQ, 1);
-        if(err != OS_NO_ERR)
-        {
-            return err;
-        }
-    }
-
-    return set_IRQ_PIC_mask(irq_number, enabled);
-
-}
-
-OS_RETURN_E set_IRQ_EOI(const uint32_t irq_number)
-{
-    return set_IRQ_PIC_EOI(irq_number);
-}
-
-void update_tick(void)
-{
-    update_pit_tick();
-}
-
-int32_t get_IRQ_SCHED_TIMER(void)
-{
-    return PIT_IRQ_LINE;
-}
-
-int32_t get_line_SCHED_HW(void)
-{
-    return PIT_INTERRUPT_LINE;
-}
-
-
-uint32_t get_current_uptime(void)
-{
-    return get_pit_current_uptime();
-}
-
-uint32_t get_tick_count(void)
-{
-    return get_pit_tick_count();
-}
-
-#endif
