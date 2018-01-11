@@ -28,11 +28,11 @@
 /* Assemly function */
 extern void _bios_int(uint8_t intnum, bios_int_regs_t* regs);
 
-void bios_int(const uint8_t intnum, bios_int_regs_t* regs)
+void bios_int(uint8_t intnum, bios_int_regs_t* regs)
 {
-	(void)intnum;
-	(void)regs;
 	disable_interrupt();
+
 	_bios_int(intnum, regs);
+
 	enable_interrupt();
 }

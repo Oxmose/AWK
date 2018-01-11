@@ -11,8 +11,6 @@
  * Kernel tests bank: Bios interrupts call tests
  ******************************************************************************/
 
-
-
 #include "../core/interrupts.h"
 #include "../core/kernel_output.h"
 #include "../core/panic.h"

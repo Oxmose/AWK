@@ -12,6 +12,8 @@
  * AT THIS POINT INTERRUPT SHOULD BE DISABLED
  ******************************************************************************/
 
+#include "../drivers/serial.h"   /* init_serial */
+#include "../drivers/vesa.h"     /* init_vesa */
 #include "../drivers/lapic.h"    /* init_lapic */
 #include "../drivers/io_apic.h"  /* init_ioapic */
 #include "../drivers/keyboard.h" /* init_keyboard */
@@ -82,6 +84,33 @@ void kernel_kickstart(void)
     }
 
     test_bios_call();
+
+    /* Init VESA */
+    err = init_vesa();
+    if(err == OS_NO_ERR)
+    {
+        kernel_success("VESA Initialized\n");
+    }
+    else
+    {
+        kernel_error("VESA Initialization error [%d]\n", err);
+    }
+    err = text_vga_to_vesa();
+    if(err != OS_NO_ERR)
+    {
+        kernel_error("VESA swtich error [%d]\n", err);
+    }
+
+    /* Init SERIAL */
+    err = init_serial();
+    if(err == OS_NO_ERR)
+    {
+        kernel_success("SERIAL Initialized\n");
+    }
+    else
+    {
+        kernel_error("SERIAL Initialization error [%d]\n", err);
+    }
 
     /* Init ACPI */
     err = init_acpi();

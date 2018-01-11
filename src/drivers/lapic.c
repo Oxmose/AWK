@@ -95,7 +95,6 @@ static void lapic_init_pit_handler(cpu_state_t* cpu_state, uint32_t int_id,
 
     if(wait_int == 1)
     {
-
         ++wait_int;
         /* Set LAPIC init counter to -1 */
         lapic_write(LAPIC_TICR, 0xFFFFFFFF);

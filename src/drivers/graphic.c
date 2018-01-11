@@ -15,6 +15,7 @@
 #include "../lib/stdint.h"      /* Generic int types */
 #include "../lib/stddef.h"      /* OS_RETURN_E */
 #include "vga_text.h"           /* VGA drivers */
+#include "vesa.h"               /* VESA drivers */
 
 /* Header file */
 #include "graphic.h"
@@ -56,7 +57,7 @@ void clear_screen(void)
 {
 	if(selected_driver == VESA_DRIVER_SELECTED)
 	{
-		vga_clear_screen();
+		vesa_clear_screen();
 	}
 	else
 	{
@@ -69,7 +70,7 @@ OS_RETURN_E put_cursor_at(const uint32_t line, const uint32_t column)
 {
 	if(selected_driver == VESA_DRIVER_SELECTED)
 	{
-		return vga_put_cursor_at(line, column);
+		return vesa_put_cursor_at(line, column);
 	}
 	else
 	{
@@ -81,7 +82,7 @@ OS_RETURN_E save_cursor(cursor_t* buffer)
 {
 	if(selected_driver == VESA_DRIVER_SELECTED)
 	{
-		return vga_save_cursor(buffer);
+		return vesa_save_cursor(buffer);
 	}
 	else
 	{
@@ -93,7 +94,7 @@ OS_RETURN_E restore_cursor(const cursor_t buffer)
 {
 	if(selected_driver == VESA_DRIVER_SELECTED)
 	{
-		return vga_restore_cursor(buffer);
+		return vesa_restore_cursor(buffer);
 	}
 	else
 	{
@@ -106,7 +107,7 @@ void scroll(const SCROLL_DIRECTION_E direction,
 {
 	if(selected_driver == VESA_DRIVER_SELECTED)
 	{
-		vga_scroll(direction, lines_count);
+		vesa_scroll(direction, lines_count);
 	}
 	else
 	{
@@ -123,7 +124,7 @@ void set_color_scheme(colorscheme_t color_scheme)
 			color_scheme.foreground = vga_color_table[color_scheme.foreground];
 			color_scheme.background = vga_color_table[color_scheme.background];
 		}
-		vga_set_color_scheme(color_scheme);
+		vesa_set_color_scheme(color_scheme);
 	}
 	else
 	{
@@ -135,7 +136,7 @@ OS_RETURN_E save_color_scheme(colorscheme_t* buffer)
 {
 	if(selected_driver == VESA_DRIVER_SELECTED)
 	{
-		return vga_save_color_scheme(buffer);
+		return vesa_save_color_scheme(buffer);
 	}
 	else
 	{
@@ -147,7 +148,7 @@ void screen_put_string(const char* str)
 {
 	if(selected_driver == VESA_DRIVER_SELECTED)
 	{
-		vga_put_string(str);
+		vesa_put_string(str);
 	}
 	else
 	{
@@ -159,7 +160,7 @@ void screen_put_char(const char character)
 {
     if(selected_driver == VESA_DRIVER_SELECTED)
 	{
-		vga_put_char(character);
+		vesa_put_char(character);
 	}
 	else
 	{
@@ -171,7 +172,7 @@ void console_write_keyboard(const char* str, const uint32_t len)
 {
 	if(selected_driver == VESA_DRIVER_SELECTED)
 	{
-		vga_console_write_keyboard(str, len);
+		vesa_console_write_keyboard(str, len);
 	}
 	else
 	{

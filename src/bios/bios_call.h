@@ -24,21 +24,21 @@
  * STRUCTURES
  ******************************************************************************/
 
-typedef struct bios_int_regs
+typedef volatile struct bios_int_regs
 {
-    uint16_t di;
-    uint16_t si;
-    uint16_t bp;
-    uint16_t sp;
-    uint16_t bx;
-    uint16_t dx;
-    uint16_t cx;
-    uint16_t ax;
-    uint16_t gs;
-    uint16_t fs;
-    uint16_t es;
-    uint16_t ds;
-    uint16_t eflags;
+    volatile uint16_t di;
+    volatile uint16_t si;
+    volatile uint16_t bp;
+    volatile uint16_t sp;
+    volatile uint16_t bx;
+    volatile uint16_t dx;
+    volatile uint16_t cx;
+    volatile uint16_t ax;
+    volatile uint16_t gs;
+    volatile uint16_t fs;
+    volatile uint16_t es;
+    volatile uint16_t ds;
+    volatile uint16_t eflags;
 } __attribute__((__packed__)) bios_int_regs_t;
 
 
@@ -51,6 +51,6 @@ typedef struct bios_int_regs
  * @param intnum The interrupt to raise.
  * @param regs The array containing the registers values for the call.
  */
-void bios_int(const uint8_t intnum, bios_int_regs_t* regs);
+void bios_int(uint8_t intnum, bios_int_regs_t* regs);
 
 #endif /* __BIOS_CALL_H_  */
