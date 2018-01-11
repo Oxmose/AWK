@@ -182,13 +182,6 @@ OS_RETURN_E init_lapic_timer(void)
     /* Compute the new tick count */
     new_count = lapic_timer_frequency / LAPIC_TIMER_SCHED_FREQUENCY;
 
-    /* Remove the current handler */
-    err = remove_interrupt_handler(LAPIC_TIMER_INTERRUPT_LINE);
-    if(err != OS_NO_ERR)
-    {
-        return err;
-    }
-
     /* Register LAPI dummy handler */
     err = register_interrupt_handler(LAPIC_TIMER_INTERRUPT_LINE,
                                      lapic_dummy_handler);

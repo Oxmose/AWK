@@ -83,7 +83,9 @@ void kernel_kickstart(void)
         kernel_panic();
     }
 
+#ifdef TESTS
     test_bios_call();
+#endif
 
     /* Init VESA */
     err = init_vesa();

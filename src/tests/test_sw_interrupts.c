@@ -154,6 +154,19 @@ static void test_sw_interupts_lock(void)
         kernel_error("TEST_SW_INT_LOCK 7 %d != %d\n", cnt_val, counter);
         kernel_panic();
     }
+
+
+    if(remove_interrupt_handler(MIN_INTERRUPT_LINE))
+    {
+        kernel_error("TEST_SW_INT_LOCK 8\n");
+        kernel_panic();
+    }
+
+    if(remove_interrupt_handler(MIN_INTERRUPT_LINE + 1))
+    {
+        kernel_error("TEST_SW_INT_LOCK 9\n");
+        kernel_panic();
+    }
 }
 
 void test_sw_interupts(void)
