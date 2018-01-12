@@ -99,6 +99,8 @@ typedef struct vesa_mode
     uint16_t mode_id;
 
     uint32_t framebuffer;
+
+    struct vesa_mode* next;
 } __attribute__ ((packed)) vesa_mode_t;
 
 typedef struct vesa_mode_info

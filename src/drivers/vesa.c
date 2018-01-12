@@ -31,8 +31,8 @@
  ******************************************************************************/
 
 /* Screen settings */
-#define MAX_SUPPORTED_HEIGHT 800
-#define MAX_SUPPORTED_WIDTH  1280
+#define MAX_SUPPORTED_HEIGHT 1080
+#define MAX_SUPPORTED_WIDTH  1920
 #define MAX_SUPPORTED_BPP    32
 
 /* VESA data structures */
@@ -40,18 +40,16 @@ extern vbe_info_structure_t      vbe_info_base;
 extern vbe_mode_info_structure_t vbe_mode_info_base;
 
 /* VESA modes */
-/* TODO malloc here  */
 static vesa_mode_t* saved_modes;
+static vesa_mode_t* current_mode;
 static uint16_t     mode_count     = 0;
 static uint8_t      vesa_supported = 0;
-static vesa_mode_t* current_mode;
 
 /* VESA console settigns, used in tty mode */
 static cursor_t      screen_cursor;
 static cursor_t      last_printed_cursor;
 static colorscheme_t screen_scheme;
 
-/* TODO malloc here depending actual font height and not 16  */
 static uint32_t*    last_columns;
 
 static const uint32_t vga_color_table[16] = {
@@ -267,11 +265,13 @@ OS_RETURN_E init_vesa(void)
     bios_int_regs_t regs;
     uint32_t        i;
     uint16_t*       modes;
+    vesa_mode_t*    new_mode;
 
     /* Init data */
     mode_count     = 0;
     vesa_supported = 0;
     current_mode   = NULL;
+    saved_modes    = NULL;
 
     /* Console mode init */
     screen_cursor.x = 0;
@@ -298,8 +298,7 @@ OS_RETURN_E init_vesa(void)
         return OS_ERR_VESA_NOT_SUPPORTED;
     }
 
-    /* TODO Linked list or course you dumb lazy dev */
-    /* Allocate memory */
+    /* Get modes */
     modes = (uint16_t*)vbe_info_base.video_modes;
     for (i = 0 ; mode_count < MAX_VESA_MODE_COUNT && modes[i] != 0xFFFF ; ++i)
     {
@@ -330,55 +329,32 @@ OS_RETURN_E init_vesa(void)
         {
             continue;
         }
-        ++mode_count;
-    }
-    saved_modes = kmalloc(sizeof(vesa_mode_t) * mode_count);
-    if(saved_modes == NULL)
-    {
-        return OS_ERR_MALLOC;
-    }
 
-    /* Get all the supported modes */
-    modes = (uint16_t*)vbe_info_base.video_modes;
-    for (i = 0 ; i < mode_count && modes[i] != 0xFFFF ; ++i)
-    {
-        /* Prepare registers for mode query call */
-        regs.ax = BIOS_CALL_GET_VESA_MODE;
-        regs.cx = modes[i];
-        regs.es = 0;
-        regs.di = (uint16_t)(uint32_t)(&vbe_mode_info_base);
-
-        bios_int(BIOS_INTERRUPT_VESA, &regs);
-
-        /* Check call result */
-        if(regs.ax != 0x004F)
+        new_mode = kmalloc(sizeof(vesa_mode_t));
+        if(new_mode == NULL)
         {
-            continue;
-        }
-
-        /* The driver only support linear frame buffer management */
-        if ((vbe_mode_info_base.attributes & VESA_FLAG_LINEAR_FB) !=
-            VESA_FLAG_LINEAR_FB)
-        {
-            continue;
-        }
-
-        /* Check if this is a packed pixel or direct color mode */
-        if (vbe_mode_info_base.memory_model != 4 &&
-            vbe_mode_info_base.memory_model != 6 )
-        {
-            continue;
+            return OS_ERR_MALLOC;
         }
 
         /* The mode is compatible, save it */
-        saved_modes[i].width       = vbe_mode_info_base.width;
-        saved_modes[i].height      = vbe_mode_info_base.height;
-        saved_modes[i].bpp         = vbe_mode_info_base.bpp;
-        saved_modes[i].mode_id     = modes[i];
-        saved_modes[i].framebuffer = vbe_mode_info_base.framebuffer;
+        new_mode->width       = vbe_mode_info_base.width;
+        new_mode->height      = vbe_mode_info_base.height;
+        new_mode->bpp         = vbe_mode_info_base.bpp;
+        new_mode->mode_id     = modes[i];
+        new_mode->framebuffer = vbe_mode_info_base.framebuffer;
+
+        /* Save mode in list */
+        new_mode->next = saved_modes;
+        saved_modes = new_mode;
+
+        ++mode_count;
     }
 
-    vesa_supported = 1;
+    if(mode_count > 0)
+    {
+        vesa_supported = 1;
+    }
+
     return OS_NO_ERR;
 }
 
@@ -387,8 +363,8 @@ OS_RETURN_E text_vga_to_vesa(void)
     OS_RETURN_E       err;
     uint32_t          i;
     uint32_t          j;
-    uint16_t          vesa_mode_count;
     vesa_mode_info_t  selected_mode;
+    vesa_mode_t*      cursor;
     uint16_t*         vga_fb;
     cursor_t          vga_cursor;
     uint16_t          temp_buffer[SCREEN_LINE_SIZE * SCREEN_COL_SIZE];
@@ -402,8 +378,6 @@ OS_RETURN_E text_vga_to_vesa(void)
            sizeof(uint16_t) * SCREEN_LINE_SIZE * SCREEN_COL_SIZE);
 
     /* Set VESA mode */
-    vesa_mode_count = get_vesa_mode_count();
-
     if(vesa_supported == 0)
     {
         return OS_ERR_VESA_NOT_SUPPORTED;
@@ -418,30 +392,38 @@ OS_RETURN_E text_vga_to_vesa(void)
     selected_mode.height = 0;
     selected_mode.bpp = 0;
 
-    for(i = 0; i < vesa_mode_count; ++i)
+
+    cursor = saved_modes;
+    while(cursor != NULL)
     {
-        if(saved_modes[i].width > MAX_SUPPORTED_WIDTH ||
-           saved_modes[i].height > MAX_SUPPORTED_HEIGHT ||
-           saved_modes[i].bpp > MAX_SUPPORTED_BPP)
+        if(cursor->width > MAX_SUPPORTED_WIDTH ||
+           cursor->height > MAX_SUPPORTED_HEIGHT ||
+           cursor->bpp > MAX_SUPPORTED_BPP)
         {
+            cursor = cursor->next;
             continue;
         }
 
-        if(saved_modes[i].width >= selected_mode.width &&
-           saved_modes[i].height >= selected_mode.height &&
-           saved_modes[i].bpp  >= selected_mode.bpp)
+        if(cursor->width >= selected_mode.width &&
+           cursor->height >= selected_mode.height &&
+           cursor->bpp  >= selected_mode.bpp)
         {
-            selected_mode.width = saved_modes[i].width;
-            selected_mode.height = saved_modes[i].height;
-            selected_mode.bpp = saved_modes[i].bpp;
-            selected_mode.mode_id = saved_modes[i].mode_id;
+            selected_mode.width = cursor->width;
+            selected_mode.height = cursor->height;
+            selected_mode.bpp = cursor->bpp;
+            selected_mode.mode_id = cursor->mode_id;
         }
+        cursor = cursor->next;
     }
+    #ifdef DEBUG_VESA
+    kernel_serial_debug("SELECTED VESA mode %dx%d %dbits\n",
+                                                  selected_mode.width,
+                                                  selected_mode.height,
+                                                  selected_mode.bpp);
+    #endif
 
     err = set_vesa_mode(selected_mode);
-    //kernel_serial_debug("VESA mode %dx%d %dbits\n", selected_mode.width,
-    //                                              selected_mode.height,
-    //                                              selected_mode.bpp);
+
     if(err != OS_NO_ERR)
     {
         return err;
@@ -498,6 +480,7 @@ uint16_t get_vesa_mode_count(void)
 OS_RETURN_E get_vesa_modes(vesa_mode_info_t* buffer, const uint32_t size)
 {
     uint32_t i;
+    vesa_mode_t* cursor;
 
     if(vesa_supported == 0)
     {
@@ -514,12 +497,16 @@ OS_RETURN_E get_vesa_modes(vesa_mode_info_t* buffer, const uint32_t size)
         return OS_ERR_NULL_POINTER;
     }
 
-    for(i = 0; i < mode_count && i < size; ++i)
+    i = 0;
+    cursor = saved_modes;
+    while(cursor != NULL && i < size)
     {
-        buffer[i].width       = saved_modes[i].width;
-        buffer[i].height      = saved_modes[i].height;
-        buffer[i].bpp         = saved_modes[i].bpp;
-        buffer[i].mode_id     = saved_modes[i].mode_id;
+        buffer[i].width       = cursor->width;
+        buffer[i].height      = cursor->height;
+        buffer[i].bpp         = cursor->bpp;
+        buffer[i].mode_id     = cursor->mode_id;
+        cursor = cursor->next;
+        ++i;
     }
 
     return OS_NO_ERR;
@@ -528,8 +515,8 @@ OS_RETURN_E get_vesa_modes(vesa_mode_info_t* buffer, const uint32_t size)
 OS_RETURN_E set_vesa_mode(const vesa_mode_info_t mode)
 {
     bios_int_regs_t regs;
-    uint32_t        i;
     uint32_t        last_columns_size;
+    vesa_mode_t*    cursor;
 
     if(vesa_supported == 0)
     {
@@ -537,19 +524,21 @@ OS_RETURN_E set_vesa_mode(const vesa_mode_info_t mode)
     }
 
     /* Search for the mode in the saved modes */
-    for(i = 0; i < mode_count; ++i)
+    cursor = saved_modes;
+    while(cursor != NULL)
     {
-        if(saved_modes[i].mode_id == mode.mode_id &&
-           saved_modes[i].width == mode.width     &&
-           saved_modes[i].height == mode.height   &&
-           saved_modes[i].bpp == mode.bpp)
+        if(cursor->mode_id == mode.mode_id &&
+           cursor->width == mode.width     &&
+           cursor->height == mode.height   &&
+           cursor->bpp == mode.bpp)
         {
             break;
         }
+        cursor = cursor->next;
     }
 
     /* The mode was not found */
-    if(i == mode_count)
+    if(cursor == NULL)
     {
         return OS_ERR_VESA_MODE_NOT_SUPPORTED;
     }
@@ -572,7 +561,7 @@ OS_RETURN_E set_vesa_mode(const vesa_mode_info_t mode)
 
     /* Set the VESA mode */
     regs.ax = BIOS_CALL_SET_VESA_MODE;
-    regs.bx = saved_modes[i].mode_id | VESA_FLAG_LFB_ENABLE;
+    regs.bx = cursor->mode_id | VESA_FLAG_LFB_ENABLE;
     bios_int(BIOS_INTERRUPT_VESA, &regs);
 
     /* Check call result */
@@ -581,7 +570,7 @@ OS_RETURN_E set_vesa_mode(const vesa_mode_info_t mode)
         return OS_ERR_VESA_MODE_NOT_SUPPORTED;
     }
 
-    current_mode = &saved_modes[i];
+    current_mode = cursor;
 
     /* Tell generic driver we loaded a VESA mode */
     set_selected_driver(VESA_DRIVER);

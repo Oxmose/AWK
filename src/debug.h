@@ -14,7 +14,7 @@
 #ifndef __DEBUG_H_
 #define __DEBUG_H_
 
-//#define KERNEL_DEBUG
+#define KERNEL_DEBUG
 
 #ifdef KERNEL_DEBUG
 
@@ -27,10 +27,11 @@
 //#define DEBUG_KERNEL_QUEUE
 //#define DEBUG_SCHED
 //#define DEBUG_ATA
-#define DEBUG_LAPIC
-#define DEBUG_PIC
-#define DEBUG_IOAPIC
-#define DEBUG_PIT
+#define DEBUG_VESA
+//#define DEBUG_LAPIC
+//#define DEBUG_PIC
+//#define DEBUG_IOAPIC
+//#define DEBUG_PIT
 //#define DEBUG_MOUSE
 
 #endif /* DEBUG */
