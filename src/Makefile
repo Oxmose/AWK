@@ -1,19 +1,25 @@
 # Noyau
 KERNEL = kernel.bin
 
-BIOS_DIR = $(wildcard bios/*.c bios/*.S)
+BOOT_DIR = $(wildcard boot/*.c boot/*.S)
 CORE_DIR = $(wildcard core/*.c core/*.S)
 CPU_DIR = $(wildcard cpu/*.c cpu/*.S)
 DRIVERS_DIR = $(wildcard drivers/*.c drivers/*.S)
 LIB_DIR = $(wildcard lib/*.c lib/*.S)
+MEM_DIR = $(wildcard memory/*.c memory/*.S)
+BIOS_DIR = $(wildcard bios/*.c bios/*.S)
 STRLIB_DIR = $(wildcard lib/string/*.c lib/string/*.S)
 STDLIB_DIR = $(wildcard lib/stdlib/*.c lib/stdlib/*.S)
 SYNC_DIR = $(wildcard sync/*.c sync/*.S)
 COMM_DIR = $(wildcard comm/*.c comm/*.S)
 TESTS_DIR = $(wildcard tests/*.c tests/*.S)
 USER_DIR = $(wildcard user/*.c user/*.S)
+
+
 # on compile tous les fichiers assembleur et c du repertoire
-SRCS = $(BIOS_DIR) $(CORE_DIR) $(CPU_DIR) $(DRIVERS_DIR) $(LIB_DIR) $(STDLIB_DIR) $(STRLIB_DIR) $(SYNC_DIR) $(COMM_DIR) $(TESTS_DIR) $(USER_DIR)
+SRCS = $(BOOT_DIR) $(CPU_DIR) $(CORE_DIR) $(DRIVERS_DIR) $(LIB_DIR)\
+$(STDLIB_DIR) $(STRLIB_DIR) $(SYNC_DIR) $(COMM_DIR) $(TESTS_DIR) $(USER_DIR)\
+$(BIOS_DIR) $(MEM_DIR)
 
 # crt0.o doit etre linke en premier
 OBJS = $(patsubst %.S,%.o,$(patsubst %.c,%.o,$(SRCS)))

@@ -21,6 +21,7 @@ extern clear_screen
 extern init_serial
 extern kernel_panic
 extern kernel_kickstart
+extern setup_kheap
 
 extern _edata
 extern mem_heap_end
@@ -97,6 +98,9 @@ section .text:
 
     ; Setup kernel IDT
     call setup_idt
+
+    ; Setup kernel heap management
+    call setup_kheap
 
     ; Kernel C entry point
     call kernel_kickstart

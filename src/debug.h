@@ -14,7 +14,7 @@
 #ifndef __DEBUG_H_
 #define __DEBUG_H_
 
-#define KERNEL_DEBUG
+//#define KERNEL_DEBUG
 
 #ifdef KERNEL_DEBUG
 

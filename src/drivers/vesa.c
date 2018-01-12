@@ -11,6 +11,7 @@
  * VESA VBE 2 graphic drivers
  ******************************************************************************/
 
+#include "../memory/heap.h"    /* kmalloc, kfree */
 #include "../lib/stdint.h"     /* Generic int types */
 #include "../lib/stddef.h"     /* OS_RETURN_E */
 #include "../lib/string.h"     /* memmove, memset */
@@ -30,7 +31,7 @@
  ******************************************************************************/
 
 /* Screen settings */
-#define MAX_SUPPORTED_HEIGHT 600
+#define MAX_SUPPORTED_HEIGHT 800
 #define MAX_SUPPORTED_WIDTH  1280
 #define MAX_SUPPORTED_BPP    32
 
@@ -40,7 +41,7 @@ extern vbe_mode_info_structure_t vbe_mode_info_base;
 
 /* VESA modes */
 /* TODO malloc here  */
-static vesa_mode_t  saved_modes[MAX_VESA_MODE_COUNT];
+static vesa_mode_t* saved_modes;
 static uint16_t     mode_count     = 0;
 static uint8_t      vesa_supported = 0;
 static vesa_mode_t* current_mode;
@@ -51,7 +52,7 @@ static cursor_t      last_printed_cursor;
 static colorscheme_t screen_scheme;
 
 /* TODO malloc here depending actual font height and not 16  */
-static uint32_t     last_columns[MAX_SUPPORTED_HEIGHT / 16];
+static uint32_t*    last_columns;
 
 static const uint32_t vga_color_table[16] = {
     0x00000000,
@@ -297,7 +298,8 @@ OS_RETURN_E init_vesa(void)
         return OS_ERR_VESA_NOT_SUPPORTED;
     }
 
-    /* Get all the supported modes */
+    /* TODO Linked list or course you dumb lazy dev */
+    /* Allocate memory */
     modes = (uint16_t*)vbe_info_base.video_modes;
     for (i = 0 ; mode_count < MAX_VESA_MODE_COUNT && modes[i] != 0xFFFF ; ++i)
     {
@@ -328,14 +330,52 @@ OS_RETURN_E init_vesa(void)
         {
             continue;
         }
+        ++mode_count;
+    }
+    saved_modes = kmalloc(sizeof(vesa_mode_t) * mode_count);
+    if(saved_modes == NULL)
+    {
+        return OS_ERR_MALLOC;
+    }
+
+    /* Get all the supported modes */
+    modes = (uint16_t*)vbe_info_base.video_modes;
+    for (i = 0 ; i < mode_count && modes[i] != 0xFFFF ; ++i)
+    {
+        /* Prepare registers for mode query call */
+        regs.ax = BIOS_CALL_GET_VESA_MODE;
+        regs.cx = modes[i];
+        regs.es = 0;
+        regs.di = (uint16_t)(uint32_t)(&vbe_mode_info_base);
+
+        bios_int(BIOS_INTERRUPT_VESA, &regs);
+
+        /* Check call result */
+        if(regs.ax != 0x004F)
+        {
+            continue;
+        }
+
+        /* The driver only support linear frame buffer management */
+        if ((vbe_mode_info_base.attributes & VESA_FLAG_LINEAR_FB) !=
+            VESA_FLAG_LINEAR_FB)
+        {
+            continue;
+        }
+
+        /* Check if this is a packed pixel or direct color mode */
+        if (vbe_mode_info_base.memory_model != 4 &&
+            vbe_mode_info_base.memory_model != 6 )
+        {
+            continue;
+        }
 
         /* The mode is compatible, save it */
-        saved_modes[mode_count].width       = vbe_mode_info_base.width;
-        saved_modes[mode_count].height      = vbe_mode_info_base.height;
-        saved_modes[mode_count].bpp         = vbe_mode_info_base.bpp;
-        saved_modes[mode_count].mode_id     = modes[i];
-        saved_modes[mode_count].framebuffer = vbe_mode_info_base.framebuffer;
-        ++mode_count;
+        saved_modes[i].width       = vbe_mode_info_base.width;
+        saved_modes[i].height      = vbe_mode_info_base.height;
+        saved_modes[i].bpp         = vbe_mode_info_base.bpp;
+        saved_modes[i].mode_id     = modes[i];
+        saved_modes[i].framebuffer = vbe_mode_info_base.framebuffer;
     }
 
     vesa_supported = 1;
@@ -489,6 +529,7 @@ OS_RETURN_E set_vesa_mode(const vesa_mode_info_t mode)
 {
     bios_int_regs_t regs;
     uint32_t        i;
+    uint32_t        last_columns_size;
 
     if(vesa_supported == 0)
     {
@@ -513,8 +554,21 @@ OS_RETURN_E set_vesa_mode(const vesa_mode_info_t mode)
         return OS_ERR_VESA_MODE_NOT_SUPPORTED;
     }
 
+    last_columns_size = sizeof(uint32_t) * current_mode->height / font_height;
+
+    if(last_columns != NULL)
+    {
+        kfree(last_columns);
+    }
+
+    last_columns = kmalloc(last_columns_size);
+    if(last_columns == NULL)
+    {
+        return OS_ERR_MALLOC;
+    }
+
     /* Set the last collumn array */
-    memset(last_columns, 0, sizeof(uint32_t) * current_mode->height / font_height);
+    memset(last_columns, 0, last_columns_size);
 
     /* Set the VESA mode */
     regs.ax = BIOS_CALL_SET_VESA_MODE;
