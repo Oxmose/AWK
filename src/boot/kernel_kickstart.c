@@ -12,6 +12,7 @@
  * AT THIS POINT INTERRUPT SHOULD BE DISABLED
  ******************************************************************************/
 
+#include "../drivers/ata.h"         /* init_ata */
 #include "../drivers/serial.h"      /* init_serial */
 #include "../drivers/vesa.h"        /* init_vesa */
 #include "../drivers/lapic.h"       /* init_lapic */
@@ -274,7 +275,22 @@ void kernel_kickstart(void)
     test_mouse();
 #endif
 
+    /* Init ATA PIO drivers */
+    err = init_ata();
+    if(err == OS_NO_ERR)
+    {
+        kernel_success("ATA-PIO Initialized\n");
+    }
+    else
+    {
+        kernel_error("ATA-PIO Initialization error [%d]\n", err);
+        kernel_panic();
+    }
+
     enable_interrupt();
 
-    while(1);
+    while(1)
+    {
+        hlt();
+    }
 }
