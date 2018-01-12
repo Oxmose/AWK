@@ -31,7 +31,7 @@
  ******************************************************************************/
 
 /* Screen settings */
-#define MAX_SUPPORTED_HEIGHT 1080
+#define MAX_SUPPORTED_HEIGHT 1000
 #define MAX_SUPPORTED_WIDTH  1920
 #define MAX_SUPPORTED_BPP    32
 

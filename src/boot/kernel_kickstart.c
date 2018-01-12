@@ -8,24 +8,25 @@
  *
  * Version: 1.0
  *
- * Init the rest of the kernel after GDT and IDT
+ * Init the rest of the kernel after GDT and IDT and HEAP
  * AT THIS POINT INTERRUPT SHOULD BE DISABLED
  ******************************************************************************/
 
-#include "../drivers/serial.h"   /* init_serial */
-#include "../drivers/vesa.h"     /* init_vesa */
-#include "../drivers/lapic.h"    /* init_lapic */
-#include "../drivers/io_apic.h"  /* init_ioapic */
-#include "../drivers/keyboard.h" /* init_keyboard */
-#include "../drivers/mouse.h"    /* init_mouse */
-#include "../drivers/rtc.h"      /* init_rtc */
-#include "../drivers/pit.h"      /* init_pit */
-#include "../drivers/pic.h"      /* init_pic */
-#include "../drivers/acpi.h"     /* init_acpi */
-#include "../cpu/cpu.h"          /* get_cpu_info */
-#include "kernel_output.h"       /* kernel_success, kernel_error, kernel_info */
-#include "interrupts.h"          /* init_kernel_interrupt */
-#include "panic.h"               /* kernel_panic */
+#include "../drivers/serial.h"      /* init_serial */
+#include "../drivers/vesa.h"        /* init_vesa */
+#include "../drivers/lapic.h"       /* init_lapic */
+#include "../drivers/io_apic.h"     /* init_ioapic */
+#include "../drivers/keyboard.h"    /* init_keyboard */
+#include "../drivers/mouse.h"       /* init_mouse */
+#include "../drivers/rtc.h"         /* init_rtc */
+#include "../drivers/pit.h"         /* init_pit */
+#include "../drivers/pic.h"         /* init_pic */
+#include "../drivers/acpi.h"        /* init_acpi */
+#include "../cpu/cpu.h"             /* get_cpu_info */
+#include "../core/interrupts.h"     /* init_kernel_interrupt */
+#include "../core/panic.h"          /* kernel_panic */
+#include "../core/kernel_output.h"  /* kernel_success, kernel_error,
+                                       kernel_info */
 
 #include "../tests/tests.h"      /* test_bank */
 
