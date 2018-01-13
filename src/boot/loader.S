@@ -1,4 +1,4 @@
-;----------------------------------------------
+;-------------------------------------------------------------------------------
 ;
 ; File: loader.S
 ;
@@ -9,8 +9,7 @@
 ; Version: 1.0
 ;
 ; Kernel entry point and cpu initialization
-;
-;---------------------------------------------
+;-------------------------------------------------------------------------------
 
 ;-----------------------------------------
 ; EXTERN FUNCTIONS
@@ -19,7 +18,6 @@ extern setup_gdt
 extern setup_idt
 extern clear_screen
 extern init_serial
-extern kernel_panic
 extern kernel_kickstart
 extern setup_kheap
 

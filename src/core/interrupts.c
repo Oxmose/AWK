@@ -50,7 +50,7 @@ static uint8_t lapic_capable;
 static volatile uint32_t int_lock_nesting = 1;
 
 #ifndef KERNEL_MONOCORE_SYNC
-static lock_t            lock_nesting_lock = 0;
+static lock_t lock_nesting_lock = 0;
 #endif
 
 /*******************************************************************************

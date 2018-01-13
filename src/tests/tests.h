@@ -22,7 +22,7 @@
  * CONSTANTS
  ******************************************************************************/
 
-//#define TESTS 1
+#define TESTS 1
 
 /*******************************************************************************
  * STRUCTURES
@@ -42,5 +42,7 @@ extern void test_rtc(void);
 extern void test_keyboard(void);
 extern void test_mouse(void);
 extern void test_bios_call(void);
+extern void test_ata(void);
+extern void test_klist(void);
 
  #endif /* __TESTS_H_ */

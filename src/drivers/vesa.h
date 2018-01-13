@@ -121,18 +121,65 @@ typedef struct vesa_mode_info
  */
 OS_RETURN_E init_vesa(void);
 
+/* Switch for VGA text mode to VESA mode. The function will copy the content of
+ * the VGA framebuffer to write it on the screen after the video mode switch.
+ *
+ * @return The state or error code.
+ */
 OS_RETURN_E text_vga_to_vesa(void);
 
+/* Get the number of VESA modes detected in the system.
+ *
+ * @returns The  number of VESA modes detected in the system.
+ */
 uint16_t get_vesa_mode_count(void);
 
+/* Fill a biffer given as parameter with the list of all VESA modes detected in
+ * the system. If the buffer is too huge, the function just fill the need space.
+ * if the buffer is too small, the function will stop filling the buffer when
+ * the parameter size is reached.
+ *
+ * @param buffer The buffer that needs to be filled with the data.
+ * @param size The size of the buffer in number of elements.
+ * @return The state or error code.
+ */
 OS_RETURN_E get_vesa_modes(vesa_mode_info_t* buffer, const uint32_t size);
 
+/* Set the VESA mode given as parameter. If the VESA mode is not correct or
+ * does not correspond to a mode detected in the system, the function will
+ * return an error. To get the list of all available modes please check
+ * the get_vesa_modes function.
+ *
+ * @param mode The mode to be set.
+ * @return The state or error code.
+ */
 OS_RETURN_E set_vesa_mode(const vesa_mode_info_t mode);
 
+/* Draw a pixel on the screen at the given coordinates. The top left hand corner
+ * of the screen has coordinates x = 0 and y = 0. The color of the pixel should
+ * be expressed in the bpp format of the current set mode.
+ *
+ * @param x The x coordinate of the pixel.
+ * @param y The y coordinate of the pixel.
+ * @param red The red component of the pixel.
+ * @param green The green component of the pixel.
+ * @param blue The blue component of the pixel.
+ * @return The state or error code.
+ */
 OS_RETURN_E vesa_draw_pixel(const uint16_t x, const uint16_t y,
                             const uint8_t red, const uint8_t green,
                             const uint8_t blue);
 
+/* Draw a character on the screen at the given coordinates. The top left hand
+ * corner of the screen has coordinates x = 0 and y = 0. The coordinates reffer
+ * to the top left hand corner of the character.
+ *
+ * @param x The x coordinate of the character.
+ * @param y The y coordinate of the character.
+ * @param fgcolor The foreground color of the character.
+ * @param bgcolor The background color of the character.
+ * @return The state or error code.
+ */
 void vesa_drawchar(const unsigned char character,
                    const uint32_t x, const uint32_t y,
                    const uint32_t fgcolor, const uint32_t bgcolor);

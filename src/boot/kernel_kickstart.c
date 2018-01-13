@@ -41,6 +41,9 @@
  * FUNCTIONS
  ******************************************************************************/
 
+/* Init each basic drivers for the kernel, then init the scheduler and
+ * start the system.
+ */
 void kernel_kickstart(void)
 {
     OS_RETURN_E err;
@@ -87,6 +90,7 @@ void kernel_kickstart(void)
 
 #ifdef TESTS
     test_bios_call();
+    test_klist();
 #endif
 
     /* Init VESA */
@@ -286,6 +290,9 @@ void kernel_kickstart(void)
         kernel_error("ATA-PIO Initialization error [%d]\n", err);
         kernel_panic();
     }
+#ifdef TESTS
+    test_ata();
+#endif
 
     enable_interrupt();
 

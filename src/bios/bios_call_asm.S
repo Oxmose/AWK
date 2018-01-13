@@ -8,7 +8,7 @@
 ;
 ; Version: 1.0
 ;
-; Switch to real mode to do a bios call
+; Switch to real mode to do a bios call then switch back to protected mode.
 ;-------------------------------------------------------------------------------
 [bits 32]
 

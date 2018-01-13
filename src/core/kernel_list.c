@@ -57,20 +57,22 @@
      return new_node;
 }
 
-OS_RETURN_E kernel_list_delete_node(kernel_list_node_t* node)
+OS_RETURN_E kernel_list_delete_node(kernel_list_node_t** node)
 {
-    if(node == NULL)
+    if(node == NULL || *node == NULL)
     {
         return OS_ERR_NULL_POINTER;
     }
 
     /* Check list chaining */
-    if(node->next != NULL || node->prev != NULL)
+    if((*node)->enlisted != 0)
     {
         return OS_ERR_UNAUTHORIZED_ACTION;
     }
 
-    kfree(node);
+    kfree(*node);
+
+    *node = NULL;
 
     return OS_NO_ERR;
 }
@@ -102,27 +104,29 @@ kernel_list_t* kernel_list_create_list(OS_RETURN_E *error)
     return new_list;
 }
 
-OS_RETURN_E kernel_list_delete_list(kernel_list_t* list)
+OS_RETURN_E kernel_list_delete_list(kernel_list_t** list)
 {
-    if(list == NULL)
+    if(list == NULL || *list == NULL)
     {
         return OS_ERR_NULL_POINTER;
     }
 
     /* Check list chaining */
-    if(list->head != NULL || list->tail != NULL)
+    if((*list)->head != NULL || (*list)->tail != NULL)
     {
         return OS_ERR_UNAUTHORIZED_ACTION;
     }
 
-    kfree(list);
+    kfree(*list);
+
+    *list = NULL;
 
     return OS_NO_ERR;
 }
 
 OS_RETURN_E kernel_list_enlist_data(kernel_list_node_t* node,
                                     kernel_list_t* list,
-                                    const uint32_t priority)
+                                    const uint16_t priority)
 {
     kernel_list_node_t* cursor;
 
@@ -136,6 +140,8 @@ OS_RETURN_E kernel_list_enlist_data(kernel_list_node_t* node,
     {
         return OS_ERR_NULL_POINTER;
     }
+
+    spinlock_lock(&list->lock);
 
     node->priority = priority;
 
@@ -179,6 +185,9 @@ OS_RETURN_E kernel_list_enlist_data(kernel_list_node_t* node,
             list->tail = node;
         }
     }
+    ++list->size;
+    node->enlisted = 1;
+    spinlock_unlock(&list->lock);
 
     return OS_NO_ERR;
 }
@@ -207,6 +216,8 @@ kernel_list_node_t* kernel_list_delist_data(kernel_list_t* list,
         *error = OS_NO_ERR;
     }
 
+    spinlock_lock(&list->lock);
+
     /* If this priority queue is empty */
     if(list->head == NULL)
     {
@@ -226,19 +237,29 @@ kernel_list_node_t* kernel_list_delist_data(kernel_list_t* list,
         list->tail = NULL;
     }
 
+    --list->size;
+
+    spinlock_unlock(&list->lock);
+
     node->next = NULL;
     node->prev = NULL;
+    node->enlisted = 0;
+
+    if(error != NULL)
+    {
+        *error = OS_NO_ERR;
+    }
 
     return node;
 }
 
-OS_RETURN_E kernel_list_remove_data(kernel_list_t* list,
-                                    void* data)
+kernel_list_node_t* kernel_list_find_node(kernel_list_t* list, void* data,
+                                          OS_RETURN_E *error)
 {
     kernel_list_node_t* node;
 
     #ifdef DEBUG_KERNEL_QUEUE
-    kernel_serial_debug("Remove kernel data 0x%08x in list 0x%08x\n",
+    kernel_serial_debug("Find kernel data 0x%08x in list 0x%08x\n",
                         (uint32_t)data,
                         (uint32_t)list);
     #endif
@@ -246,8 +267,14 @@ OS_RETURN_E kernel_list_remove_data(kernel_list_t* list,
     /* If this priority queue is empty */
     if(list == NULL)
     {
-        return OS_ERR_NULL_POINTER;
+        if(error != NULL)
+        {
+            *error = OS_ERR_NULL_POINTER;
+        }
+        return NULL;
     }
+
+    spinlock_lock(&list->lock);
 
     /* Search for the data */
     node = list->head;
@@ -259,32 +286,20 @@ OS_RETURN_E kernel_list_remove_data(kernel_list_t* list,
     /* No such data */
     if(node == NULL)
     {
-        return OS_ERR_NO_SUCH_ID;
+        spinlock_unlock(&list->lock);
+        if(error != NULL)
+        {
+            *error = OS_ERR_NO_SUCH_ID;
+        }
+        return NULL;
     }
 
-    /* Manage link */
-    if(node->prev != NULL && node->next != NULL)
+    spinlock_unlock(&list->lock);
+
+    if(error != NULL)
     {
-        node->prev->next = node->next;
-        node->next->prev = node->prev;
-    }
-    else if(node->prev == NULL && node->next != NULL)
-    {
-        list->head = node->next;
-        node->next->prev = NULL;
-    }
-    else if(node->prev != NULL && node->next == NULL)
-    {
-        list->tail = node->prev;
-        node->prev->next = NULL;
-    }
-    else
-    {
-        list->head = NULL;
-        list->tail = NULL;
+        *error = OS_NO_ERR;
     }
 
-    kfree(node);
-
-    return OS_NO_ERR;
+    return node;
 }

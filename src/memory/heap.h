@@ -54,8 +54,24 @@ enum heap_enum
 * FUNCTIONS
 ******************************************************************************/
 
+/* Setup kernel heap management at start. It will also allign kernel heap start
+ * and initialize the basic heap paramters such as its size.
+ */
 void setup_kheap(void);
+
+/* Allocate size bytes of memory in the kernel heap.
+ *
+ * ­@param size The number of byte to allocate.
+ * @return A pointer to the staqrt address of the allocated memory. If the
+ * memory cannot be allocated, this pointer will be NULL.
+ */
 void* kmalloc(uint32_t size);
+
+/* Release allocated memory. Of the pointer is NULL or has not been allocated
+ * previously, nothing is done.
+ *
+ * @param ptr The pointer of the begining of the memory area to free.
+ */
 void kfree(void* ptr);
 
 #endif /* __HEAP_H_ */

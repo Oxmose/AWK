@@ -32,7 +32,8 @@ typedef struct kernel_list_node
     struct kernel_list_node* next; /* Next node of the list */
     struct kernel_list_node* prev; /* Previous node of the list */
 
-    uint32_t priority;      /* Priority of the element */
+    uint16_t priority;      /* Priority of the element */
+    uint16_t enlisted;      /* Is the node in a list */
 
     void* data;             /* Data contained by the node */
 } kernel_list_node_t;
@@ -44,19 +45,50 @@ typedef struct kernel_list
     struct kernel_list_node* tail; /* Tail of the list */
 
     lock_t lock;            /* List lock */
+
+    uint32_t size;         /* List size */
 } kernel_list_t;
 
 /*******************************************************************************
  * FUNCTIONS
  ******************************************************************************/
 
+/* Create a node ready to be inserted in a list. The data can be modified later
+ * by accessing the data field of the node structure.
+ *
+ * WARNING A node should be only used in ONE list at most !!!
+ *
+ * @param data The pointer to the data to carry in the node.
+ * @param error A pointer to the variable that contains the function success
+ * state. May be NULL.
+ * @returns The node pointer is returned.
+ */
 kernel_list_node_t* kernel_list_create_node(void* data, OS_RETURN_E *error);
 
-OS_RETURN_E kernel_list_delete_node(kernel_list_node_t* node);
+/* Delete a node from the memory. The node should not be used in any list. If it
+ * is the case, the function will return an error.
+ *
+ * @param node The node pointer of pointer to destroy.
+ * @returns The function returns OS_NO_ERR on success, see system returns type
+ * for further error description.
+ */
+OS_RETURN_E kernel_list_delete_node(kernel_list_node_t** node);
 
+/* Create an empty list ready to be used.
+ *
+ * @param error A pointer to the variable that contains the function success
+ * state. May be NULL.
+ * @returns The list pointer is returned.
+ */
 kernel_list_t* kernel_list_create_list(OS_RETURN_E *error);
 
-OS_RETURN_E kernel_list_delete_list(kernel_list_t* list);
+/* Delete a list from the memory.If the list is not empty, an error is returned.
+ *
+ * @param list The list pointer of pointer to destroy.
+ * @returns The function returns OS_NO_ERR on success, see system returns type
+ * for further error description.
+ */
+OS_RETURN_E kernel_list_delete_list(kernel_list_t** list);
 
 /* Enlist a node in the list given as parameter. The data will be placed
  * in the list accordinlgy to the priority defined.
@@ -69,7 +101,7 @@ OS_RETURN_E kernel_list_delete_list(kernel_list_t* list);
  */
 OS_RETURN_E kernel_list_enlist_data(kernel_list_node_t* node,
                                     kernel_list_t* list,
-                                    const uint32_t priority);
+                                    const uint16_t priority);
 
 /* Remove a node from the list given as parameter. The retreived node that is
  * returned is the one with the highest priority parameter.
@@ -82,16 +114,16 @@ OS_RETURN_E kernel_list_enlist_data(kernel_list_node_t* node,
 kernel_list_node_t* kernel_list_delist_data(kernel_list_t* list,
                                             OS_RETURN_E* error);
 
-/* Rmove a node containing the pointed data from the list given as parameter.
- * The node is also deleted from the memory, you should not use
- * kernel_list_detele_node.
+/* Find a node containing the data given as paramter. An error is set if not any
+ * node is found.
  *
  * @param list The list to manage.
- * @param data The pointer contained by the node to remove.
- * @returns The function returns OS_NO_ERR on success, see system returns type
- * for further error description.
+ * @param data The data contained by the node to find.
+ * @param error A pointer to the variable that contains the function success
+ * state. May be NULL.
+ * @returns The function returns a pointer to the node if found, NULL otherwise.
  */
-OS_RETURN_E kernel_list_remove_data(kernel_list_t* list,
-                                    void* data);
+kernel_list_node_t* kernel_list_find_node(kernel_list_t* list, void* data,
+                                          OS_RETURN_E *error);
 
 #endif /* __KERNEL_LIST_H_ */

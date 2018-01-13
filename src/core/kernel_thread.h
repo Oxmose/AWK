@@ -16,6 +16,7 @@
 
 #include "../lib/stdint.h"       /* Generic int types */
 #include "../cpu/cpu_settings.h" /* KERNEL_CS KERNEL_DS */
+#include "kernel_list.h"
 
 /* Forward declaration */
 struct thread_queue;
@@ -25,8 +26,8 @@ struct thread_queue;
  ******************************************************************************/
 
 /* Thread settings */
-#define THREAD_MAX_NAME_LENGTH  64
-#define THREAD_STACK_SIZE       8192 /* 32 Kb */
+#define THREAD_MAX_NAME_LENGTH  32
+#define THREAD_STACK_SIZE       2048 /* 64 KB */
 
 /* Thread init values */
 #define THREAD_INIT_EFLAGS 0x202 // INT | PARITY
@@ -50,7 +51,7 @@ struct thread_queue;
 /* Thread states */
 typedef enum THREAD_STATE
 {
-    ELECTED,
+    RUNNING,
     READY,
     SLEEPING,
     DEAD,
@@ -90,7 +91,7 @@ typedef struct kernel_thread
     uint32_t         eip;
 
     /* Thread kernel stack */
-    uint32_t         stack[THREAD_STACK_SIZE];
+    uint32_t         kernel_stack[THREAD_STACK_SIZE];
 
     /* Wake up time for the sleeping thread */
     uint32_t         wakeup_time;
@@ -103,7 +104,7 @@ typedef struct kernel_thread
     struct kernel_thread* joining_thread;
 
     /* Thread's children */
-    struct thread_queue* children[2];
+    struct kernel_list_t children;
 
     /* Statistics (scheduler) */
     uint32_t         last_sched;
