@@ -83,6 +83,7 @@ void kernel_interrupt_handler(cpu_state_t cpu_state,
     /* If interrupts are disabled */
     if(int_lock_nesting > 0 &&
        int_id != PANIC_INT_LINE &&
+       int_id != SCHEDULER_SW_INT_LINE &&
        int_id >= MIN_INTERRUPT_LINE)
     {
         #ifdef DEBUG_INTERRUPT

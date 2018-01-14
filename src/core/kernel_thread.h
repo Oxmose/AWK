@@ -101,10 +101,10 @@ typedef struct kernel_thread
     uint32_t         io_req_time;
 
     /* Thread pointer that is joining the thread */
-    struct kernel_thread* joining_thread;
+    kernel_list_node_t* joining_thread;
 
     /* Thread's children */
-    struct kernel_list_t children;
+    kernel_list_t* children;
 
     /* Statistics (scheduler) */
     uint32_t         last_sched;

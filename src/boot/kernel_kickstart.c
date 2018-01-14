@@ -24,6 +24,7 @@
 #include "../drivers/pic.h"         /* init_pic */
 #include "../drivers/acpi.h"        /* init_acpi */
 #include "../cpu/cpu.h"             /* get_cpu_info */
+#include "../core/scheduler.h"      /* init_scheduler */
 #include "../core/interrupts.h"     /* init_kernel_interrupt */
 #include "../core/panic.h"          /* kernel_panic */
 #include "../core/kernel_output.h"  /* kernel_success, kernel_error,
@@ -294,7 +295,11 @@ void kernel_kickstart(void)
     test_ata();
 #endif
 
-    enable_interrupt();
+    /* Init Scheduler */
+    err = init_scheduler();
+
+    kernel_error("Scheduelr returned [%d]\n", err);
+    kernel_panic();
 
     while(1)
     {

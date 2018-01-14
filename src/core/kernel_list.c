@@ -221,6 +221,7 @@ kernel_list_node_t* kernel_list_delist_data(kernel_list_t* list,
     /* If this priority queue is empty */
     if(list->head == NULL)
     {
+        spinlock_unlock(&list->lock);
         return NULL;
     }
 
@@ -282,11 +283,11 @@ kernel_list_node_t* kernel_list_find_node(kernel_list_t* list, void* data,
     {
         node = node->next;
     }
+    spinlock_unlock(&list->lock);
 
     /* No such data */
     if(node == NULL)
-    {
-        spinlock_unlock(&list->lock);
+    {        
         if(error != NULL)
         {
             *error = OS_ERR_NO_SUCH_ID;
@@ -294,12 +295,63 @@ kernel_list_node_t* kernel_list_find_node(kernel_list_t* list, void* data,
         return NULL;
     }
 
-    spinlock_unlock(&list->lock);
-
     if(error != NULL)
     {
         *error = OS_NO_ERR;
     }
 
     return node;
+}
+
+OS_RETURN_E kernel_list_remove_node_from(kernel_list_t* list,
+                                         kernel_list_node_t* node)
+{
+    kernel_list_node_t* cursor;
+    if(list == NULL || node == NULL)
+    {
+        return OS_ERR_NULL_POINTER;
+    }
+
+    spinlock_lock(&list->lock);
+
+    /* Search for node in the list */
+    cursor = list->head;
+    while(cursor != NULL && cursor != node)
+    {
+        cursor = cursor->next;
+    }
+
+    if(cursor == NULL)
+    {
+        return OS_ERR_NO_SUCH_ID;
+    }
+
+    /* Manage link */
+    if(cursor->prev != NULL && cursor->next != NULL)
+    {
+        cursor->prev->next = cursor->next;
+        cursor->next->prev = cursor->prev;
+    }
+    else if(cursor->prev == NULL && cursor->next != NULL)
+    {
+        list->head = cursor->next;
+        cursor->next->prev = NULL;
+    }
+    else if(cursor->prev != NULL && cursor->next == NULL)
+    {
+        list->tail = cursor->prev;
+        cursor->prev->next = NULL;
+    }
+    else
+    {
+        list->head = NULL;
+        list->tail = NULL;
+    }
+
+    spinlock_unlock(&list->lock);
+
+    node->next = NULL;
+    node->prev = NULL;
+
+    return OS_NO_ERR;
 }

@@ -126,4 +126,16 @@ kernel_list_node_t* kernel_list_delist_data(kernel_list_t* list,
 kernel_list_node_t* kernel_list_find_node(kernel_list_t* list, void* data,
                                           OS_RETURN_E *error);
 
+/* Remove a node from a list given as parameter. If the node is not found,
+ * nothing is done and an error is returned.
+ *
+ * @param list The list containing the node.
+ * @param node The node to remove.
+ * @returns The function returns OS_NO_ERR on success, see system returns type
+ * for further error description.
+ */
+OS_RETURN_E kernel_list_remove_node_from(kernel_list_t* list,
+                                         kernel_list_node_t* node);
+
+
 #endif /* __KERNEL_LIST_H_ */

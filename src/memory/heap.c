@@ -133,45 +133,46 @@ __inline__ static void remove(list_t* node)
     node->prev = node;
 }
 
-__inline__ static void push(list_t** d1p, list_t* d2) {
-
-    if (*d1p != NULL)
-    {
-	       insert_before(*d1p, d2);
-    }
-
-    *d1p = d2;
-}
-
-__inline__ static list_t* pop(list_t** dp)
+__inline__ static void push(list_t** list, list_t* node)
 {
 
-    list_t* d1 = *dp;
-    list_t* d2 = d1->next;
-
-    remove(d1);
-
-    if (d1 == d2)
+    if (*list != NULL)
     {
-	       *dp = NULL;
+	       insert_before(*list, node);
+    }
+
+    *list = node;
+}
+
+__inline__ static list_t* pop(list_t** list)
+{
+
+    list_t* top = *list;
+    list_t* next_top = top->next;
+
+    remove(top);
+
+    if (top == next_top)
+    {
+	       *list = NULL;
     }
     else
     {
-	       *dp = d2;
+	       *list = next_top;
     }
 
-    return d1;
+    return top;
 }
 
-__inline__ static void remove_from(list_t** d1p, list_t* d2)
+__inline__ static void remove_from(list_t** list, list_t* node)
 {
-    if (*d1p == d2)
+    if (*list == node)
     {
-	       pop(d1p);
+	       pop(list);
     }
     else
     {
-	       remove(d2);
+	       remove(node);
     }
 }
 
