@@ -35,7 +35,7 @@ CFLAGS = -m32 -g -gstabs -O0 -std=c99 -nostdinc -fno-builtin\
 		 -Wextra -Werror -Wimplicit-fallthrough=0 -c
 ASFLAGS = -f elf -w+gnu-elf-extensions
 LDFLAGS = -e loader -T linker.ld -melf_i386
-QEMUOPTS = -cpu core2duo -rtc base=localtime -m 64M -gdb tcp::1234 -vga std\
+QEMUOPTS = -cpu core2duo -d guest_errors -rtc base=localtime -m 64M -gdb tcp::1234 -vga std\
            -serial stdio -hda ../hdd.img -kernel
 
 # cible principale, on nettoie systematiquement le repertoire avant

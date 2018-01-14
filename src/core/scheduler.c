@@ -44,7 +44,7 @@ static lock_t sched_lock;
 /* Threads management */
 static uint32_t last_given_pid;
 static uint32_t thread_count;
-static uint32_t first_schedule;
+static volatile uint32_t first_schedule;
 
 /* Kernel thread */
 static kernel_thread_t*    idle_thread;
@@ -176,21 +176,23 @@ static void* idle_sys(void* args)
     kernel_printf("=================================== Welcome! ===============\
 ====================\n");
 
-    enable_interrupt();
 
+    (void)args;
+    (void)err;
+    (void)init_func;
     /* We create the init thread */
-    err = create_thread(&init_thread, init_func,
-                        KERNEL_HIGHEST_PRIORITY, "init", args);
-    if(err != OS_NO_ERR)
-    {
-        kernel_error("Error while creating INIT thread [%d]\n", err);
-        kernel_panic();
-    }
+    //err = create_thread(&init_thread, init_func,
+    //                    KERNEL_HIGHEST_PRIORITY, "init", args);
+    //if(err != OS_NO_ERR)
+    //{
+    //    kernel_error("Error while creating INIT thread [%d]\n", err);
+    //    kernel_panic();
+    //}
 
     /* Halt forever, hlt for energy consumption */
     while(1 < 2)
     {
-        sti();
+        enable_interrupt();
         if(system_state == HALTED && notify == 0)
         {
             notify = 1;
@@ -757,7 +759,7 @@ OS_RETURN_E init_scheduler(void)
     kernel_success("SCHEDULER Initialized\n");
 
     schedule();
-    
+
     /* We should never return fron this function */
     return OS_ERR_UNAUTHORIZED_ACTION;
 }
@@ -1031,17 +1033,24 @@ OS_RETURN_E wait_thread(thread_t thread, void** ret_val)
     return OS_NO_ERR;
 }
 
-OS_RETURN_E lock_thread(const BLOCK_TYPE_E block_type)
+kernel_list_node_t* lock_thread(const BLOCK_TYPE_E block_type)
 {
+    kernel_list_node_t* current_thread_node;
     /* Cant lock kernel thread */
     if(active_thread == idle_thread)
     {
-        return OS_ERR_UNAUTHORIZED_ACTION;
+        return NULL;
     }
+
+    spinlock_lock(&sched_lock);
+
+    current_thread_node = active_thread_node;
 
     /* Lock the thread */
     active_thread->state      = BLOCKED;
     active_thread->block_type = block_type;
+
+    spinlock_unlock(&sched_lock);
 
     #ifdef DEBUG_SCHED
     kernel_serial_debug("Thread %d locked, reason: %d\n",
@@ -1049,10 +1058,7 @@ OS_RETURN_E lock_thread(const BLOCK_TYPE_E block_type)
                         block_type);
     #endif
 
-    /* Schedule to an other thread */
-    schedule();
-
-    return OS_NO_ERR;
+    return current_thread_node;
 }
 
 OS_RETURN_E unlock_thread(kernel_list_node_t* node,
@@ -1103,7 +1109,6 @@ OS_RETURN_E unlock_thread(kernel_list_node_t* node,
                          block_type);
     #endif
 
-    /* Schedule if asked for */
     if(do_schedule)
     {
         schedule();

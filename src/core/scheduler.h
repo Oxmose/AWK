@@ -147,12 +147,13 @@ OS_RETURN_E unlock_thread(kernel_list_node_t* node,
                           const uint8_t do_schedule);
 
 /* Remove the active thread from the active threads table, the thread might be
- * contained in an other structure such as a mutex
+ * contained in an other structure such as a mutex.
  *
  * @param block_type The type of block (mutex, sem, ...)
- * @returns OS_NO_ERR on success, error code otherwise.
+ * @returns The node to the thread that has been locked. NULL is returned if the
+ * current thread cannot be locked (idle).
  */
-OS_RETURN_E lock_thread(const BLOCK_TYPE_E block_type);
+kernel_list_node_t* lock_thread(const BLOCK_TYPE_E block_type);
 
 /* Lock the current thread waiting for an IO.
  * @param block_type The type of IO that locks the thread.
