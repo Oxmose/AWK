@@ -132,8 +132,7 @@ OS_RETURN_E mutex_pend(mutex_t* mutex)
     /* Check if we can enter the critical section, also check if the mutex
      * has not been destroyed
      */
-    while(mutex != NULL &&
-          mutex->init == 1 &&
+    while(mutex->init == 1 &&
           mutex->state != 1)
     {
         active_thread = lock_thread(MUTEX);
@@ -157,7 +156,7 @@ OS_RETURN_E mutex_pend(mutex_t* mutex)
         spinlock_lock(&mutex->lock);
     }
 
-    if(mutex == NULL || mutex->init != 1)
+    if(mutex->init != 1)
     {
         spinlock_unlock(&mutex->lock);
 

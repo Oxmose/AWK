@@ -128,8 +128,7 @@ OS_RETURN_E sem_pend(semaphore_t* sem)
     /* Check if we can enter the critical section, also check if the semaphore
      * has not been destroyed
      */
-    while(sem != NULL &&
-          sem->init == 1 &&
+    while(sem->init == 1 &&
           sem->sem_level < 1)
     {
         active_thread = lock_thread(SEM);
@@ -154,7 +153,7 @@ OS_RETURN_E sem_pend(semaphore_t* sem)
         spinlock_lock(&sem->lock);
     }
 
-    if(sem == NULL || sem->init != 1)
+    if(sem->init != 1)
     {
         spinlock_unlock(&sem->lock);
 
