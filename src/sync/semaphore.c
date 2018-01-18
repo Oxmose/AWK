@@ -20,6 +20,8 @@
 #include "../core/scheduler.h"     /* lock_thread, unlock_thread */
 #include "lock.h"                  /* lock_t */
 
+#include "../debug.h"            /* DEBUG */
+
 /* Header include */
 #include "semaphore.h"
 
@@ -53,6 +55,10 @@ OS_RETURN_E sem_init(semaphore_t* sem, const int32_t init_level)
     }
 
     sem->init = 1;
+
+    #ifdef DEBUG_SEM
+    kernel_serial_debug("Semaphore 0x%08x initialized\n", (uint32_t)sem);
+    #endif
 
     return OS_NO_ERR;
 }
@@ -93,12 +99,22 @@ OS_RETURN_E sem_destroy(semaphore_t* sem)
             kernel_error("Could not unlock thread from semaphore[%d]\n", err);
             kernel_panic();
         }
+
+        #ifdef DEBUG_SEM
+        kernel_serial_debug("Semaphore 0x%08x unlocked thead %d\n",
+                            (uint32_t)sem,
+                            ((kernel_thread_t*)node->data)->pid);
+        #endif
     }
     if(err != OS_NO_ERR)
     {
         kernel_error("Could not dequeue thread from semaphore[%d]\n", err);
         kernel_panic();
     }
+
+    #ifdef DEBUG_MUTEX
+    kernel_serial_debug("Semaphore 0x%08x destroyed\n", (uint32_t)sem);
+    #endif
 
     spinlock_unlock(&sem->lock);
 
@@ -148,6 +164,12 @@ OS_RETURN_E sem_pend(semaphore_t* sem)
             kernel_panic();
         }
 
+        #ifdef DEBUG_SEM
+        kernel_serial_debug("Semaphore 0x%08x locked thead %d\n",
+                            (uint32_t)sem,
+                            ((kernel_thread_t*)active_thread->data)->pid);
+        #endif
+
         spinlock_unlock(&sem->lock);
         schedule();
         spinlock_lock(&sem->lock);
@@ -162,6 +184,12 @@ OS_RETURN_E sem_pend(semaphore_t* sem)
 
     /* Decrement sem level */
     --(sem->sem_level);
+
+    #ifdef DEBUG_SEM
+    kernel_serial_debug("Semaphore 0x%08x aquired by thead %d\n",
+                        (uint32_t)sem,
+                        get_pid());
+    #endif
 
     spinlock_unlock(&sem->lock);
 
@@ -203,6 +231,12 @@ OS_RETURN_E sem_post(semaphore_t* sem)
                 kernel_panic();
             }
 
+            #ifdef DEBUG_SEM
+            kernel_serial_debug("Semaphore 0x%08x unlocked thead %d\n",
+                                (uint32_t)sem,
+                                ((kernel_thread_t*)node->data)->pid);
+            #endif
+
             spinlock_unlock(&sem->lock);
 
             /* Do not schedule, sem can be used in interrupt handlers */
@@ -213,6 +247,12 @@ OS_RETURN_E sem_post(semaphore_t* sem)
                 kernel_panic();
             }
 
+            #ifdef DEBUG_SEM
+            kernel_serial_debug("Semaphore 0x%08x released by thead %d\n",
+                                (uint32_t)sem,
+                                get_pid());
+            #endif
+
             return OS_NO_ERR;
         }
         if(err != OS_NO_ERR)
@@ -221,6 +261,12 @@ OS_RETURN_E sem_post(semaphore_t* sem)
            kernel_panic();
         }
     }
+
+    #ifdef DEBUG_SEM
+    kernel_serial_debug("Semaphore 0x%08x released by thead %d\n",
+                        (uint32_t)sem,
+                        get_pid());
+    #endif
 
     /* If here, we did not find any waiting process */
     spinlock_unlock(&sem->lock);
@@ -253,6 +299,12 @@ OS_RETURN_E sem_try_pend(semaphore_t* sem, int8_t* value)
     {
         *value = sem->sem_level;
 
+        #ifdef DEBUG_SEM
+        kernel_serial_debug("Locked semaphore 0x%08x try pend by thead %d\n",
+                            (uint32_t)sem,
+                            get_pid());
+        #endif
+
         spinlock_unlock(&sem->lock);
 
         return OS_SEM_LOCKED;
@@ -267,6 +319,12 @@ OS_RETURN_E sem_try_pend(semaphore_t* sem, int8_t* value)
 
         return OS_ERR_SEM_UNINITIALIZED;
     }
+
+    #ifdef DEBUG_SEM
+    kernel_serial_debug("Unlocked semaphore 0x%08x try pend and aquired by thead %d\n",
+                        (uint32_t)sem,
+                        get_pid());
+    #endif
 
     spinlock_unlock(&sem->lock);
 
