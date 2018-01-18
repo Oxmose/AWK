@@ -181,13 +181,13 @@ static void* idle_sys(void* args)
     (void)err;
     (void)init_func;
     /* We create the init thread */
-    //err = create_thread(&init_thread, init_func,
-    //                    KERNEL_HIGHEST_PRIORITY, "init", args);
-    //if(err != OS_NO_ERR)
-    //{
-    //    kernel_error("Error while creating INIT thread [%d]\n", err);
-    //    kernel_panic();
-    //}
+    err = create_thread(&init_thread, init_func,
+                        KERNEL_HIGHEST_PRIORITY, "init", args);
+    if(err != OS_NO_ERR)
+    {
+        kernel_error("Error while creating INIT thread [%d]\n", err);
+        kernel_panic();
+    }
 
     /* Halt forever, hlt for energy consumption */
     while(1 < 2)
