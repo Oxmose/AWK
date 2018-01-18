@@ -16,7 +16,6 @@
 
 #include "../lib/stddef.h" /* OS_RETURN_E */
 #include "../lib/stdint.h" /* Generic int types */
-#include "../sync/lock.h"  /* spinlock */
 
 /*******************************************************************************
  * CONSTANTS
@@ -43,8 +42,6 @@ typedef struct kernel_list
 {
     struct kernel_list_node* head; /* Head of the list */
     struct kernel_list_node* tail; /* Tail of the list */
-
-    lock_t lock;            /* List lock */
 
     uint32_t size;         /* List size */
 } kernel_list_t;

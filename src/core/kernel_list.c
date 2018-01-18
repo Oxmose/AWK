@@ -15,7 +15,6 @@
 #include "../lib/stdint.h"  /* Generic int types */
 #include "../lib/string.h"  /* memset */
 #include "../memory/heap.h" /* kmalloc, kfree */
-#include "../sync/lock.h"   /* spinlock */
 
 #include "../debug.h"       /* kernel_serial_debug */
 
@@ -94,7 +93,6 @@ kernel_list_t* kernel_list_create_list(OS_RETURN_E *error)
 
     /* Init the structure */
     memset(new_list, 0, sizeof(kernel_list_t));
-    spinlock_init(&new_list->lock);
 
     if(error != NULL)
     {
@@ -141,8 +139,6 @@ OS_RETURN_E kernel_list_enlist_data(kernel_list_node_t* node,
         return OS_ERR_NULL_POINTER;
     }
 
-    spinlock_lock(&list->lock);
-
     node->priority = priority;
 
     /* If this queue is empty */
@@ -187,7 +183,6 @@ OS_RETURN_E kernel_list_enlist_data(kernel_list_node_t* node,
     }
     ++list->size;
     node->enlisted = 1;
-    spinlock_unlock(&list->lock);
 
     return OS_NO_ERR;
 }
@@ -216,12 +211,10 @@ kernel_list_node_t* kernel_list_delist_data(kernel_list_t* list,
         *error = OS_NO_ERR;
     }
 
-    spinlock_lock(&list->lock);
 
     /* If this priority queue is empty */
     if(list->head == NULL)
     {
-        spinlock_unlock(&list->lock);
         return NULL;
     }
 
@@ -239,8 +232,6 @@ kernel_list_node_t* kernel_list_delist_data(kernel_list_t* list,
     }
 
     --list->size;
-
-    spinlock_unlock(&list->lock);
 
     node->next = NULL;
     node->prev = NULL;
@@ -275,19 +266,16 @@ kernel_list_node_t* kernel_list_find_node(kernel_list_t* list, void* data,
         return NULL;
     }
 
-    spinlock_lock(&list->lock);
-
     /* Search for the data */
     node = list->head;
     while(node != NULL && node->data != data)
     {
         node = node->next;
     }
-    spinlock_unlock(&list->lock);
 
     /* No such data */
     if(node == NULL)
-    {        
+    {
         if(error != NULL)
         {
             *error = OS_ERR_NO_SUCH_ID;
@@ -311,8 +299,6 @@ OS_RETURN_E kernel_list_remove_node_from(kernel_list_t* list,
     {
         return OS_ERR_NULL_POINTER;
     }
-
-    spinlock_lock(&list->lock);
 
     /* Search for node in the list */
     cursor = list->head;
@@ -347,8 +333,6 @@ OS_RETURN_E kernel_list_remove_node_from(kernel_list_t* list,
         list->head = NULL;
         list->tail = NULL;
     }
-
-    spinlock_unlock(&list->lock);
 
     node->next = NULL;
     node->prev = NULL;
