@@ -12,11 +12,15 @@
  *
  ******************************************************************************/
 
-#include "doprnt.h"
+ #include "../stddef.h" /* size_t */
 
+ /* Header file */
+ #include "../stdio.h"
+
+#if 0
 #define SPRINTF_UNLIMITED -1
 
-struct sprintf_state 
+struct sprintf_state
 {
       char *buf;
       unsigned int len;
@@ -26,7 +30,7 @@ struct sprintf_state
 static void savechar(char *arg, int c)
 {
     struct sprintf_state *state = (struct sprintf_state *)arg;
-    
+
     if (state->max != (unsigned int)SPRINTF_UNLIMITED)
     {
         if (state->len == state->max)
@@ -45,7 +49,7 @@ int vsprintf(char *s, const char *fmt, __builtin_va_list args)
     struct sprintf_state state;
     state.max = SPRINTF_UNLIMITED;
     state.len = 0;
-    state.buf = s;    
+    state.buf = s;
 
     _doprnt(fmt, args, 0, (void (*)()) savechar, (char *) &state);
     *(state.buf) = '\0';
@@ -95,4 +99,4 @@ int snprintf(char *s, unsigned int size, const char *fmt, ...)
 
     return err;
 }
-
+#endif

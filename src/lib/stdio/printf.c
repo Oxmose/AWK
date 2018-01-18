@@ -12,67 +12,35 @@
  *
  ******************************************************************************/
 
-#include "stddef.h" /* size_t */
-#include "doprnt.h" /* doprnt */
+#include "../stddef.h" /* size_t */
 
 /* Header file */
-#include "stdio.h"
+#include "../stdio.h"
 
-/* Screen driver must implement this function to output text to
- * the screen.
- */
-extern void console_putbytes(const char *s, const uint32_t len);
+/*******************************************************************************
+ * GLOBAL VARIABLES
+ ******************************************************************************/
 
-#define PRINTF_BUFMAX 128
+/* TODO MUTEX LOCK */
 
-struct printf_state 
-{
-    char buf[PRINTF_BUFMAX];
-    unsigned int index;
-};
+/*******************************************************************************
+ * FUNCTIONS
+ ******************************************************************************/
 
-static void flush(struct printf_state *state)
-{
-    console_putbytes((const char *)state->buf, state->index);
-    state->index = 0;
-}
-
-static void printf_char(char *arg, int c)
-{
-    struct printf_state *state = (struct printf_state *) arg;
-
-    if ((c == 0) || (c == '\n') || (state->index >= PRINTF_BUFMAX))
-    {
-        flush(state);
-        state->buf[0] = c;
-        console_putbytes((const char *)state->buf, 1);
-    }
-    else
-    {
-        state->buf[state->index] = c;
-        state->index++;
-    }
-}
+extern void kernel_doprint(const char* str, __builtin_va_list args);
+extern void screen_put_char(const char c);
 
 int vprintf(const char *fmt, __builtin_va_list args)
 {
-    struct printf_state state;
+    kernel_doprint(fmt, args);
 
-    state.index = 0;
-    _doprnt(fmt, args, 0, (void (*)())printf_char, (char *) &state);
-
-    if (state.index != 0)
-    {
-        flush(&state);
-    }
     return 0;
-}    
+}
 
 int printf(const char *fmt, ...)
 {
     __builtin_va_list    args;
-
-    int err;
+    int                  err;
 
     __builtin_va_start(args, fmt);
 
@@ -85,19 +53,16 @@ int printf(const char *fmt, ...)
 
 int putchar(int c)
 {
-    char ch = c;
-    console_putbytes(&ch, 1);
-    return (unsigned char)ch;
+    screen_put_char((char)c);
+    return (unsigned char)c;
 }
 
 int puts(const char *s)
 {
-    while (*s) 
+    while (*s)
     {
         putchar(*s++);
     }
     putchar('\n');
     return 0;
 }
-
-#undef PRINTF_BUFMAX

@@ -342,6 +342,19 @@ void kernel_serial_debug(const char* fmt, ...)
     current_output.putc = serial_put_char;
     current_output.puts = serial_put_string;
     kprint_fmt("[DEBUG] ", args);
+
     kprint_fmt(fmt, args);
     __builtin_va_end(args);
+}
+
+void kernel_doprint(const char* str, __builtin_va_list args)
+{
+    if(str == NULL)
+    {
+        return;
+    }
+
+    current_output.putc = screen_put_char;
+    current_output.puts = screen_put_string;
+    kprint_fmt(str, args);
 }

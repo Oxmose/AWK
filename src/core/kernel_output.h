@@ -75,4 +75,12 @@ void kernel_debug(const char *__format, ...);
  */
 void kernel_serial_debug(const char *__format, ...);
 
+/* Print the desired string to the screen with the argument list given as
+ * parameter, may ber used by printf.
+ *
+ * @param str The format string to output.
+ * @param args The arguments list.
+ */
+void kernel_doprint(const char* str, __builtin_va_list args);
+
 #endif /* __KERNEL_OUTPUT_H_ */

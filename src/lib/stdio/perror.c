@@ -13,10 +13,10 @@
  *
  ******************************************************************************/
 
-#include "stddef.h" /* OS_RETURN_E */
+#include "../stddef.h" /* OS_RETURN_E */
 
 /* Header file */
-#include "stdio.h"
+#include "../stdio.h"
 
 int perror(const int error)
 {
