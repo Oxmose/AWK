@@ -93,6 +93,11 @@ void kernel_interrupt_handler(cpu_state_t cpu_state,
         return;
     }
 
+    #ifdef DEBUG_INTERRUPT
+    kernel_serial_debug("Interrupt %d, (nesting level %d)\n",
+                        int_id, int_lock_nesting);
+    #endif
+
     /* Execute custom handlers */
     if(int_id < IDT_ENTRY_COUNT &&
        kernel_interrupt_handlers[int_id].enabled == 1 &&

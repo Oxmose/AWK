@@ -12,16 +12,17 @@
  * Thread creation and management functions are located in this file.
  ******************************************************************************/
 
- #include "../lib/stdint.h"  /* Generic int types */
-#include "../lib/stddef.h"   /* OS_RETURN_E, OS_EVENT_ID */
-#include "../lib/string.h"   /* strncpy */
-#include "../memory/heap.h"  /* kmalloc, kfree */
-#include "../cpu/cpu.h"      /* sti, hlt */
-#include "../sync/lock.h"    /* enable_interrupt */
-#include "interrupts.h"      /* register_interrupt_handler,
-                               set_IRQ_EOI, update_tick */
-#include "kernel_output.h"   /* kernel_success, kernel_error */
-#include "kernel_list.h"     /* kernel_list_t, kernel_list_node_t */
+#include "../lib/stdint.h"     /* Generic int types */
+#include "../lib/stddef.h"      /* OS_RETURN_E, OS_EVENT_ID */
+#include "../lib/string.h"      /* strncpy */
+#include "../memory/heap.h"     /* kmalloc, kfree */
+#include "../cpu/cpu.h"         /* sti, hlt */
+#include "../sync/lock.h"       /* spinlock */
+#include "../drivers/graphic.h" /* colorsheme */
+#include "interrupts.h"         /* register_interrupt_handler,
+                                 set_IRQ_EOI, update_tick */
+#include "kernel_output.h"      /* kernel_success, kernel_error */
+#include "kernel_list.h"        /* kernel_list_t, kernel_list_node_t */
 
 #include "panic.h"           /* kernel_panic */
 
@@ -38,7 +39,7 @@
 static uint32_t sched_irq;
 static uint32_t sched_hw_int_line;
 
-/* Scheduler lock */
+/* Scheduler lock TODO for SMP lock local interrupt or global interrupt IDK */
 static lock_t sched_lock;
 
 /* Threads management */
@@ -106,6 +107,7 @@ static void* init_func(void* args)
     #endif
 
     (void)args;
+
     /* Call main */
     main(1, argv);
 
@@ -166,16 +168,33 @@ static void* init_func(void* args)
  */
 static void* idle_sys(void* args)
 {
-    OS_RETURN_E err;
-    int8_t      notify = 0;
+    OS_RETURN_E   err;
+    colorscheme_t buffer;
+    colorscheme_t new_scheme;
+    int8_t        notify = 0;
+
 
     #ifdef DEBUG_SCHED
     kernel_serial_debug("IDLE Started\n");
     #endif
 
-    kernel_printf("=================================== Welcome! ===============\
-====================\n");
+    kernel_printf("\nWelcome to ");
 
+    new_scheme.foreground = FG_CYAN;
+    new_scheme.background = BG_BLACK;
+    new_scheme.vga_color  = 1;
+
+    /* No need to test return value */
+    save_color_scheme(&buffer);
+
+    /* Set REG on BLACK color scheme */
+    set_color_scheme(new_scheme);
+
+    /* Print tag */
+    kernel_printf("PathOS\n\n");
+
+    /* Restore original screen color scheme */
+    set_color_scheme(buffer);
 
     (void)args;
     (void)err;
@@ -188,6 +207,11 @@ static void* idle_sys(void* args)
         kernel_error("Error while creating INIT thread [%d]\n", err);
         kernel_panic();
     }
+
+    #ifdef DEBUG_SCHED
+    kernel_serial_debug("INIT Created\n");
+    #endif
+
 
     /* Halt forever, hlt for energy consumption */
     while(1 < 2)
@@ -424,6 +448,7 @@ static void select_thread(void)
     old_thread = active_thread;
     old_thread_node = active_thread_node;
 
+
     /* If the thread was not locked */
     if(old_thread->state == RUNNING)
     {
@@ -532,6 +557,7 @@ static void schedule_int(cpu_state_t *cpu_state, uint32_t int_id,
     {
         /* Save the actual ESP */
         active_thread->esp = cpu_state->esp - 4;
+
         /* Search for next thread */
         select_thread();
     }
@@ -723,14 +749,6 @@ OS_RETURN_E init_scheduler(void)
         kernel_panic();
     }
 
-    err = kernel_list_enlist_data(idle_thread_node, active_threads_table,
-                                  idle_thread->priority);
-    if(err != OS_NO_ERR)
-    {
-        kernel_error("Could not enqueue thread in active table[%d]\n", err);
-        kernel_panic();
-    }
-
     sched_irq         = (uint32_t)get_IRQ_SCHED_TIMER();
     sched_hw_int_line = (uint32_t)get_line_SCHED_HW();
 
@@ -782,7 +800,7 @@ OS_RETURN_E sleep(const unsigned int time_ms)
     active_thread->state = SLEEPING;
 
     #ifdef DEBUG_SCHED
-    kernel_serial_debug("Thread %d asleep until %d\n", active_thread->pid,
+    kernel_serial_debug("%d Thread %d asleep until %d\n", get_current_uptime(), active_thread->pid,
                         active_thread->wakeup_time );
     #endif
 
@@ -834,6 +852,8 @@ OS_RETURN_E create_thread(thread_t* thread,
         return OS_ERR_FORBIDEN_PRIORITY;
     }
 
+    spinlock_lock(&sched_lock);
+
     new_thread = kmalloc(sizeof(kernel_thread_t));
     new_thread_node = kernel_list_create_node(new_thread, &err);
 
@@ -848,6 +868,7 @@ OS_RETURN_E create_thread(thread_t* thread,
         {
             err = OS_ERR_MALLOC;
         }
+        spinlock_unlock(&sched_lock);
         return err;
     }
 
@@ -869,6 +890,7 @@ OS_RETURN_E create_thread(thread_t* thread,
     {
         kernel_list_delete_node(&new_thread_node);
         kfree(new_thread);
+        spinlock_unlock(&sched_lock);
         return err;
     }
 
@@ -907,6 +929,7 @@ OS_RETURN_E create_thread(thread_t* thread,
     {
         kernel_list_delete_node(&new_thread_node);
         kfree(new_thread);
+        spinlock_unlock(&sched_lock);
         return err;
     }
 
@@ -916,10 +939,10 @@ OS_RETURN_E create_thread(thread_t* thread,
         kernel_list_delete_node(&new_thread_node);
         kernel_list_delete_node(&seconde_new_thread_node);
         kfree(new_thread);
+        spinlock_unlock(&sched_lock);
         return err;
     }
 
-    spinlock_lock(&sched_lock);
     err = kernel_list_enlist_data(new_thread_node, active_threads_table,
                                   priority);
     if(err != OS_NO_ERR)
@@ -959,7 +982,7 @@ OS_RETURN_E create_thread(thread_t* thread,
 
     ++thread_count;
 
-    spinlock_unlock(&sched_lock);
+
 
     #ifdef DEBUG_SCHED
     kernel_serial_debug("Created thread %d\n", new_thread->pid);
@@ -969,6 +992,8 @@ OS_RETURN_E create_thread(thread_t* thread,
     {
         *thread = new_thread;
     }
+
+    spinlock_unlock(&sched_lock);
 
     return OS_NO_ERR;
 }

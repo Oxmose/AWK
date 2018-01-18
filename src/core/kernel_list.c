@@ -121,7 +121,7 @@ OS_RETURN_E kernel_list_delete_list(kernel_list_t** list)
 
     return OS_NO_ERR;
 }
-
+#include "kernel_thread.h"
 OS_RETURN_E kernel_list_enlist_data(kernel_list_node_t* node,
                                     kernel_list_t* list,
                                     const uint16_t priority)
@@ -131,7 +131,7 @@ OS_RETURN_E kernel_list_enlist_data(kernel_list_node_t* node,
     #ifdef DEBUG_KERNEL_QUEUE
     kernel_serial_debug("Enlist 0x%08x in lsit 0x%08x\n",
                         (uint32_t)node,
-                        (uint32_t)queue);
+                        (uint32_t)list);
     #endif
 
     if(node == NULL || list == NULL)
@@ -183,6 +183,11 @@ OS_RETURN_E kernel_list_enlist_data(kernel_list_node_t* node,
     }
     ++list->size;
     node->enlisted = 1;
+
+    if(node->next && node->prev && node->next == node->prev)
+    {
+        kernel_panic();
+    }
 
     return OS_NO_ERR;
 }
@@ -300,6 +305,12 @@ OS_RETURN_E kernel_list_remove_node_from(kernel_list_t* list,
         return OS_ERR_NULL_POINTER;
     }
 
+    #ifdef DEBUG_KERNEL_QUEUE
+    kernel_serial_debug("Remove node kernel node 0x%08x in list 0x%08x\n",
+                        (uint32_t)node,
+                        (uint32_t)list);
+    #endif
+
     /* Search for node in the list */
     cursor = list->head;
     while(cursor != NULL && cursor != node)
@@ -336,6 +347,8 @@ OS_RETURN_E kernel_list_remove_node_from(kernel_list_t* list,
 
     node->next = NULL;
     node->prev = NULL;
+
+    node->enlisted = 0;
 
     return OS_NO_ERR;
 }
