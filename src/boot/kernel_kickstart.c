@@ -178,9 +178,9 @@ void kernel_kickstart(void)
             kernel_error("IO-APIC Initialization error [%d]\n", err);
             kernel_panic();
         }
-    #ifdef TESTS
+#ifdef TESTS
         test_io_apic();
-    #endif
+#endif
     }
 
     /* Init LAPIC */
@@ -196,9 +196,9 @@ void kernel_kickstart(void)
             kernel_error("Local APIC Initialization error [%d]\n", err);
             kernel_panic();
         }
-    #ifdef TESTS
+#ifdef TESTS
         test_lapic();
-    #endif
+#endif
     }
 
     /* Init PIT */

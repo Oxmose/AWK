@@ -68,6 +68,7 @@ OS_RETURN_E queue_init(queue_t* queue, const uint32_t length)
     queue->write_waiting_threads = kernel_list_create_list(&err);
     if(err != OS_NO_ERR)
     {
+        kernel_list_delete_list(&queue->read_waiting_threads);
         return err;
     }
 
@@ -315,15 +316,6 @@ OS_RETURN_E queue_destroy(queue_t* queue)
         return OS_ERR_QUEUE_NON_INITIALIZED;
     }
 
-    queue->init = 0;
-    queue->head = 0;
-    queue->tail = 0;
-
-    queue->max_length = 0;
-    queue->length     = 0;
-
-    kfree(queue->container);
-
     /* Check if we can wake up threads */
     node = kernel_list_delist_data(queue->read_waiting_threads, &err);
     while(node != NULL && err == OS_NO_ERR)
@@ -358,6 +350,29 @@ OS_RETURN_E queue_destroy(queue_t* queue)
         kernel_error("Could not dequeue thread from queue[%d]\n", err);
         kernel_panic();
     }
+
+    /* Delete lists */
+    err = kernel_list_delete_list(&queue->read_waiting_threads);
+    if(err != OS_NO_ERR)
+    {
+        kernel_error("Could not delete list from queue[%d]\n", err);
+        kernel_panic();
+    }
+    err = kernel_list_delete_list(&queue->write_waiting_threads);
+    if(err != OS_NO_ERR)
+    {
+        kernel_error("Could not delete list from queue[%d]\n", err);
+        kernel_panic();
+    }
+
+    queue->init = 0;
+    queue->head = 0;
+    queue->tail = 0;
+
+    queue->max_length = 0;
+    queue->length     = 0;
+
+    kfree(queue->container);
 
     spinlock_unlock(&queue->lock);
 

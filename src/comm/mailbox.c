@@ -57,6 +57,7 @@ OS_RETURN_E mailbox_init(mailbox_t* mailbox)
     mailbox->write_waiting_threads = kernel_list_create_list(&err);
     if(err != OS_NO_ERR)
     {
+        kernel_list_delete_list(&mailbox->read_waiting_threads);
         return err;
     }
 
@@ -288,10 +289,6 @@ OS_RETURN_E mailbox_destroy(mailbox_t* mailbox)
         return OS_ERR_MAILBOX_NON_INITIALIZED;
     }
 
-    /* Set the mailbox to a destroyed state */
-    mailbox->init  = 0;
-    mailbox->state = 0;
-
     /* Check if we can wake up a thread */
     node = kernel_list_delist_data(mailbox->read_waiting_threads, &err);
     while(node != NULL && err == OS_NO_ERR)
@@ -326,6 +323,24 @@ OS_RETURN_E mailbox_destroy(mailbox_t* mailbox)
         kernel_error("Could not dequeue thread from mailbox[%d]\n", err);
         kernel_panic();
     }
+
+    /* Delete lists */
+    err = kernel_list_delete_list(&mailbox->read_waiting_threads);
+    if(err != OS_NO_ERR)
+    {
+        kernel_error("Could not delete list from mailbox[%d]\n", err);
+        kernel_panic();
+    }
+    err = kernel_list_delete_list(&mailbox->write_waiting_threads);
+    if(err != OS_NO_ERR)
+    {
+        kernel_error("Could not delete list from mailbox[%d]\n", err);
+        kernel_panic();
+    }
+
+    /* Set the mailbox to a destroyed state */
+    mailbox->init  = 0;
+    mailbox->state = 0;
 
     spinlock_unlock(&mailbox->lock);
 
