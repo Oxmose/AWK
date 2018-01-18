@@ -17,11 +17,11 @@
  * !!! THESE TESTS MUST BE DONE AFTER INITIALIZING THE PIC AND OR THE IOAPIC!!!
  */
 
-#include "../core/interrupts.h"
-#include "../core/kernel_output.h"
-#include "../core/panic.h"
-#include "../cpu/cpu.h"
-#include "../drivers/pit.h"
+#include "../../core/interrupts.h"
+#include "../../core/kernel_output.h"
+#include "../../core/panic.h"
+#include "../../cpu/cpu.h"
+#include "../../drivers/pit.h"
 
 static volatile uint32_t counter;
 
@@ -151,7 +151,7 @@ void test_pit(void)
     }
 
     kernel_debug("PIT tests passed\n");
-    
+
     enable_pit();
     disable_interrupt();
 }

@@ -13,11 +13,11 @@
 
 
 
-#include "../core/interrupts.h"
-#include "../core/kernel_output.h"
-#include "../core/panic.h"
-#include "../cpu/cpu.h"
-#include "../drivers/lapic.h"
+#include "../../core/interrupts.h"
+#include "../../core/kernel_output.h"
+#include "../../core/panic.h"
+#include "../../cpu/cpu.h"
+#include "../../drivers/lapic.h"
 
 void test_lapic(void)
 {

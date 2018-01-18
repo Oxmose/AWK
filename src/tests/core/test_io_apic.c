@@ -16,11 +16,11 @@
  *     BETWEEN MIN_INTERRUPT_LINE AND MAX_INTERRUPT_LINE !!!
  */
 
-#include "../core/interrupts.h"
-#include "../core/kernel_output.h"
-#include "../core/panic.h"
-#include "../cpu/cpu.h"
-#include "../drivers/io_apic.h"
+#include "../../core/interrupts.h"
+#include "../../core/kernel_output.h"
+#include "../../core/panic.h"
+#include "../../cpu/cpu.h"
+#include "../../drivers/io_apic.h"
 
 void test_io_apic(void)
 {

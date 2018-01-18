@@ -18,11 +18,11 @@
  *     IOAPIC!!!
  */
 
-#include "../core/interrupts.h"
-#include "../core/kernel_output.h"
-#include "../core/panic.h"
-#include "../cpu/cpu.h"
-#include "../drivers/pic.h"
+#include "../../core/interrupts.h"
+#include "../../core/kernel_output.h"
+#include "../../core/panic.h"
+#include "../../cpu/cpu.h"
+#include "../../drivers/pic.h"
 
 void test_pic(void)
 {

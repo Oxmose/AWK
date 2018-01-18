@@ -30,7 +30,7 @@
 #include "../core/kernel_output.h"  /* kernel_success, kernel_error,
                                        kernel_info */
 
-#include "../tests/tests.h"      /* test_bank */
+#include "../tests/core/tests.h"      /* test_bank */
 
 #include "../debug.h"            /* DEBUG */
 

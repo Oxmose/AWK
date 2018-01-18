@@ -11,10 +11,10 @@
  * Kernel tests bank: ATA PIO drivers tests
  ******************************************************************************/
 
-#include "../drivers/ata.h"
-#include "../core/kernel_output.h"
-#include "../core/panic.h"
-#include "../lib/string.h"
+#include "../../drivers/ata.h"
+#include "../../core/kernel_output.h"
+#include "../../core/panic.h"
+#include "../../lib/string.h"
 
 void test_ata(void)
 {

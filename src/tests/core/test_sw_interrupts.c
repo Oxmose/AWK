@@ -18,10 +18,10 @@
  * !!! THESE TESTS DISABLE IRQs ON THE PIC !!!
  */
 
-#include "../core/interrupts.h"
-#include "../core/kernel_output.h"
-#include "../core/panic.h"
-#include "../cpu/cpu.h"
+#include "../../core/interrupts.h"
+#include "../../core/kernel_output.h"
+#include "../../core/panic.h"
+#include "../../cpu/cpu.h"
 
 static volatile uint32_t counter = 0;
 

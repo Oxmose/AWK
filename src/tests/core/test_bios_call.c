@@ -11,12 +11,12 @@
  * Kernel tests bank: Bios interrupts call tests
  ******************************************************************************/
 
-#include "../core/interrupts.h"
-#include "../core/kernel_output.h"
-#include "../core/panic.h"
-#include "../lib/string.h"
-#include "../bios/bios_call.h"
-#include "../drivers/graphic.h"
+#include "../../core/interrupts.h"
+#include "../../core/kernel_output.h"
+#include "../../core/panic.h"
+#include "../../lib/string.h"
+#include "../../bios/bios_call.h"
+#include "../../drivers/graphic.h"
 
 void test_bios_call(void)
 {

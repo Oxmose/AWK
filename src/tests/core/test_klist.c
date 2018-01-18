@@ -11,10 +11,10 @@
  * Kernel tests bank: Kernel list tests
  ******************************************************************************/
 
-#include "../core/kernel_list.h"
-#include "../core/kernel_output.h"
-#include "../core/panic.h"
-#include "../lib/stddef.h"
+#include "../../core/kernel_list.h"
+#include "../../core/kernel_output.h"
+#include "../../core/panic.h"
+#include "../../lib/stddef.h"
 
 void test_klist(void)
 {
