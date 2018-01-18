@@ -12,7 +12,7 @@
  * Thread creation and management functions are located in this file.
  ******************************************************************************/
 
-#include "../lib/stdint.h"     /* Generic int types */
+#include "../lib/stdint.h"      /* Generic int types */
 #include "../lib/stddef.h"      /* OS_RETURN_E, OS_EVENT_ID */
 #include "../lib/string.h"      /* strncpy */
 #include "../memory/heap.h"     /* kmalloc, kfree */
@@ -24,9 +24,9 @@
 #include "kernel_output.h"      /* kernel_success, kernel_error */
 #include "kernel_list.h"        /* kernel_list_t, kernel_list_node_t */
 
-#include "panic.h"           /* kernel_panic */
+#include "panic.h"              /* kernel_panic */
 
-#include "../debug.h"        /* kernel_serial_debug */
+#include "../debug.h"           /* DEBUG */
 
 /* Header file */
 #include "scheduler.h"
@@ -318,6 +318,14 @@ static void thread_exit(void)
         kernel_panic();
     }
 
+    /* Delete lsit */
+    err = kernel_list_delete_list(&active_thread->children);
+    if(err != OS_NO_ERR)
+    {
+        kernel_error("Could not delete lsit of children[%d]\n", err);
+        kernel_panic();
+    }
+
     spinlock_unlock(&sched_lock);
 
     /* Schedule thread */
@@ -337,15 +345,16 @@ static void thread_wrapper(void)
     active_thread->ret_val = active_thread->function(active_thread->args);
 
     active_thread->end_time = get_current_uptime();
-    active_thread->exec_time =
-        active_thread->end_time - active_thread->start_time;
+    active_thread->exec_time = active_thread->end_time -
+                               active_thread->start_time;
 
     /* Exit thread properly */
     thread_exit();
 }
 
 /* Clean a thread that is currently being joined by the curent active thread.
- * Remove the thread from all lists and celan the lists nodes.
+ * Remove the thread from all lists and celan the lists nodes. Scheduler lock
+ * should be locked before calling this function.
  *
  * @param thread The thread to clean.
  */
@@ -360,6 +369,7 @@ static void clean_joined_thread(kernel_thread_t* thread)
     {
         kernel_error("Could not find joined thread in chlidren table[%d]\n",
                      err);
+        kernel_panic();
     }
     if(node != NULL && err == OS_NO_ERR)
     {
@@ -368,12 +378,13 @@ static void clean_joined_thread(kernel_thread_t* thread)
         {
             kernel_error("Could delete thread node in children table[%d]\n",
                          err);
+            kernel_panic();
         }
         err = kernel_list_delete_node(&node);
         if(err != OS_NO_ERR)
         {
-            kernel_error("Could delete thread node[%d]\n",
-                         err);
+            kernel_error("Could delete thread node[%d]\n", err);
+            kernel_panic();
         }
     }
 
@@ -383,6 +394,7 @@ static void clean_joined_thread(kernel_thread_t* thread)
     {
         kernel_error("Could not find joined thread in zombie table[%d]\n",
                      err);
+        kernel_panic();
     }
     if(node != NULL && err == OS_NO_ERR)
     {
@@ -391,12 +403,13 @@ static void clean_joined_thread(kernel_thread_t* thread)
         {
             kernel_error("Could delete thread node in zombie table[%d]\n",
                          err);
+            kernel_panic();
         }
         err = kernel_list_delete_node(&node);
         if(err != OS_NO_ERR)
         {
-            kernel_error("Could delete thread node[%d]\n",
-                         err);
+            kernel_error("Could delete thread node[%d]\n", err);
+            kernel_panic();
         }
     }
 
@@ -406,6 +419,7 @@ static void clean_joined_thread(kernel_thread_t* thread)
     {
         kernel_error("Could not find joined thread in general table[%d]\n",
                      err);
+        kernel_panic();
     }
     if(node != NULL && err == OS_NO_ERR)
     {
@@ -414,22 +428,26 @@ static void clean_joined_thread(kernel_thread_t* thread)
         {
             kernel_error("Could delete thread node in general table[%d]\n",
                          err);
+            kernel_panic();
         }
         err = kernel_list_delete_node(&node);
         if(err != OS_NO_ERR)
         {
-            kernel_error("Could delete thread node[%d]\n",
-                         err);
+            kernel_error("Could delete thread node[%d]\n", err);
+            kernel_panic();
         }
     }
+
     #ifdef DEBUG_SCHED
     kernel_serial_debug("Thread %d joined thread %d\n",
                          active_thread->pid,
                          thread->pid);
     #endif
 
-    --thread_count;
     kfree(thread);
+    
+    --thread_count;
+
 }
 
 /* Set the old_thread and active_thread pointers. The function will select the
@@ -927,6 +945,7 @@ OS_RETURN_E create_thread(thread_t* thread,
     seconde_new_thread_node = kernel_list_create_node(new_thread, &err);
     if(err != OS_NO_ERR)
     {
+        kernel_list_delete_list(&new_thread->children);
         kernel_list_delete_node(&new_thread_node);
         kfree(new_thread);
         spinlock_unlock(&sched_lock);
@@ -936,6 +955,7 @@ OS_RETURN_E create_thread(thread_t* thread,
     children_new_thread_node = kernel_list_create_node(new_thread, &err);
     if(err != OS_NO_ERR)
     {
+        kernel_list_delete_list(&new_thread->children);
         kernel_list_delete_node(&new_thread_node);
         kernel_list_delete_node(&seconde_new_thread_node);
         kfree(new_thread);
@@ -947,6 +967,7 @@ OS_RETURN_E create_thread(thread_t* thread,
                                   priority);
     if(err != OS_NO_ERR)
     {
+        kernel_list_delete_list(&new_thread->children);
         kernel_list_delete_node(&children_new_thread_node);
         kernel_list_delete_node(&new_thread_node);
         kernel_list_delete_node(&seconde_new_thread_node);
@@ -960,6 +981,7 @@ OS_RETURN_E create_thread(thread_t* thread,
                                    new_thread->priority);
      if(err != OS_NO_ERR)
      {
+         kernel_list_delete_list(&new_thread->children);
          kernel_list_delete_node(&children_new_thread_node);
          kernel_list_delete_node(&new_thread_node);
          kernel_list_delete_node(&seconde_new_thread_node);
@@ -972,6 +994,7 @@ OS_RETURN_E create_thread(thread_t* thread,
                                   active_thread->children, 0);
     if(err != OS_NO_ERR)
     {
+        kernel_list_delete_list(&new_thread->children);
         kernel_list_delete_node(&children_new_thread_node);
         kernel_list_delete_node(&new_thread_node);
         kernel_list_delete_node(&seconde_new_thread_node);
@@ -981,8 +1004,6 @@ OS_RETURN_E create_thread(thread_t* thread,
     }
 
     ++thread_count;
-
-
 
     #ifdef DEBUG_SCHED
     kernel_serial_debug("Created thread %d\n", new_thread->pid);

@@ -333,7 +333,7 @@ OS_RETURN_E init_vesa(void)
         new_mode = kmalloc(sizeof(vesa_mode_t));
         if(new_mode == NULL)
         {
-            return OS_ERR_MALLOC;
+            continue;
         }
 
         /* The mode is compatible, save it */
