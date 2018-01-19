@@ -6,11 +6,10 @@
  *
  * Date: 16/12/2017
  *
- * Version: 1.0
+ * Version: 2.0
  *
  * Kernel scheduler
  * Thread creation and management functions are located in this file.
- *
  ******************************************************************************/
 
 #ifndef __SCHEDULER_H_
@@ -18,9 +17,7 @@
 
 #include "../lib/stddef.h"  /* OS_RETURN_E */
 #include "../lib/stdint.h"  /* Generic int types */
-#include "interrupts.h"     /* cpu_state_t, stack_state_t */
 #include "kernel_thread.h"  /* thread_t */
-#include "kernel_queue.h"   /* kernel_queue_t */
 
 /*******************************************************************************
  * CONSTANTS
@@ -40,7 +37,7 @@
 /* System possible sates */
 typedef enum SYSTEM_STATE
 {
-    RUNNING,
+    ALIVE,
     HALTED
 } SYSTEM_STATE_E;
 
@@ -54,8 +51,6 @@ typedef struct thread_info
     uint32_t         priority;
 
     THREAD_STATE_E   state;
-
-    thread_queue_t* children;
 
     uint32_t start_time;
     uint32_t end_time;
@@ -91,7 +86,7 @@ void schedule(void);
  * @param time_ms The number of milliseconds to wait.
  * @returns The success or error code.
  */
-OS_RETURN_E sleep(const unsigned int time_ms);
+OS_RETURN_E sleep(const uint32_t time_ms);
 
 /* Returns the number of existing threads
  *
@@ -111,23 +106,11 @@ int32_t get_pid(void);
  */
 int32_t get_ppid(void);
 
-/* Returns the name of the current executing thread.
- *
- * @returns The name of the current executing thread.
- */
-char *get_current_thread_name(void);
-
 /* Returns the priority of the current executing thread.
  *
  * @returns The priority of the current executing thread.
  */
 uint32_t get_priority(void);
-
-/* Returns the executing thread structuer pointer.
- *
- * @returns The executing thread structuer pointer.
- */
-kernel_thread_t* get_active_thread(void);
 
 /* Create a new thread in the thread table.
  *
@@ -154,22 +137,23 @@ OS_RETURN_E wait_thread(thread_t thread, void** ret_val);
 /* Add a thread to the active threads table, the thread might be contained
  * in an other structure such as a mutex
  *
- * @param thread The thread to unlock.
+ * @param node The node containing the thread to unlock.
  * @param block_type The type of block (mutex, sem, ...)
  * @param do_schedule Set to 1 if you want an immediat schedule.
  * @returns OS_NO_ERR on success, error code otherwise.
  */
-OS_RETURN_E unlock_thread(const thread_t thread,
+OS_RETURN_E unlock_thread(kernel_list_node_t* node,
                           const BLOCK_TYPE_E block_type,
                           const uint8_t do_schedule);
 
 /* Remove the active thread from the active threads table, the thread might be
- * contained in an other structure such as a mutex
+ * contained in an other structure such as a mutex.
  *
  * @param block_type The type of block (mutex, sem, ...)
- * @returns OS_NO_ERR on success, error code otherwise.
+ * @returns The node to the thread that has been locked. NULL is returned if the
+ * current thread cannot be locked (idle).
  */
-OS_RETURN_E lock_thread(const BLOCK_TYPE_E block_type);
+kernel_list_node_t* lock_thread(const BLOCK_TYPE_E block_type);
 
 /* Lock the current thread waiting for an IO.
  * @param block_type The type of IO that locks the thread.

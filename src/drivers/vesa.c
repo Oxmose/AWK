@@ -11,14 +11,15 @@
  * VESA VBE 2 graphic drivers
  ******************************************************************************/
 
+#include "../memory/heap.h"    /* kmalloc, kfree */
 #include "../lib/stdint.h"     /* Generic int types */
 #include "../lib/stddef.h"     /* OS_RETURN_E */
-#include "../lib/malloc.h"     /* malloc */
-#include "../cpu/bios_call.h"  /* regs_t, bios_call */
-#include "../font/uni_vga.c"   /* __fonct_bitmap__ */
-#include "serial.h"            /* serial_write */
+#include "../lib/string.h"     /* memmove, memset */
+#include "../bios/bios_call.h" /* regs_t, bios_call */
+#include "../fonts/uni_vga.c"  /* __font_bitmap__ */
 #include "vga_text.h"          /* vga_get_framebuffer */
-#include "graphic.h"            /* structures */
+#include "serial.h"            /* serial_write */
+#include "graphic.h"           /* structures */
 
 #include "../debug.h"      /* kernel_serial_debug */
 
@@ -30,10 +31,9 @@
  ******************************************************************************/
 
 /* Screen settings */
-static uint32_t max_supported_height = 600;
-static uint32_t max_supported_width = 1280;
-static uint32_t max_supported_bpp = 32;
-
+#define MAX_SUPPORTED_HEIGHT 1000
+#define MAX_SUPPORTED_WIDTH  1920
+#define MAX_SUPPORTED_BPP    32
 
 /* VESA data structures */
 extern vbe_info_structure_t      vbe_info_base;
@@ -41,15 +41,16 @@ extern vbe_mode_info_structure_t vbe_mode_info_base;
 
 /* VESA modes */
 static vesa_mode_t* saved_modes;
+static vesa_mode_t* current_mode;
 static uint16_t     mode_count     = 0;
 static uint8_t      vesa_supported = 0;
-static vesa_mode_t* current_mode;
 
 /* VESA console settigns, used in tty mode */
 static cursor_t      screen_cursor;
 static cursor_t      last_printed_cursor;
 static colorscheme_t screen_scheme;
-static uint32_t*     last_columns = NULL;
+
+static uint32_t*    last_columns;
 
 static const uint32_t vga_color_table[16] = {
     0x00000000,
@@ -108,7 +109,6 @@ static void vesa_process_char(const char character)
             }
             vesa_put_cursor_at(screen_cursor.y + font_height, 0);
             last_columns[(screen_cursor.y / font_height)] = screen_cursor.x;
-            kernel_serial_debug(" %d ", last_columns[(screen_cursor.y / font_height)]);
         }
 
         /* Manage end of screen cursor position */
@@ -141,9 +141,7 @@ static void vesa_process_char(const char character)
             }
             vesa_put_cursor_at(screen_cursor.y + font_height, 0);
         }
-        kernel_serial_debug(" %dF%d ",screen_cursor.y, last_columns[(screen_cursor.y / font_height)]);
         last_columns[(screen_cursor.y / font_height)] = screen_cursor.x;
-        kernel_serial_debug(" %dM%d ",screen_cursor.y , last_columns[(screen_cursor.y / font_height)]);
     }
     else
     {
@@ -190,7 +188,6 @@ static void vesa_process_char(const char character)
                         vesa_drawchar(' ', last_columns[(screen_cursor.y / font_height) - 1], screen_cursor.y - font_height,
                                       screen_scheme.foreground,
                                       screen_scheme.background);
-                        kernel_serial_debug(" %dD%d ", screen_cursor.y , last_columns[(screen_cursor.y / font_height) - 1]);
                         vesa_put_cursor_at(screen_cursor.y - font_height,
                                            last_columns[(screen_cursor.y / font_height) - 1]);
                     }
@@ -266,15 +263,15 @@ static void vesa_process_char(const char character)
 OS_RETURN_E init_vesa(void)
 {
     bios_int_regs_t regs;
-    vesa_mode_t*    new_mode;
     uint32_t        i;
     uint16_t*       modes;
+    vesa_mode_t*    new_mode;
 
     /* Init data */
-    saved_modes    = NULL;
     mode_count     = 0;
     vesa_supported = 0;
     current_mode   = NULL;
+    saved_modes    = NULL;
 
     /* Console mode init */
     screen_cursor.x = 0;
@@ -294,15 +291,16 @@ OS_RETURN_E init_vesa(void)
     /* Issue call */
     bios_int(BIOS_INTERRUPT_VESA, &regs);
 
+
     /* Check call result */
     if(regs.ax != 0x004F || strncmp(vbe_info_base.signature, "VESA", 4) != 0)
     {
         return OS_ERR_VESA_NOT_SUPPORTED;
     }
 
-    /* Get all the supported modes */
+    /* Get modes */
     modes = (uint16_t*)vbe_info_base.video_modes;
-    for (i = 0 ; modes[i] != 0xFFFF ; ++i)
+    for (i = 0 ; mode_count < MAX_VESA_MODE_COUNT && modes[i] != 0xFFFF ; ++i)
     {
         /* Prepare registers for mode query call */
         regs.ax = BIOS_CALL_GET_VESA_MODE;
@@ -332,50 +330,46 @@ OS_RETURN_E init_vesa(void)
             continue;
         }
 
-        /* The mode is compatible, save it */
-        new_mode = malloc(sizeof(vesa_mode_t));
+        new_mode = kmalloc(sizeof(vesa_mode_t));
         if(new_mode == NULL)
         {
-            mode_count = 0;
-            return OS_ERR_MALLOC;
+            continue;
         }
 
+        /* The mode is compatible, save it */
         new_mode->width       = vbe_mode_info_base.width;
         new_mode->height      = vbe_mode_info_base.height;
         new_mode->bpp         = vbe_mode_info_base.bpp;
         new_mode->mode_id     = modes[i];
         new_mode->framebuffer = vbe_mode_info_base.framebuffer;
-        new_mode->next = NULL;
 
-        /* Store the mode */
-        if(saved_modes == NULL)
-        {
-            saved_modes = new_mode;
-        }
-        else
-        {
-            new_mode->next = saved_modes;
-            saved_modes = new_mode;
-        }
+        /* Save mode in list */
+        new_mode->next = saved_modes;
+        saved_modes = new_mode;
+
         ++mode_count;
     }
-    vesa_supported = 1;
+
+    if(mode_count > 0)
+    {
+        vesa_supported = 1;
+    }
+
     return OS_NO_ERR;
 }
 
 OS_RETURN_E text_vga_to_vesa(void)
 {
-    OS_RETURN_E err;
-    uint32_t i;
-    uint32_t j;
-    uint16_t vesa_mode_count;
-    vesa_mode_info_t* modes;
-    vesa_mode_info_t selected_mode;
-    uint16_t* vga_fb;
-    cursor_t vga_cursor;
-    uint16_t temp_buffer[SCREEN_LINE_SIZE * SCREEN_COL_SIZE];
-    colorscheme_t new_colorscheme;
-    colorscheme_t old_colorscheme = screen_scheme;
+    OS_RETURN_E       err;
+    uint32_t          i;
+    uint32_t          j;
+    vesa_mode_info_t  selected_mode;
+    vesa_mode_t*      cursor;
+    uint16_t*         vga_fb;
+    cursor_t          vga_cursor;
+    uint16_t          temp_buffer[SCREEN_LINE_SIZE * SCREEN_COL_SIZE];
+    colorscheme_t     new_colorscheme;
+    colorscheme_t     old_colorscheme = screen_scheme;
 
     /* Save VGA content */
     vga_save_cursor(&vga_cursor);
@@ -384,8 +378,6 @@ OS_RETURN_E text_vga_to_vesa(void)
            sizeof(uint16_t) * SCREEN_LINE_SIZE * SCREEN_COL_SIZE);
 
     /* Set VESA mode */
-    vesa_mode_count = get_vesa_mode_count();
-
     if(vesa_supported == 0)
     {
         return OS_ERR_VESA_NOT_SUPPORTED;
@@ -396,39 +388,42 @@ OS_RETURN_E text_vga_to_vesa(void)
         return OS_NO_ERR;
     }
 
-    modes = malloc(sizeof(vesa_mode_info_t) * vesa_mode_count);
-
-    err = get_vesa_modes(modes, vesa_mode_count);
-    if(err != OS_NO_ERR)
-    {
-        return err;
-    }
-
     selected_mode.width = 0;
     selected_mode.height = 0;
     selected_mode.bpp = 0;
 
-    for(i = 0; i < vesa_mode_count; ++i)
+
+    cursor = saved_modes;
+    while(cursor != NULL)
     {
-        if(modes[i].width > max_supported_width ||
-           modes[i].height > max_supported_height ||
-           modes[i].bpp > max_supported_bpp)
+        if(cursor->width > MAX_SUPPORTED_WIDTH ||
+           cursor->height > MAX_SUPPORTED_HEIGHT ||
+           cursor->bpp > MAX_SUPPORTED_BPP)
         {
+            cursor = cursor->next;
             continue;
         }
 
-        if(modes[i].width >= selected_mode.width &&
-           modes[i].height >= selected_mode.height &&
-           modes[i].bpp  >= selected_mode.bpp)
+        if(cursor->width >= selected_mode.width &&
+           cursor->height >= selected_mode.height &&
+           cursor->bpp  >= selected_mode.bpp)
         {
-            selected_mode = modes[i];
+            selected_mode.width = cursor->width;
+            selected_mode.height = cursor->height;
+            selected_mode.bpp = cursor->bpp;
+            selected_mode.mode_id = cursor->mode_id;
         }
+        cursor = cursor->next;
     }
-
-    err = set_vesa_mode(selected_mode);
-    kernel_serial_debug("VESA mode %dx%d %dbits\n", selected_mode.width,
+    #ifdef DEBUG_VESA
+    kernel_serial_debug("SELECTED VESA mode %dx%d %dbits\n",
+                                                  selected_mode.width,
                                                   selected_mode.height,
                                                   selected_mode.bpp);
+    #endif
+
+    err = set_vesa_mode(selected_mode);
+
     if(err != OS_NO_ERR)
     {
         return err;
@@ -502,14 +497,16 @@ OS_RETURN_E get_vesa_modes(vesa_mode_info_t* buffer, const uint32_t size)
         return OS_ERR_NULL_POINTER;
     }
 
+    i = 0;
     cursor = saved_modes;
-    for(i = 0; cursor != NULL && i < mode_count && i < size; ++i)
+    while(cursor != NULL && i < size)
     {
         buffer[i].width       = cursor->width;
         buffer[i].height      = cursor->height;
         buffer[i].bpp         = cursor->bpp;
         buffer[i].mode_id     = cursor->mode_id;
         cursor = cursor->next;
+        ++i;
     }
 
     return OS_NO_ERR;
@@ -517,8 +514,9 @@ OS_RETURN_E get_vesa_modes(vesa_mode_info_t* buffer, const uint32_t size)
 
 OS_RETURN_E set_vesa_mode(const vesa_mode_info_t mode)
 {
-    vesa_mode_t* cursor;
     bios_int_regs_t regs;
+    uint32_t        last_columns_size;
+    vesa_mode_t*    cursor;
 
     if(vesa_supported == 0)
     {
@@ -545,19 +543,21 @@ OS_RETURN_E set_vesa_mode(const vesa_mode_info_t mode)
         return OS_ERR_VESA_MODE_NOT_SUPPORTED;
     }
 
-    /* Set the last collumn array */
+    last_columns_size = sizeof(uint32_t) * current_mode->height / font_height;
+
     if(last_columns != NULL)
     {
-        free(last_columns);
+        kfree(last_columns);
     }
 
-    last_columns = malloc(sizeof(uint32_t) * current_mode->height / font_height);
+    last_columns = kmalloc(last_columns_size);
     if(last_columns == NULL)
     {
         return OS_ERR_MALLOC;
     }
 
-    memset(last_columns, 0, sizeof(uint32_t) * current_mode->height / font_height);
+    /* Set the last collumn array */
+    memset(last_columns, 0, last_columns_size);
 
     /* Set the VESA mode */
     regs.ax = BIOS_CALL_SET_VESA_MODE;
@@ -608,6 +608,48 @@ OS_RETURN_E vesa_draw_pixel(const uint16_t x, const uint16_t y,
     return OS_NO_ERR;
 }
 
+OS_RETURN_E vesa_draw_rectangle(const uint16_t x, const uint16_t y,
+                                const uint16_t width, const uint16_t height,
+                                const uint8_t red, const uint8_t green,
+                                const uint8_t blue)
+{
+    uint16_t i;
+    uint16_t j;
+    uint32_t* addr;
+
+    if(vesa_supported == 0)
+    {
+        return OS_ERR_VESA_NOT_SUPPORTED;
+    }
+
+    if(current_mode == NULL)
+    {
+        return OS_ERR_VESA_NOT_INIT;
+    }
+
+    if(x + width > current_mode->width || y + height > current_mode->height)
+    {
+        return OS_ERR_OUT_OF_BOUND;
+    }
+
+    uint8_t pixel[4] = {blue, green, red, 0x00};
+
+    for(i = y; i < y + height; ++i)
+    {
+        for(j = x; j < x + width; ++j)
+        {
+            /* Get framebuffer address */
+            addr = ((uint32_t*)current_mode->framebuffer) +
+                     (current_mode->width * i) + j;
+
+            *addr = *((uint32_t*)pixel);
+        }
+    }
+
+    return OS_NO_ERR;
+}
+
+
 void vesa_drawchar(const unsigned char charracter,
                    const uint32_t x, const uint32_t y,
                    const uint32_t fgcolor, const uint32_t bgcolor)
@@ -631,6 +673,51 @@ void vesa_drawchar(const unsigned char charracter,
                             pixel[2], pixel[1], pixel[0]);
         }
     }
+}
+
+int32_t vesa_get_screen_width(void)
+{
+    if(vesa_supported == 0)
+    {
+        return -1;
+    }
+
+    if(current_mode == NULL)
+    {
+        return -1;
+    }
+
+    return current_mode->width;
+}
+
+int32_t vesa_get_screen_height(void)
+{
+    if(vesa_supported == 0)
+    {
+        return -1;
+    }
+
+    if(current_mode == NULL)
+    {
+        return -1;
+    }
+
+    return current_mode->height;
+}
+
+int8_t vesa_get_screen_bpp(void)
+{
+    if(vesa_supported == 0)
+    {
+        return -1;
+    }
+
+    if(current_mode == NULL)
+    {
+        return -1;
+    }
+
+    return current_mode->bpp;
 }
 
 void vesa_clear_screen(void)
@@ -708,8 +795,6 @@ void vesa_scroll(const SCROLL_DIRECTION_E direction,
     q = current_mode->height / font_height;
     m = current_mode->height % (q * font_height);
 
-    kernel_serial_debug("SCRRL");
-
     /* Select scroll direction */
     if(direction == SCROLL_DOWN)
     {
@@ -762,14 +847,20 @@ OS_RETURN_E vesa_save_color_scheme(colorscheme_t* buffer)
     return OS_NO_ERR;
 }
 
-void vesa_console_putbytes(const char* string, const uint32_t size)
+void vesa_put_string(const char* string)
 {
     /* Output each character of the string */
     uint32_t i;
-    for(i = 0; i < size; ++i)
+    for(i = 0; i < strlen(string); ++i)
     {
         vesa_process_char(string[i]);
     }
+    last_printed_cursor = screen_cursor;
+}
+
+void vesa_put_char(const char charactrer)
+{
+    vesa_process_char(charactrer);
     last_printed_cursor = screen_cursor;
 }
 

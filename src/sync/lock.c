@@ -1,6 +1,6 @@
 /*******************************************************************************
  *
- * File: lock.h
+ * File: lock.c
  *
  * Author: Alexy Torres Aurora Dugo
  *
@@ -34,13 +34,11 @@ OS_RETURN_E spinlock_lock(lock_t* lock)
         return OS_ERR_NULL_POINTER;
     }
 
-#ifdef KERNEL_MONOCORE
+#ifdef KERNEL_MONOCORE_SYNC
     disable_interrupt();
-    *lock = 1;
-#else
-    while(cpu_test_and_set(lock) == 1);
 #endif
-
+    while(cpu_test_and_set(lock) == 1);
+    
     return OS_NO_ERR;
 }
 
@@ -54,7 +52,7 @@ OS_RETURN_E spinlock_unlock(lock_t* lock)
 
     *lock = 0;
 
-#ifdef KERNEL_MONOCORE
+#ifdef KERNEL_MONOCORE_SYNC
     enable_interrupt();
 #endif
 
@@ -68,10 +66,6 @@ OS_RETURN_E spinlock_init(lock_t* lock)
         return OS_ERR_NULL_POINTER;
     }
 
-#ifdef KERNEL_MONOCORE
     *lock = 0;
     return OS_NO_ERR;
-#else
-    return spinlock_unlock(lock);
-#endif
 }

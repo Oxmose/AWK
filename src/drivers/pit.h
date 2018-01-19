@@ -16,6 +16,7 @@
 
 #include "../lib/stdint.h"            /* Generioc int types */
 #include "../lib/stddef.h"            /* OS_RETURN_E, OS_EVENT_ID*/
+#include "../core/interrupts.h"       /* Interrupts handler prototype */
 
 /*******************************************************************************
  * CONSTANTS

@@ -16,7 +16,9 @@
                                     * stack_state, set_IRQ_EOI, set_IRQ_mask */
 #include "../lib/stdint.h"         /* Generic int types */
 #include "../lib/stddef.h"         /* OS_RETURN_E, OS_EVENT_ID */
-#include "../sync/lock.h"          /* enable_interrupt, disable_interrupt */
+#include "../sync/lock.h"          /* spinlock */
+
+#include "../debug.h"      /* kernel_serial_debug */
 
 /* Header file*/
 #include "rtc.h"
@@ -33,29 +35,23 @@ static date_t date;
 
 /* Events table */
 static rtc_event_t clock_events[RTC_MAX_EVENT_COUNT];
-static lock_t clock_events_lock;
+static lock_t      clock_events_lock;
 
 /* Tick count */
-uint32_t tick_count;
+static volatile uint32_t tick_count;
 
 /*******************************************************************************
  * FUNCTIONS
  ******************************************************************************/
 
-static void rtc_interrupt_handler(cpu_state_t *cpu_state, uint32_t int_id,
-                                  stack_state_t *stack_state)
+static void update_time(void)
 {
-    (void)cpu_state;
-    (void)stack_state;
-    (void)int_id;
-
     int8_t nmi_info;
     uint8_t seconds;
     uint8_t minutes;
     uint32_t hours;
     uint8_t century;
     uint8_t reg_b;
-    uint32_t i;
 
     /* Set NMI info bit */
     nmi_info = CMOS_NMI_DISABLE_BIT << 7;
@@ -139,19 +135,32 @@ static void rtc_interrupt_handler(cpu_state_t *cpu_state, uint32_t int_id,
     /* Clear C Register */
     outb(CMOS_REG_C, CMOS_COMM_PORT);
     inb(CMOS_DATA_PORT);
+}
+
+static void rtc_interrupt_handler(cpu_state_t *cpu_state, uint32_t int_id,
+                                  stack_state_t *stack_state)
+{
+    uint32_t    i;
+
+    (void)cpu_state;
+    (void)stack_state;
+    (void)int_id;
+
+    ++tick_count;
+
+    update_time();
 
     /* Execute events */
     for(i = 0; i < RTC_MAX_EVENT_COUNT; ++i)
     {
         /* Check update frequency */
         if(clock_events[i].enabled  == 1 &&
+           clock_events[i].execute != NULL &&
            tick_count % clock_events[i].period == 0)
         {
             clock_events[i].execute();
         }
     }
-
-    ++tick_count;
 
     /* Send EOI signal */
     set_IRQ_EOI(RTC_IRQ_LINE);
@@ -257,6 +266,11 @@ OS_RETURN_E register_rtc_event(void (*function)(void),
         *event_id = i;
     }
 
+    #ifdef DEBUG_RTC
+    kernel_serial_debug("Registered RTC event id %d, handler 0x%08x\n",
+                         i, (uint32_t)function);
+    #endif
+
     spinlock_unlock(&clock_events_lock);
 
     return OS_NO_ERR;
@@ -278,9 +292,13 @@ OS_RETURN_E unregister_rtc_event(const OS_EVENT_ID event_id)
     }
 
     /* Disable event */
+    clock_events[event_id].enabled = 0;
     clock_events[event_id].execute = NULL;
     clock_events[event_id].period  = 0;
-    clock_events[event_id].enabled = 0;
+
+    #ifdef DEBUG_RTC
+    kernel_serial_debug("Unregistered RTC event id %d\n", event_id);
+    #endif
 
     spinlock_unlock(&clock_events_lock);
 

@@ -86,7 +86,7 @@ OS_RETURN_E save_cursor(cursor_t* buffer)
 	}
 	else
 	{
-		return vesa_save_cursor(buffer);
+		return vga_save_cursor(buffer);
 	}
 }
 
@@ -144,15 +144,27 @@ OS_RETURN_E save_color_scheme(colorscheme_t* buffer)
 	}
 }
 
-void console_putbytes(const char* str, const uint32_t len)
+void screen_put_string(const char* str)
 {
 	if(selected_driver == VESA_DRIVER_SELECTED)
 	{
-		vesa_console_putbytes(str, len);
+		vesa_put_string(str);
 	}
 	else
 	{
-		vga_console_putbytes(str, len);
+		vga_put_string(str);
+	}
+}
+
+void screen_put_char(const char character)
+{
+    if(selected_driver == VESA_DRIVER_SELECTED)
+	{
+		vesa_put_char(character);
+	}
+	else
+	{
+		vga_put_char(character);
 	}
 }
 

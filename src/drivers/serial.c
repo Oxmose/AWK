@@ -13,6 +13,7 @@
 
 #include "../lib/stddef.h" /* OS_RETURN_E */
 #include "../lib/stdint.h" /* Generic int types */
+#include "../lib/string.h" /* strlen */
 #include "../cpu/cpu.h"    /* outb, inb */
 
 /* Header file */
@@ -170,4 +171,18 @@ void serial_write(const uint32_t port, const uint8_t data)
 
    while((SERIAL_LINE_STATUS_PORT(port) & 0x20) == 0)
    {}
+}
+
+void serial_put_string(const char* string)
+{
+    uint32_t i;
+    for(i = 0; i < strlen(string); ++i)
+    {
+        serial_write(SERIAL_DEBUG_PORT, string[i]);
+    }
+}
+
+void serial_put_char(const char character)
+{
+    serial_write(SERIAL_DEBUG_PORT, character);
 }

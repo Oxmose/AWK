@@ -109,4 +109,16 @@ OS_RETURN_E init_serial(void);
  */
 void serial_write(const uint32_t port, const uint8_t data);
 
+/* Write the string given as patameter on the debug port.
+ *
+ * @param str The string to write to the debug port.
+ */
+void serial_put_string(const char* string);
+
+/* Write the char given as patameter on the debug port.
+ *
+ * @param character The cahracter to write to the debug port.
+ */
+void serial_put_char(const char character);
+
 #endif /* __SERIAL_H_ */

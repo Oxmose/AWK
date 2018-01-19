@@ -6,10 +6,9 @@
  *
  * Date: 16/12/2017
  *
- * Version: 1.0
+ * Version: 2.0
  *
  * Kernel mailboxes features.
- *
  ******************************************************************************/
 
 #ifndef __MAILBOX_H_
@@ -17,7 +16,7 @@
 
 #include "../lib/stddef.h"        /* OS_RETURN_E */
 #include "../lib/stdint.h"        /* Generic int types */
-#include "../core/kernel_queue.h" /* thread_queue_t */
+#include "../core/kernel_list.h"  /* kernel_list_t */
 #include "../sync/lock.h"         /* lock_t */
 
 /*******************************************************************************
@@ -35,15 +34,15 @@ typedef struct mailbox
 
     void*  value;   /* Mailbox value */
     int8_t init;    /* Mailbox initialization state */
-    int8_t state;   /* Mailbox current state (0 = empty, 1 = full) */
+    volatile int8_t state;   /* Mailbox current state (0 = empty, 1 = full) */
 
     /***********************************
-     * THREAD TABLE | 0: Head, 1: Tail
+     * THREAD TABLE
      *
      * FIFO fashioned
      **********************************/
-    thread_queue_t* read_waiting_threads[2];
-    thread_queue_t* write_waiting_threads[2];
+    kernel_list_t* read_waiting_threads;
+    kernel_list_t* write_waiting_threads;
 } mailbox_t;
 
 /*******************************************************************************

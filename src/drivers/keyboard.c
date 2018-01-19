@@ -11,11 +11,12 @@
  * Keyboard driver (PS2/USB) for the kernel.
  ******************************************************************************/
 
-#include "graphic.h"              /* console_write_keyboard */
+#include "graphic.h"               /* put_char */
 #include "../cpu/cpu.h"            /* outb inb */
 #include "../core/interrupts.h"    /* register_interrupt, cpu_state,
                                     * stack_state, set_IRQ_mask, set_IRQ_EOI */
 #include "../core/scheduler.h"     /* lock_io, unlock_io */
+
 #include "../lib/stdint.h"         /* Generic int types */
 #include "../lib/stddef.h"         /* OS_RETURN_E, OS_EVENT_ID */
 #include "../lib/string.h"         /* memcpy */
@@ -30,18 +31,18 @@
  ******************************************************************************/
 
 /* Keyboard security */
-static uint8_t secure_input;
-static uint8_t display_keyboard;
+static volatile uint8_t secure_input;
+static volatile uint8_t display_keyboard;
 
 /* Keybard buffer */
-static uint8_t buffer_enabled;
+static volatile uint8_t buffer_enabled;
 
 /* Shift key used */
-static uint32_t keyboard_flags;
+static volatile uint32_t keyboard_flags;
 
 /* Keyboard buffer */
-static char   keyboard_buffer;
-static lock_t buffer_lock;
+static volatile char keyboard_buffer;
+static lock_t        buffer_lock;
 
 /* Keyboard map */
 static const key_mapper_t qwerty_map =
@@ -394,8 +395,6 @@ uint32_t read_keyboard(char* buffer, const uint32_t size)
     }
     while(1);
 
-    get_active_thread()->io_req_time = 0;
-
     return read;
 }
 
@@ -423,9 +422,6 @@ void getch(char* character)
 
     /* Enable buffer */
     ++buffer_enabled;
-
-    /* Get the request time for the thread */
-    get_active_thread()->io_req_time = get_current_uptime();
 
     /* If no character is in the buffer but the thread in IO waiting state */
     while(keyboard_buffer == 0)

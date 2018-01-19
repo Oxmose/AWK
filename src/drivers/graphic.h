@@ -153,9 +153,14 @@ OS_RETURN_E save_color_scheme(colorscheme_t* buffer);
 /* Used by the kernel to display strings on the screen.
  *
  * @param str The string to display on the screen.
- * @param len The length of the string to display.
  */
-void console_putbytes(const char* str, const uint32_t len);
+void screen_put_string(const char* str);
+
+/* Used by the kernel to display char on the screen.
+ *
+ * @param character The char to display on the screen.
+ */
+void screen_put_char(const char character);
 
 /* Used by the kernel to display strings on the screen from a keyboard input.
  *

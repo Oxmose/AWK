@@ -15,10 +15,10 @@
 #ifndef __QUEUE_H_
 #define __QUEUE_H_
 
-#include "../lib/stddef.h"        /* OS_RETURN_E */
-#include "../lib/stdint.h"        /* Generic int types */
-#include "../core/kernel_queue.h" /* thread_queue_t */
-#include "../sync/lock.h"         /* lock_t */
+#include "../lib/stddef.h"         /* OS_RETURN_E */
+#include "../lib/stdint.h"         /* Generic int types */
+#include "../core/kernel_list.h"   /* kernel_list_t kernel_list_node_t */
+#include "../sync/lock.h"          /* lock_t */
 
 /*******************************************************************************
  * CONSTANTS
@@ -37,19 +37,19 @@ typedef struct queue
     uint32_t tail;        /* Queue item list tail */
 
     uint32_t max_length;  /* Maximum length of the queue */
-    uint32_t length;      /* Number of elements contained in the queue */
+    volatile uint32_t length;      /* Number of elements contained in the queue */
 
     void** container;     /* Queue's list */
 
     int8_t init;          /* Queue init sate */
 
     /***********************************
-     * THREAD TABLE | 0: Head, 1: Tail
+     * THREAD TABLE
      *
      * FIFO fashioned
      **********************************/
-    thread_queue_t* read_waiting_threads[2];
-    thread_queue_t* write_waiting_threads[2];
+    kernel_list_t* read_waiting_threads;
+    kernel_list_t* write_waiting_threads;
 } queue_t;
 
 /*******************************************************************************

@@ -14,23 +14,24 @@
 #ifndef __STDDEF_H_
 #define __STDDEF_H_
 
-#include "stdint.h" /* Generic int types */
+#include "stdint.h"                /* Generic int types */
 
 /*******************************************************************************
  * CONSTANTS
  ******************************************************************************/
- #define NULL ((void *)0)
+#define NULL ((void *)0)
 
 #ifdef NDEBUG
 
 #define assert(expr) ((void)0)
 
 #else
-
+extern void kernel_panic(void);
+extern void kernel_error(const char*, ...);
 #define assert(expr) \
     ((void)((expr) ? 0 : \
-        (panic(__FILE__":%u: failed assertion `"#expr"'\n", \
-            __LINE__), 0)))
+        (kernel_error(__FILE__":%u: failed assertion `"#expr"'\n", \
+            __LINE__), 0))); kernel_panic()\
 
 #endif
 
@@ -103,5 +104,7 @@ typedef __SIZE_TYPE__ size_t;
 #endif
 
 typedef __PTRDIFF_TYPE__ ptrdiff_t;
+
+typedef int32_t intptr_t;
 
 #endif /* __STDDEF_H_ */

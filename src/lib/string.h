@@ -9,12 +9,10 @@
  * Version: 1.0
  *
  * Strings and memory manipulation functions.
- *
  ******************************************************************************/
 
 #ifndef __STRING_H_
 #define __STRING_H_
-
 
 #define __alias(x) __attribute__((weak, alias(x)))
 
@@ -55,4 +53,4 @@ extern char *strstr(const char *, const char *);
 extern char *strtok(char *, const char *);
 extern size_t __strxspn(const char *s, const char *map, int parity);
 
-#endif                /* __STRING_H_ */
+#endif /* __STRING_H_ */

@@ -6,7 +6,7 @@
  *
  * Date: 14/12/2017
  *
- * Version: 1.0
+ * Version: 1.5
  *
  * X86 interrupt manager. Allows to attach ISR to interrupt lines and
  * manage IRQ used by the CPU.
@@ -28,7 +28,7 @@
 #define MIN_INTERRUPT_LINE  0x20
 #define MAX_INTERRUPT_LINE  (IDT_ENTRY_COUNT - 2)
 
-#define SPURIOUS_INTERRUPT_LINE (IDT_ENTRY_COUNT - 1)
+#define SPURIOUS_INT_LINE (IDT_ENTRY_COUNT - 1)
 
 #define PIT_IRQ_LINE         0
 #define PIT_INTERRUPT_LINE   (INT_IRQ_OFFSET + PIT_IRQ_LINE)
@@ -138,10 +138,16 @@ OS_RETURN_E register_interrupt_handler(const uint32_t interrupt_line,
  */
 OS_RETURN_E remove_interrupt_handler(const uint32_t interrupt_line);
 
-/* Enable CPU interrupt */
+/* Enable CPU interrupt (SW/HW)
+ * We keep track of the interrupt state nesting and enable the interrupt only if
+ * the nesting level is 1.
+ */
 void enable_interrupt(void);
 
-/* Disable CPU interrupt */
+/* Disable CPU interrupt (SW/HW)
+ * We keep track of the interrupt state nesting and disable interrupts in all
+ * cases.
+ */
 void disable_interrupt(void);
 
 /* Set the IRQ mask for the IRQ number given as parameter.
@@ -159,10 +165,19 @@ OS_RETURN_E set_IRQ_mask(const uint32_t irq_number, const uint8_t enabled);
  */
 OS_RETURN_E set_IRQ_EOI(const uint32_t irq_number);
 
+/* Update kernel time counter by one tick, compute the uptime in ms */
 void update_tick(void);
 
+/* Returns the timer IRQ number attached to the scheduler.
+ *
+ * @return The IRQ number of the timer that is attached to the scheduler.
+ */
 int32_t get_IRQ_SCHED_TIMER(void);
 
+/* Returns the timer interrupt line attached to the scheduler.
+ *
+ * @return The interrupt line of the timer that is attached to the scheduler.
+ */
 int32_t get_line_SCHED_HW(void);
 
 /* Return current uptime

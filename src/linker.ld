@@ -3,13 +3,10 @@ SECTIONS
 {
     /* Kernel starts at 2M */
     . = 0x200000;
-
     _start = .;
 
-    /* KERNEL MUST BE ALIGNED ON 4K */
-
     /* Put the multiboot header */
-    .rodata BLOCK(4K) : ALIGN(4K)
+    .multiboot BLOCK(4K) : ALIGN(4K)
     {
         *(.multiboot)
     }
@@ -62,8 +59,8 @@ SECTIONS
     cpu_gdt      = 0x10080C; /* SIZE = 16384bits, ends at 0x10100C */
 
     /* Beginning of kernel memory heap 16Mb */
-    mem_heap = 0x1000000;
+    mem_heap_start = 0x1000000;
 
-    /* End of kernel memory heap 32Mb */
+    /* End of kernel memory heap 16Mb */
     mem_heap_end = 0x2000000;
 }

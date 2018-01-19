@@ -23,10 +23,8 @@
  * CONSTANTS
  ******************************************************************************/
 
-#define IO_APIC_BASE_INTERRUPT_LINE MIN_INTERRUPT_LINE
-
 #define IO_APIC_MIN_IRQ_LINE 0
-#define IO_APIC_MAX_IRQ_LINE 15
+#define IO_APIC_MAX_IRQ_LINE 23
 
 #define IOREGSEL                        0x00
 #define IOWIN                           0x10

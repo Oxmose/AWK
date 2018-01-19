@@ -13,11 +13,14 @@
 
 #include "../lib/stddef.h"         /* OS_RETURN_E */
 #include "../lib/stdint.h"         /* Generic int types */
-#include "../core/kernel_queue.h"  /* thread_queue_t */
+#include "../lib/string.h"         /* memset */
+#include "../core/kernel_list.h"   /* kernel_list_t, kernel_list_node_t */
 #include "../core/kernel_output.h" /* kernel_error */
 #include "../core/panic.h"         /* kernel_panic */
 #include "../core/scheduler.h"     /* lock_thread, unlock_thread */
 #include "lock.h"                  /* lock_t */
+
+#include "../debug.h"            /* DEBUG */
 
 /* Header include */
 #include "mutex.h"
@@ -32,28 +35,38 @@
 
 OS_RETURN_E mutex_init(mutex_t* mutex)
 {
+    OS_RETURN_E err;
+
     if(mutex == NULL)
     {
         return OS_ERR_NULL_POINTER;
     }
 
     /* Init the mutex*/
-    mutex->state = 1;
+    memset(mutex, 0, sizeof(mutex_t));
 
+    mutex->state = 1;
     spinlock_init(&mutex->lock);
 
-    mutex->waiting_threads[0] = NULL;
-    mutex->waiting_threads[1] = NULL;
+    mutex->waiting_threads = kernel_list_create_list(&err);
+    if(err != OS_NO_ERR)
+    {
+        return err;
+    }
 
     mutex->init = 1;
+
+    #ifdef DEBUG_MUTEX
+    kernel_serial_debug("Mutex 0x%08x initialized\n", (uint32_t)mutex);
+    #endif
 
     return OS_NO_ERR;
 }
 
 OS_RETURN_E mutex_destroy(mutex_t* mutex)
 {
-    kernel_thread_t* thread;
-    OS_RETURN_E      err;
+    kernel_list_node_t* node;
+    OS_RETURN_E         err;
 
     /* Check if mutex is initialized */
     if(mutex == NULL)
@@ -71,7 +84,7 @@ OS_RETURN_E mutex_destroy(mutex_t* mutex)
     }
 
     /* Unlock all thread*/
-    while((thread = kernel_dequeue_thread(mutex->waiting_threads, &err))
+    while((node = kernel_list_delist_data(mutex->waiting_threads, &err))
         != NULL)
     {
         if(err != OS_NO_ERR)
@@ -79,12 +92,19 @@ OS_RETURN_E mutex_destroy(mutex_t* mutex)
             kernel_error("Could not dequeue thread from mutex[%d]\n", err);
             kernel_panic();
         }
-        err = unlock_thread(thread, MUTEX, 0);
+
+        err = unlock_thread(node, MUTEX, 0);
         if(err != OS_NO_ERR)
         {
             kernel_error("Could not unlock thread from mutex[%d]\n", err);
             kernel_panic();
         }
+
+        #ifdef DEBUG_MUTEX
+        kernel_serial_debug("Mutex 0x%08x unlocked thead %d\n",
+                            (uint32_t)mutex,
+                            ((kernel_thread_t*)node->data)->pid);
+        #endif
     }
     if(err != OS_NO_ERR)
     {
@@ -93,7 +113,12 @@ OS_RETURN_E mutex_destroy(mutex_t* mutex)
     }
 
 
+    err = kernel_list_delete_list(&mutex->waiting_threads);
     mutex->init = 0;
+
+    #ifdef DEBUG_MUTEX
+    kernel_serial_debug("Mutex 0x%08x destroyed\n", (uint32_t)mutex);
+    #endif
 
     spinlock_unlock(&mutex->lock);
 
@@ -102,7 +127,8 @@ OS_RETURN_E mutex_destroy(mutex_t* mutex)
 
 OS_RETURN_E mutex_pend(mutex_t* mutex)
 {
-    OS_RETURN_E err;
+    OS_RETURN_E         err;
+    kernel_list_node_t* active_thread;
 
     /* Check if mutex is initialized */
     if(mutex == NULL)
@@ -122,31 +148,37 @@ OS_RETURN_E mutex_pend(mutex_t* mutex)
     /* Check if we can enter the critical section, also check if the mutex
      * has not been destroyed
      */
-    while(mutex != NULL &&
-          mutex->init == 1 &&
+    while(mutex->init == 1 &&
           mutex->state != 1)
     {
-        err = kernel_enqueue_thread(get_active_thread(),
-                                    mutex->waiting_threads, 0);
+        active_thread = lock_thread(MUTEX);
+        if(active_thread == NULL)
+        {
+            kernel_error("Could not lock this thread to mutex[%d]\n",
+                         OS_ERR_NULL_POINTER);
+            kernel_panic();
+        }
+
+        err = kernel_list_enlist_data(active_thread,
+                                      mutex->waiting_threads, 0);
         if(err != OS_NO_ERR)
         {
             kernel_error("Could not enqueue thread to mutex[%d]\n", err);
             kernel_panic();
         }
 
+        #ifdef DEBUG_MUTEX
+        kernel_serial_debug("Mutex 0x%08x locked thead %d\n",
+                            (uint32_t)mutex,
+                            ((kernel_thread_t*)active_thread->data)->pid);
+        #endif
+
         spinlock_unlock(&mutex->lock);
-
-        err = lock_thread(MUTEX);
-        if(err != OS_NO_ERR)
-        {
-            kernel_error("Could not lock thread to mutex[%d]\n", err);
-            kernel_panic();
-        }
-
+        schedule();
         spinlock_lock(&mutex->lock);
     }
 
-    if(mutex == NULL || mutex->init != 1)
+    if(mutex->init != 1)
     {
         spinlock_unlock(&mutex->lock);
 
@@ -156,6 +188,12 @@ OS_RETURN_E mutex_pend(mutex_t* mutex)
     /* Set state to busy */
     mutex->state = 0;
 
+    #ifdef DEBUG_MUTEX
+    kernel_serial_debug("Mutex 0x%08x aquired by thead %d\n",
+                        (uint32_t)mutex,
+                        get_pid());
+    #endif
+
     spinlock_unlock(&mutex->lock);
 
     return OS_NO_ERR;
@@ -163,8 +201,8 @@ OS_RETURN_E mutex_pend(mutex_t* mutex)
 
 OS_RETURN_E mutex_post(mutex_t* mutex)
 {
-    kernel_thread_t* thread;
-    OS_RETURN_E      err;
+    kernel_list_node_t* node;
+    OS_RETURN_E         err;
 
     /* Check if mutex is initialized */
     if(mutex == NULL)
@@ -185,7 +223,7 @@ OS_RETURN_E mutex_post(mutex_t* mutex)
     mutex->state = 1;
 
     /* Check if we can unlock a blocked thread on the mutex */
-    if((thread = kernel_dequeue_thread(mutex->waiting_threads, &err)) != NULL)
+    if((node = kernel_list_delist_data(mutex->waiting_threads, &err)) != NULL)
     {
         if(err != OS_NO_ERR)
         {
@@ -193,23 +231,40 @@ OS_RETURN_E mutex_post(mutex_t* mutex)
             kernel_panic();
         }
 
+        #ifdef DEBUG_MUTEX
+        kernel_serial_debug("Mutex 0x%08x unlocked thead %d\n",
+                            (uint32_t)mutex,
+                            ((kernel_thread_t*)node->data)->pid);
+        #endif
+
         spinlock_unlock(&mutex->lock);
 
-        err = unlock_thread(thread, MUTEX, 1);
-
+        err = unlock_thread(node, MUTEX, 1);
         if(err != OS_NO_ERR)
         {
             kernel_error("Could not unlock thread from mutex[%d]\n", err);
             kernel_panic();
         }
 
-           return OS_NO_ERR;
+        #ifdef DEBUG_MUTEX
+        kernel_serial_debug("Mutex 0x%08x released by thead %d\n",
+                            (uint32_t)mutex,
+                            get_pid());
+        #endif
+
+        return OS_NO_ERR;
     }
     if(err != OS_NO_ERR)
     {
         kernel_error("Could not dequeue thread from mutex[%d]\n", err);
         kernel_panic();
     }
+
+    #ifdef DEBUG_MUTEX
+    kernel_serial_debug("Mutex 0x%08x released by thead %d\n",
+                        (uint32_t)mutex,
+                        get_pid());
+    #endif
 
     /* If here, we did not find any waiting process */
     spinlock_unlock(&mutex->lock);
@@ -234,7 +289,6 @@ OS_RETURN_E mutex_try_pend(mutex_t* mutex, int8_t* value)
         return OS_ERR_MUTEX_UNINITIALIZED;
     }
 
-
     /* Check if we can enter the critical section, also check if the mutex
      * has not been destroyed
      */
@@ -242,6 +296,12 @@ OS_RETURN_E mutex_try_pend(mutex_t* mutex, int8_t* value)
        mutex->state != 1)
     {
         *value = mutex->state;
+
+        #ifdef DEBUG_MUTEX
+        kernel_serial_debug("Locked mutex 0x%08x try pend by thead %d\n",
+                            (uint32_t)mutex,
+                            get_pid());
+        #endif
 
         spinlock_unlock(&mutex->lock);
 
@@ -257,6 +317,12 @@ OS_RETURN_E mutex_try_pend(mutex_t* mutex, int8_t* value)
 
         return OS_ERR_MUTEX_UNINITIALIZED;
     }
+
+    #ifdef DEBUG_MUTEX
+    kernel_serial_debug("Unlocked mutex 0x%08x try pend and aquired by thead %d\n",
+                        (uint32_t)mutex,
+                        get_pid());
+    #endif
 
     spinlock_unlock(&mutex->lock);
 

@@ -14,9 +14,9 @@
 #ifndef __MUTEX_H_
 #define __MUTEX_H_
 
-#include "../lib/stddef.h"        /* OS_RETURN_E */
-#include "../lib/stdint.h"        /* Generic int types */
-#include "../core/kernel_queue.h" /* thread_queue_t */
+#include "../lib/stddef.h"         /* OS_RETURN_E */
+#include "../lib/stdint.h"         /* Generic int types */
+#include "../core/kernel_list.h"   /* kernel_list_t, kernel_list_node_t */
 #include "lock.h"                  /* lock_t */
 
 /*******************************************************************************
@@ -33,13 +33,11 @@ typedef struct mutex
      * THREAD TABLE
      * Sorted by priority:
      *     - FIFO
-     *
-     * Index 0 is the head, 1 is the tail
      *******************************************************/
-    thread_queue_t* waiting_threads[2];
+    kernel_list_t* waiting_threads;
 
     /* Mutex lock state */
-    uint8_t state;
+    volatile uint8_t state;
 
     /* Spinlock to ensure atomic access to the mutex */
     lock_t lock;
