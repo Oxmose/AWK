@@ -36,9 +36,11 @@ OS_RETURN_E spinlock_lock(lock_t* lock)
 
 #ifdef KERNEL_MONOCORE_SYNC
     disable_interrupt();
-#endif
+    *lock = 1;
+#else
     while(cpu_test_and_set(lock) == 1);
-    
+#endif
+
     return OS_NO_ERR;
 }
 
