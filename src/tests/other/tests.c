@@ -35,7 +35,7 @@ static const int32_t tests_count = 4;
 void *launch_tests(void*args)
 {
 
-    test_mouse2(NULL);
+    //test_mouse2(NULL);
 
     //while(1);
 
@@ -57,8 +57,8 @@ void *launch_tests(void*args)
     {
         wait_thread(test_ths[i], NULL);
     }
-
-    kernel_success(" Test payload passed\n");
+    printf("\n");
+    kernel_success("Test payload passed\n");
 #endif
 
 #ifdef TEST_SEM

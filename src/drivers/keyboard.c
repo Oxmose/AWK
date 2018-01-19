@@ -11,13 +11,11 @@
  * Keyboard driver (PS2/USB) for the kernel.
  ******************************************************************************/
 
-#include "graphic.h"              /* console_write_keyboard */
+#include "graphic.h"               /* put_char */
 #include "../cpu/cpu.h"            /* outb inb */
 #include "../core/interrupts.h"    /* register_interrupt, cpu_state,
                                     * stack_state, set_IRQ_mask, set_IRQ_EOI */
-#if 0
 #include "../core/scheduler.h"     /* lock_io, unlock_io */
-#endif
 
 #include "../lib/stdint.h"         /* Generic int types */
 #include "../lib/stddef.h"         /* OS_RETURN_E, OS_EVENT_ID */
@@ -330,14 +328,11 @@ static void keyboard_interrupt_handler(cpu_state_t* cpu_state, uint32_t int_id,
         /* Manage keycode */
         manage_keycode(keycode);
 
-#if 0
-/* TODO */
         if(buffer_enabled != 0)
         {
             /* Unlock threads waiting for keyboards */
             unlock_io(IO_KEYBOARD);
         }
-#endif
     }
 
     set_IRQ_EOI(KBD_IRQ_LINE);
@@ -399,10 +394,6 @@ uint32_t read_keyboard(char* buffer, const uint32_t size)
         }
     }
     while(1);
-#if 0
-/* TODO */
-    get_active_thread()->io_req_time = 0;
-#endif
 
     return read;
 }
@@ -432,11 +423,6 @@ void getch(char* character)
     /* Enable buffer */
     ++buffer_enabled;
 
-#if 0
-/* TODO */
-    /* Get the request time for the thread */
-    get_active_thread()->io_req_time = get_current_uptime();
-
     /* If no character is in the buffer but the thread in IO waiting state */
     while(keyboard_buffer == 0)
     {
@@ -444,7 +430,6 @@ void getch(char* character)
         lock_io(IO_KEYBOARD);
         spinlock_lock(&buffer_lock);
     }
-#endif
 
     *character = keyboard_buffer;
     keyboard_buffer = 0;

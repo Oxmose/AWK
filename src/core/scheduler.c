@@ -221,6 +221,7 @@ static void* idle_sys(void* args)
         {
             notify = 1;
             kernel_info("System HALTED");
+            disable_interrupt();
         }
         hlt();
     }
