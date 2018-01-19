@@ -17,7 +17,7 @@ uint32_t lock_res;
 
 void *mutex_thread_1(void *args)
 {
-    for(int i = 0; i < 10000000; ++i)
+    for(int i = 0; i < 1000000; ++i)
     {
         if(mutex_pend(&mutex1))
         {
@@ -42,7 +42,7 @@ void *mutex_thread_1(void *args)
 }
 void *mutex_thread_2(void *args)
 {
-    for(int i = 0; i < 10000000; ++i)
+    for(int i = 0; i < 1000000; ++i)
     {
         if(mutex_pend(&mutex1))
         {
@@ -167,5 +167,5 @@ int test_mutex(void)
         return -1;
     }
     printf("Lock res = %d\n", lock_res);
-    return lock_res != 20000000;
+    return lock_res != 2000000;
 }

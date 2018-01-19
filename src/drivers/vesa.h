@@ -168,7 +168,25 @@ OS_RETURN_E set_vesa_mode(const vesa_mode_info_t mode);
  */
 OS_RETURN_E vesa_draw_pixel(const uint16_t x, const uint16_t y,
                             const uint8_t red, const uint8_t green,
-                            const uint8_t blue);
+                            const uint8_t blue)
+                            ;
+/* Draw a rectangle on the screen at the given coordinates. The top left hand
+ * corner of the screen has coordinates x = 0 and y = 0. The color of the rect
+ * should be expressed in the bpp format of the current set mode.
+ *
+ * @param x The x coordinate of the pixel.
+ * @param y The y coordinate of the pixel.
+ * @param width The width in pixels of the rectangle.
+ * @param height The height in pixels of the rectangle.
+ * @param red The red component of the pixel.
+ * @param green The green component of the pixel.
+ * @param blue The blue component of the pixel.
+ * @return The state or error code.
+ */
+OS_RETURN_E vesa_draw_rectangle(const uint16_t x, const uint16_t y,
+                                const uint16_t width, const uint16_t height,
+                                const uint8_t red, const uint8_t green,
+                                const uint8_t blue);
 
 /* Draw a character on the screen at the given coordinates. The top left hand
  * corner of the screen has coordinates x = 0 and y = 0. The coordinates reffer
@@ -183,6 +201,24 @@ OS_RETURN_E vesa_draw_pixel(const uint16_t x, const uint16_t y,
 void vesa_drawchar(const unsigned char character,
                    const uint32_t x, const uint32_t y,
                    const uint32_t fgcolor, const uint32_t bgcolor);
+
+/* Returns the current VESA mode screen width.
+ *
+ * @returns The current VESA mode screen width.
+ */
+int32_t vesa_get_screen_width(void);
+
+/* Returns the current VESA mode screen height.
+ *
+ * @returns The current VESA mode screen height.
+ */
+int32_t vesa_get_screen_height(void);
+
+/* Returns the current VESA mode screen bpp.
+ *
+ * @returns The current VESA mode screen bpp.
+ */
+int8_t vesa_get_screen_bpp(void);
 
 /* Clear the screen */
 void vesa_clear_screen(void);

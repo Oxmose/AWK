@@ -167,7 +167,7 @@ void kernel_kickstart(void)
     /* Init IOAPIC */
     if(acpi_get_io_apic_available() == 1)
     {
-        kernel_info("IO-APIC detected, PIC will be desactivated.\n");
+        kernel_info("IO-APIC detected, PIC will be desactivated\n");
         err = init_io_apic();
         if(err == OS_NO_ERR)
         {

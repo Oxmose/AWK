@@ -33,8 +33,8 @@
 //#define DEBUG_IOAPIC
 //#define DEBUG_PIT
 //#define DEBUG_MOUSE
-#define DEBUG_MUTEX
-#define DEBUG_SEM
+//#define DEBUG_MUTEX
+//#define DEBUG_SEM
 
 #endif /* DEBUG */
 

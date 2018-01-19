@@ -76,6 +76,7 @@ typedef struct kernel_thread
     int32_t          pid;
     int32_t          ppid;
     char             name[THREAD_MAX_NAME_LENGTH];
+    uint32_t         init_prio;
     uint32_t         priority;
 
     /* Thread routine, arguments and return value */
@@ -108,7 +109,6 @@ typedef struct kernel_thread
 
     /* Statistics (scheduler) */
     uint32_t         last_sched;
-    uint32_t         full_consume;
 
     /* Statistics */
     uint32_t start_time;

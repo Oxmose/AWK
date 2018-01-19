@@ -445,7 +445,7 @@ static void clean_joined_thread(kernel_thread_t* thread)
     #endif
 
     kfree(thread);
-    
+
     --thread_count;
 
 }
@@ -568,6 +568,54 @@ static void schedule_int(cpu_state_t *cpu_state, uint32_t int_id,
                          stack_state_t *stack_state)
 {
     OS_RETURN_E err;
+
+#if SCHEDULE_DYN_PRIORITY
+    kernel_list_node_t *cursor;
+    kernel_thread_t* thread;
+
+    if(active_thread != idle_thread && active_thread != init_thread)
+    {
+        if(int_id == PIT_INTERRUPT_LINE)
+        {
+            /* Here the thread consumed all its time slice so it get its init
+             * priority.
+             */
+             active_thread->priority = active_thread->init_prio;
+        }
+         /* Upgrade process priority by 1 if the thread has not been executed since
+          * the last 100 ticks. Note that the actual change will be seen when more
+          * prioritary threads will be puck bakc in the queue later.
+          */
+        cursor = active_threads_table->head;
+        while(cursor != NULL)
+        {
+            if(cursor->data == idle_thread || cursor->data == init_thread)
+            {
+                cursor = cursor->next;
+                continue;
+            }
+
+            thread = (kernel_thread_t*)cursor->data;
+
+            ++thread->last_sched;
+            if(thread->last_sched >= 25)
+            {
+                if(thread->priority > KERNEL_HIGHEST_PRIORITY)
+                {
+                    --(thread->priority);
+                    --(cursor->priority);
+                }
+                thread->last_sched = 0;
+            }
+
+            cursor = cursor->next;
+        }
+
+        active_thread->last_sched = 0;
+    }
+
+#endif /* SCHEDULE_DYN_PRIORITY */
+
     (void) stack_state;
 
     /* If not first schedule */
@@ -697,6 +745,7 @@ OS_RETURN_E init_scheduler(void)
     idle_thread->pid            = last_given_pid;
     idle_thread->ppid           = last_given_pid;
     idle_thread->priority       = IDLE_THREAD_PRIORITY;
+    idle_thread->init_prio      = IDLE_THREAD_PRIORITY;
     idle_thread->args           = 0;
     idle_thread->function       = idle_sys;
     idle_thread->joining_thread = NULL;
@@ -896,11 +945,11 @@ OS_RETURN_E create_thread(thread_t* thread,
     new_thread->pid            = ++last_given_pid;
     new_thread->ppid           = active_thread->pid;
     new_thread->priority       = priority;
+    new_thread->init_prio      = priority;
     new_thread->args           = args;
     new_thread->function       = function;
     new_thread->joining_thread = NULL;
     new_thread->state          = READY;
-    new_thread->full_consume   = 0;
     new_thread->last_sched     = 0;
 
     new_thread->children = kernel_list_create_list(&err);

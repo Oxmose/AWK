@@ -608,6 +608,48 @@ OS_RETURN_E vesa_draw_pixel(const uint16_t x, const uint16_t y,
     return OS_NO_ERR;
 }
 
+OS_RETURN_E vesa_draw_rectangle(const uint16_t x, const uint16_t y,
+                                const uint16_t width, const uint16_t height,
+                                const uint8_t red, const uint8_t green,
+                                const uint8_t blue)
+{
+    uint16_t i;
+    uint16_t j;
+    uint32_t* addr;
+
+    if(vesa_supported == 0)
+    {
+        return OS_ERR_VESA_NOT_SUPPORTED;
+    }
+
+    if(current_mode == NULL)
+    {
+        return OS_ERR_VESA_NOT_INIT;
+    }
+
+    if(x + width > current_mode->width || y + height > current_mode->height)
+    {
+        return OS_ERR_OUT_OF_BOUND;
+    }
+
+    uint8_t pixel[4] = {blue, green, red, 0x00};
+
+    for(i = y; i < y + height; ++i)
+    {
+        for(j = x; j < x + width; ++j)
+        {
+            /* Get framebuffer address */
+            addr = ((uint32_t*)current_mode->framebuffer) +
+                     (current_mode->width * i) + j;
+
+            *addr = *((uint32_t*)pixel);
+        }
+    }
+
+    return OS_NO_ERR;
+}
+
+
 void vesa_drawchar(const unsigned char charracter,
                    const uint32_t x, const uint32_t y,
                    const uint32_t fgcolor, const uint32_t bgcolor)
@@ -631,6 +673,51 @@ void vesa_drawchar(const unsigned char charracter,
                             pixel[2], pixel[1], pixel[0]);
         }
     }
+}
+
+int32_t vesa_get_screen_width(void)
+{
+    if(vesa_supported == 0)
+    {
+        return -1;
+    }
+
+    if(current_mode == NULL)
+    {
+        return -1;
+    }
+
+    return current_mode->width;
+}
+
+int32_t vesa_get_screen_height(void)
+{
+    if(vesa_supported == 0)
+    {
+        return -1;
+    }
+
+    if(current_mode == NULL)
+    {
+        return -1;
+    }
+
+    return current_mode->height;
+}
+
+int8_t vesa_get_screen_bpp(void)
+{
+    if(vesa_supported == 0)
+    {
+        return -1;
+    }
+
+    if(current_mode == NULL)
+    {
+        return -1;
+    }
+
+    return current_mode->bpp;
 }
 
 void vesa_clear_screen(void)
