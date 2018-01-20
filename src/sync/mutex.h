@@ -23,6 +23,9 @@
  * CONSTANTS
  ******************************************************************************/
 
+#define MUTEX_FLAG_NONE      0x00000000
+#define MUTEX_FLAG_RECURSIVE 0x00000001
+
 /*******************************************************************************
  * STRUCTURES
  ******************************************************************************/
@@ -39,6 +42,14 @@ typedef struct mutex
     /* Mutex lock state */
     volatile uint8_t state;
 
+    /* FLAGS
+     *     [0] = RECURSIVE
+     */
+    uint32_t flags;
+
+    /* PID of the thread that acquired the lock */
+    int32_t locker_pid;
+
     /* Spinlock to ensure atomic access to the mutex */
     lock_t lock;
 
@@ -54,9 +65,10 @@ typedef struct mutex
  * The initial state of a mutex is unlocked.
  *
  * @param mutex The pointer to the mutex to initialize.
+ * @param flags Mutex flags, see defines to get all the possible mutex flags.
  * @returns OS_NO_ERR on success, otherwise an error is returned.
  */
-OS_RETURN_E mutex_init(mutex_t* mutex);
+OS_RETURN_E mutex_init(mutex_t* mutex, const uint32_t flags);
 
 /* Destroy the mutex given as parameter. Also unlock all the threads locked on
  * this mutex.

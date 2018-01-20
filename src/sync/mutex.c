@@ -33,7 +33,7 @@
  * FUNCTIONS
  ******************************************************************************/
 
-OS_RETURN_E mutex_init(mutex_t* mutex)
+OS_RETURN_E mutex_init(mutex_t* mutex, const uint32_t flags)
 {
     OS_RETURN_E err;
 
@@ -47,6 +47,7 @@ OS_RETURN_E mutex_init(mutex_t* mutex)
 
     mutex->state = 1;
     spinlock_init(&mutex->lock);
+    mutex->flags = flags;
 
     mutex->waiting_threads = kernel_list_create_list(&err);
     if(err != OS_NO_ERR)
@@ -151,6 +152,15 @@ OS_RETURN_E mutex_pend(mutex_t* mutex)
     while(mutex->init == 1 &&
           mutex->state != 1)
     {
+        /* If the mutex is recursive and the thread acuired the mutex,
+         * then don't block the thread
+         */
+        if((mutex->flags & MUTEX_FLAG_RECURSIVE) != 0 &&
+            get_pid() == mutex->locker_pid)
+        {
+            break;
+        }
+
         active_thread = lock_thread(MUTEX);
         if(active_thread == NULL)
         {
@@ -187,6 +197,8 @@ OS_RETURN_E mutex_pend(mutex_t* mutex)
 
     /* Set state to busy */
     mutex->state = 0;
+
+    mutex->locker_pid = get_pid();
 
     #ifdef DEBUG_MUTEX
     kernel_serial_debug("Mutex 0x%08x aquired by thead %d\n",
