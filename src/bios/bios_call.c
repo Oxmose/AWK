@@ -12,7 +12,7 @@
  ******************************************************************************/
 
 #include "../lib/stdint.h"      /* Generic int types */
-#include "../core/interrupts.h" /* enable_interrupt, disable_interrupt */
+#include "../core/interrupts.h" /* enable_local_interrupt, disable_local_interrupt */
 
 /* Header file */
 #include "bios_call.h"
@@ -30,9 +30,9 @@ extern void _bios_int(uint8_t intnum, bios_int_regs_t* regs);
 
 void bios_int(uint8_t intnum, bios_int_regs_t* regs)
 {
-	disable_interrupt();
+	disable_local_interrupt();
 
 	_bios_int(intnum, regs);
 
-	enable_interrupt();
+	enable_local_interrupt();
 }

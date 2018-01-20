@@ -79,7 +79,7 @@ static void test_sw_interupts_lock(void)
         kernel_panic();
     }
 
-    enable_interrupt();
+    enable_local_interrupt();
 
     if(cnt_val != counter)
     {
@@ -99,9 +99,9 @@ static void test_sw_interupts_lock(void)
 
     cnt_val = counter;
 
-    disable_interrupt();
-    disable_interrupt();
-    disable_interrupt();
+    disable_local_interrupt();
+    disable_local_interrupt();
+    disable_local_interrupt();
 
     __asm__ __volatile__("int %0" :: "i" (MIN_INTERRUPT_LINE));
 
@@ -111,7 +111,7 @@ static void test_sw_interupts_lock(void)
         kernel_panic();
     }
 
-    enable_interrupt();
+    enable_local_interrupt();
 
     __asm__ __volatile__("int %0" :: "i" (MIN_INTERRUPT_LINE));
 
@@ -121,7 +121,7 @@ static void test_sw_interupts_lock(void)
         kernel_panic();
     }
 
-    enable_interrupt();
+    enable_local_interrupt();
 
     __asm__ __volatile__("int %0" :: "i" (MIN_INTERRUPT_LINE));
 
@@ -131,7 +131,7 @@ static void test_sw_interupts_lock(void)
         kernel_panic();
     }
 
-    enable_interrupt();
+    enable_local_interrupt();
 
     __asm__ __volatile__("int %0" :: "i" (MIN_INTERRUPT_LINE));
 
@@ -141,9 +141,9 @@ static void test_sw_interupts_lock(void)
         kernel_panic();
     }
 
-    enable_interrupt();
-    enable_interrupt();
-    disable_interrupt();
+    enable_local_interrupt();
+    enable_local_interrupt();
+    disable_local_interrupt();
 
     cnt_val = counter;
 
@@ -266,7 +266,7 @@ void test_sw_interupts(void)
         cnt_val += i;
     }
 
-    enable_interrupt();
+    enable_local_interrupt();
 
     __asm__ __volatile__("int %0" :: "i" (MIN_INTERRUPT_LINE + 0));
     __asm__ __volatile__("int %0" :: "i" (MIN_INTERRUPT_LINE + 1));
@@ -492,7 +492,7 @@ void test_sw_interupts(void)
     __asm__ __volatile__("int %0" :: "i" (MIN_INTERRUPT_LINE + 222));
     __asm__ __volatile__("int %0" :: "i" (MIN_INTERRUPT_LINE + 223));
 
-    disable_interrupt();
+    disable_local_interrupt();
 
     if(cnt_val != counter)
     {
@@ -528,7 +528,7 @@ void test_sw_interupts(void)
         cnt_val -= i;
     }
 
-    enable_interrupt();
+    enable_local_interrupt();
 
     __asm__ __volatile__("int %0" :: "i" (MIN_INTERRUPT_LINE + 0));
     __asm__ __volatile__("int %0" :: "i" (MIN_INTERRUPT_LINE + 1));
@@ -754,7 +754,7 @@ void test_sw_interupts(void)
     __asm__ __volatile__("int %0" :: "i" (MIN_INTERRUPT_LINE + 222));
     __asm__ __volatile__("int %0" :: "i" (MIN_INTERRUPT_LINE + 223));
 
-    disable_interrupt();
+    disable_local_interrupt();
 
     if(cnt_val != counter)
     {

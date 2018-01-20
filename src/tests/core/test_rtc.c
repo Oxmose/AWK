@@ -35,7 +35,7 @@ static void handler(void)
 void test_rtc(void)
 {
     int32_t i;
-    enable_interrupt();
+    enable_local_interrupt();
 
     OS_EVENT_ID ids[RTC_MAX_EVENT_COUNT + 1];
 
@@ -123,5 +123,5 @@ void test_rtc(void)
 
     kernel_debug("RTC tests passed\n");
 
-    disable_interrupt();
+    disable_local_interrupt();
 }

@@ -40,7 +40,7 @@ void test_pit(void)
     volatile uint32_t i;
     volatile uint32_t cnt_val;
 
-    enable_interrupt();
+    enable_local_interrupt();
 
     /* REGISTER NULL */
     if(set_pit_handler(NULL) != OS_ERR_NULL_POINTER)
@@ -153,5 +153,5 @@ void test_pit(void)
     kernel_debug("PIT tests passed\n");
 
     enable_pit();
-    disable_interrupt();
+    disable_local_interrupt();
 }

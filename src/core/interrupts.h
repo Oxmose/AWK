@@ -142,13 +142,20 @@ OS_RETURN_E remove_interrupt_handler(const uint32_t interrupt_line);
  * We keep track of the interrupt state nesting and enable the interrupt only if
  * the nesting level is 1.
  */
-void enable_interrupt(void);
+void enable_local_interrupt(void);
 
 /* Disable CPU interrupt (SW/HW)
  * We keep track of the interrupt state nesting and disable interrupts in all
  * cases.
  */
-void disable_interrupt(void);
+void disable_local_interrupt(void);
+
+/* Tells if the interrupt are enabled for the current CPU
+ *
+ * @returns The functions returns 1 if the interrupts are enabled, every other
+ * values are considered as false.
+ */
+int8_t get_local_interrupt_enabled(void);
 
 /* Set the IRQ mask for the IRQ number given as parameter.
  *

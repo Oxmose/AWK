@@ -32,7 +32,7 @@ void test_pic(void)
     uint8_t  pic1_mask_save;
     uint32_t i;
 
-    disable_interrupt();
+    disable_local_interrupt();
 
     /* TEST MASK > MAX */
     if(set_IRQ_PIC_mask(PIC_MAX_IRQ_LINE + 1, 0) != OS_ERR_NO_SUCH_IRQ_LINE)
@@ -96,5 +96,5 @@ void test_pic(void)
 
     kernel_debug("PIC tests passed\n");
 
-    enable_interrupt();
+    enable_local_interrupt();
 }

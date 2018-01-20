@@ -49,10 +49,6 @@ static uint8_t lapic_capable;
 /* Keep track on the nexting level, kernel starts with interrupt disabled */
 static volatile uint32_t int_lock_nesting = 1;
 
-#ifndef KERNEL_MONOCORE_SYNC
-static lock_t lock_nesting_lock = 0;
-#endif
-
 /*******************************************************************************
  * FUNCTIONS
  ******************************************************************************/
@@ -154,10 +150,6 @@ OS_RETURN_E init_kernel_interrupt(void)
 
     spinlock_init(&handler_table_lock);
 
-#ifndef KERNEL_MONOCORE_SYNC
-    spinlock_init(&lock_nesting_lock);
-#endif
-
     /* INT are disabled */
     int_lock_nesting = 1;
 
@@ -234,11 +226,8 @@ OS_RETURN_E remove_interrupt_handler(const uint32_t interrupt_line)
     return OS_NO_ERR;
 }
 
-void enable_interrupt(void)
+void enable_local_interrupt(void)
 {
-#ifndef KERNEL_MONOCORE_SYNC
-    spinlock_lock(&lock_nesting_lock);
-#endif
     if(int_lock_nesting > 0)
     {
         --int_lock_nesting;
@@ -253,30 +242,26 @@ void enable_interrupt(void)
 
         sti();
     }
-#ifndef KERNEL_MONOCORE_SYNC
-    spinlock_unlock(&lock_nesting_lock);
-#endif
 }
 
-void disable_interrupt(void)
+void disable_local_interrupt(void)
 {
-#ifndef KERNEL_MONOCORE_SYNC
-    spinlock_lock(&lock_nesting_lock);
-#endif
     cli();
 
     if(int_lock_nesting < UINT32_MAX)
     {
         ++int_lock_nesting;
     }
-#ifndef KERNEL_MONOCORE_SYNC
-    spinlock_unlock(&lock_nesting_lock);
-#endif
 
     #ifdef DEBUG_INTERRUPT
     kernel_serial_debug("--- Disabled HW INT (%d) ---\n",
                         int_lock_nesting);
     #endif
+}
+
+int8_t get_local_interrupt_enabled(void)
+{
+    return ((int_lock_nesting > 0) ? 0 : 1);
 }
 
 

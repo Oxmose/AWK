@@ -39,9 +39,6 @@
 static uint32_t sched_irq;
 static uint32_t sched_hw_int_line;
 
-/* Scheduler lock TODO for SMP lock local interrupt or global interrupt IDK */
-static lock_t sched_lock;
-
 /* Threads management */
 static uint32_t last_given_pid;
 static uint32_t thread_count;
@@ -115,7 +112,7 @@ static void* init_func(void* args)
     kernel_serial_debug("Main returned, INIT waiting for children\n");
     #endif
 
-    spinlock_lock(&sched_lock);
+    disable_local_interrupt();;
 
     /* Wait all children */
     while(thread_count > 2)
@@ -123,7 +120,7 @@ static void* init_func(void* args)
         thread_node = kernel_list_delist_data(active_thread->children, &err);
         while(thread_node != NULL && err == OS_NO_ERR)
         {
-            spinlock_unlock(&sched_lock);
+            enable_local_interrupt();;
 
             thread = (kernel_thread_t*)thread_node->data;
 
@@ -141,12 +138,12 @@ static void* init_func(void* args)
                 kernel_panic();
             }
 
-            spinlock_lock(&sched_lock);
+            disable_local_interrupt();;
 
             thread_node = kernel_list_delist_data(active_thread->children, &err);
         }
     }
-    spinlock_unlock(&sched_lock);
+    enable_local_interrupt();;
 
     #ifdef DEBUG_SCHED
     kernel_serial_debug("INIT Ended\n");
@@ -216,12 +213,12 @@ static void* idle_sys(void* args)
     /* Halt forever, hlt for energy consumption */
     while(1 < 2)
     {
-        enable_interrupt();
+        enable_local_interrupt();
         if(system_state == HALTED && notify == 0)
         {
             notify = 1;
             kernel_info("System HALTED");
-            disable_interrupt();
+            disable_local_interrupt();
         }
         hlt();
     }
@@ -242,7 +239,7 @@ static void thread_exit(void)
     kernel_thread_t*    joining_thread = NULL;
     kernel_list_node_t* node;
 
-    spinlock_lock(&sched_lock);
+    disable_local_interrupt();;
 
     #ifdef DEBUG_SCHED
     kernel_serial_debug("Exit thread %d\n", active_thread->pid);
@@ -251,7 +248,7 @@ static void thread_exit(void)
     if(active_thread == init_thread)
     {
         active_thread->state = ZOMBIE;
-        spinlock_unlock(&sched_lock);
+        enable_local_interrupt();;
 
         /* Schedule thread, should never return since the state is zombie */
         schedule();
@@ -327,7 +324,7 @@ static void thread_exit(void)
         kernel_panic();
     }
 
-    spinlock_unlock(&sched_lock);
+    enable_local_interrupt();;
 
     /* Schedule thread */
     schedule();
@@ -574,6 +571,13 @@ static void schedule_int(cpu_state_t *cpu_state, uint32_t int_id,
     kernel_list_node_t *cursor;
     kernel_thread_t* thread;
 
+    if(get_local_interrupt_enabled() != 1)
+    {
+        kernel_error("Interrupts should not be disabled when calling the\
+ scheduler\n");
+        kernel_panic();
+    }
+
     if(active_thread != idle_thread && active_thread != init_thread)
     {
         if(int_id == PIT_INTERRUPT_LINE)
@@ -686,8 +690,6 @@ OS_RETURN_E init_scheduler(void)
     idle_thread_node  = NULL;
     init_thread  = NULL;
     init_thread_node  = NULL;
-
-    spinlock_init(&sched_lock);
 
     active_thread      = NULL;
     active_thread_node = NULL;
@@ -844,6 +846,8 @@ OS_RETURN_E init_scheduler(void)
 
     kernel_success("SCHEDULER Initialized\n");
 
+    enable_local_interrupt();
+
     schedule();
 
     /* We should never return fron this function */
@@ -920,7 +924,7 @@ OS_RETURN_E create_thread(thread_t* thread,
         return OS_ERR_FORBIDEN_PRIORITY;
     }
 
-    spinlock_lock(&sched_lock);
+    disable_local_interrupt();;
 
     new_thread = kmalloc(sizeof(kernel_thread_t));
     new_thread_node = kernel_list_create_node(new_thread, &err);
@@ -936,7 +940,7 @@ OS_RETURN_E create_thread(thread_t* thread,
         {
             err = OS_ERR_MALLOC;
         }
-        spinlock_unlock(&sched_lock);
+        enable_local_interrupt();;
         return err;
     }
 
@@ -958,7 +962,7 @@ OS_RETURN_E create_thread(thread_t* thread,
     {
         kernel_list_delete_node(&new_thread_node);
         kfree(new_thread);
-        spinlock_unlock(&sched_lock);
+        enable_local_interrupt();;
         return err;
     }
 
@@ -998,7 +1002,7 @@ OS_RETURN_E create_thread(thread_t* thread,
         kernel_list_delete_list(&new_thread->children);
         kernel_list_delete_node(&new_thread_node);
         kfree(new_thread);
-        spinlock_unlock(&sched_lock);
+        enable_local_interrupt();;
         return err;
     }
 
@@ -1009,7 +1013,7 @@ OS_RETURN_E create_thread(thread_t* thread,
         kernel_list_delete_node(&new_thread_node);
         kernel_list_delete_node(&seconde_new_thread_node);
         kfree(new_thread);
-        spinlock_unlock(&sched_lock);
+        enable_local_interrupt();;
         return err;
     }
 
@@ -1022,7 +1026,7 @@ OS_RETURN_E create_thread(thread_t* thread,
         kernel_list_delete_node(&new_thread_node);
         kernel_list_delete_node(&seconde_new_thread_node);
         kfree(new_thread);
-        spinlock_unlock(&sched_lock);
+        enable_local_interrupt();;
         return err;
     }
 
@@ -1036,7 +1040,7 @@ OS_RETURN_E create_thread(thread_t* thread,
          kernel_list_delete_node(&new_thread_node);
          kernel_list_delete_node(&seconde_new_thread_node);
          kfree(new_thread);
-         spinlock_unlock(&sched_lock);
+         enable_local_interrupt();;
          return err;
      }
 
@@ -1049,7 +1053,7 @@ OS_RETURN_E create_thread(thread_t* thread,
         kernel_list_delete_node(&new_thread_node);
         kernel_list_delete_node(&seconde_new_thread_node);
         kfree(new_thread);
-        spinlock_unlock(&sched_lock);
+        enable_local_interrupt();;
         return err;
     }
 
@@ -1064,7 +1068,7 @@ OS_RETURN_E create_thread(thread_t* thread,
         *thread = new_thread;
     }
 
-    spinlock_unlock(&sched_lock);
+    enable_local_interrupt();;
 
     return OS_NO_ERR;
 }
@@ -1082,11 +1086,11 @@ OS_RETURN_E wait_thread(thread_t thread, void** ret_val)
                          thread->pid);
     #endif
 
-    spinlock_lock(&sched_lock);
+    disable_local_interrupt();;
 
     if(thread->state == DEAD)
     {
-        spinlock_unlock(&sched_lock);
+        enable_local_interrupt();;
         return OS_ERR_NO_SUCH_ID;
     }
 
@@ -1101,7 +1105,7 @@ OS_RETURN_E wait_thread(thread_t thread, void** ret_val)
 
         clean_joined_thread(thread);
 
-        spinlock_unlock(&sched_lock);
+        enable_local_interrupt();;
 
         return OS_NO_ERR;
     }
@@ -1110,12 +1114,12 @@ OS_RETURN_E wait_thread(thread_t thread, void** ret_val)
     thread->joining_thread = active_thread_node;
     active_thread->state   = JOINING;
 
-    spinlock_unlock(&sched_lock);
+    enable_local_interrupt();;
 
     /* Schedule thread */
     schedule();
 
-    spinlock_lock(&sched_lock);
+    disable_local_interrupt();;
 
     if(ret_val != NULL)
     {
@@ -1124,7 +1128,7 @@ OS_RETURN_E wait_thread(thread_t thread, void** ret_val)
 
     clean_joined_thread(thread);
 
-    spinlock_unlock(&sched_lock);
+    enable_local_interrupt();;
 
     return OS_NO_ERR;
 }
@@ -1138,7 +1142,7 @@ kernel_list_node_t* lock_thread(const BLOCK_TYPE_E block_type)
         return NULL;
     }
 
-    spinlock_lock(&sched_lock);
+    disable_local_interrupt();;
 
     current_thread_node = active_thread_node;
 
@@ -1146,7 +1150,7 @@ kernel_list_node_t* lock_thread(const BLOCK_TYPE_E block_type)
     active_thread->state      = BLOCKED;
     active_thread->block_type = block_type;
 
-    spinlock_unlock(&sched_lock);
+    enable_local_interrupt();;
 
     #ifdef DEBUG_SCHED
     kernel_serial_debug("Thread %d locked, reason: %d\n",
@@ -1187,11 +1191,11 @@ OS_RETURN_E unlock_thread(kernel_list_node_t* node,
         }
 
     }
-    spinlock_lock(&sched_lock);
+    disable_local_interrupt();;
     /* Unlock thread state */
     thread->state = READY;
     err = kernel_list_enlist_data(node, active_threads_table, thread->priority);
-    spinlock_unlock(&sched_lock);
+    enable_local_interrupt();;
 
     if(err != OS_NO_ERR)
     {
@@ -1225,7 +1229,7 @@ OS_RETURN_E lock_io(const BLOCK_TYPE_E block_type)
 
     if(block_type == IO_KEYBOARD)
     {
-        spinlock_lock(&sched_lock);
+        disable_local_interrupt();;
 
         /* Lock current tread */
         active_thread->block_type = block_type;
@@ -1240,7 +1244,7 @@ OS_RETURN_E lock_io(const BLOCK_TYPE_E block_type)
             kernel_panic();
         }
 
-        spinlock_unlock(&sched_lock);
+        enable_local_interrupt();;
 
 
         #ifdef DEBUG_SCHED
@@ -1267,7 +1271,7 @@ OS_RETURN_E unlock_io(const BLOCK_TYPE_E block_type)
         return OS_ERR_UNAUTHORIZED_ACTION;
     }
 
-    spinlock_lock(&sched_lock);
+    disable_local_interrupt();;
 
     node = kernel_list_delist_data(io_waiting_threads_table, &err);
     if(err != OS_NO_ERR || node == NULL)
@@ -1302,7 +1306,7 @@ OS_RETURN_E unlock_io(const BLOCK_TYPE_E block_type)
                              block_type);
         #endif
 
-    spinlock_unlock(&sched_lock);
+    enable_local_interrupt();;
 
     return OS_NO_ERR;
 }
@@ -1322,7 +1326,7 @@ OS_RETURN_E get_threads_info(thread_info_t* threads, int32_t* size)
         return OS_ERR_NULL_POINTER;
     }
 
-    spinlock_lock(&sched_lock);
+    disable_local_interrupt();;
 
     if(*size > (int)thread_count)
     {
@@ -1356,7 +1360,7 @@ OS_RETURN_E get_threads_info(thread_info_t* threads, int32_t* size)
         cursor_thread = (kernel_thread_t*)cursor->data;
     }
 
-    spinlock_unlock(&sched_lock);
+    enable_local_interrupt();;
 
     return OS_NO_ERR;
 }

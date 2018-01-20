@@ -17,7 +17,7 @@
 #include "../lib/stdint.h"         /* Generic int types */
 #include "../lib/stddef.h"         /* OS_RETURN_E, OS_EVENT_ID */
 #include "../lib/string.h"         /* memcpy */
-#include "../sync/lock.h"          /* enable_interrupt, disable_interrupt */
+#include "../sync/lock.h"          /* enable_local_interrupt, disable_local_interrupt */
 
 /* Header include */
 #include "mouse.h"

@@ -14,7 +14,7 @@
 #include "../cpu/cpu.h"         /* cpu_test_and_set */
 #include "../lib/stdint.h"      /* Generic int types */
 #include "../lib/stddef.h"      /* OS_RETURN_E */
-#include "../core/interrupts.h" /* enable_interrupt, disable_interrupt */
+#include "../core/interrupts.h" /* enable_local_interrupt, disable_local_interrupt */
 
 /* Header file */
 #include "lock.h"
@@ -35,7 +35,7 @@ OS_RETURN_E spinlock_lock(lock_t* lock)
     }
 
 #ifdef KERNEL_MONOCORE_SYNC
-    disable_interrupt();
+    disable_local_interrupt();
     *lock = 1;
 #else
     while(cpu_test_and_set(lock) == 1);
@@ -55,7 +55,7 @@ OS_RETURN_E spinlock_unlock(lock_t* lock)
     *lock = 0;
 
 #ifdef KERNEL_MONOCORE_SYNC
-    enable_interrupt();
+    enable_local_interrupt();
 #endif
 
     return OS_NO_ERR;

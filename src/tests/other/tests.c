@@ -1,7 +1,7 @@
 #define TEST_MUTEX
-//#define TEST_SEM
-//#define TEST_MULTITHREAD
-//#define TEST_PAYLOAD
+#define TEST_SEM
+#define TEST_MULTITHREAD
+#define TEST_PAYLOAD
 
 #define TESTS 1
 

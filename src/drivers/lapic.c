@@ -157,9 +157,9 @@ OS_RETURN_E init_lapic_timer(void)
         return err;
     }
 
-    enable_interrupt();
+    enable_local_interrupt();
     while(wait_int != 0);
-    disable_interrupt();
+    disable_local_interrupt();
 
     err = disable_pit();
     if(err != OS_NO_ERR)
