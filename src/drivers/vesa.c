@@ -33,8 +33,8 @@
  ******************************************************************************/
 
 /* Screen settings */
-#define MAX_SUPPORTED_HEIGHT 800
-#define MAX_SUPPORTED_WIDTH  1920
+#define MAX_SUPPORTED_HEIGHT 1080
+#define MAX_SUPPORTED_WIDTH  1600
 #define MAX_SUPPORTED_BPP    32
 
 /* VESA data structures */
@@ -311,7 +311,7 @@ OS_RETURN_E init_vesa(void)
     screen_cursor.x = 0;
     screen_cursor.y = 0;
     screen_scheme.foreground = 0xFFFFFFFF;
-    screen_scheme.background = 0x00000000;
+    screen_scheme.background = 0xFF000000;
     screen_scheme.vga_color  = 0;
 
     /* Init structure */
@@ -719,6 +719,10 @@ __inline__ OS_RETURN_E vesa_draw_pixel(const uint16_t x, const uint16_t y,
         pixel[1] = (green * alpha + back[1] * (255 - alpha)) >> 8;
         pixel[2] = (red * alpha + back[2] * (255 - alpha)) >> 8;
         pixel[3] = 0;
+    }
+    else
+    {
+        return OS_NO_ERR;
     }
 
     *addr = *((uint32_t*)pixel);
