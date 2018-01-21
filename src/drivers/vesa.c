@@ -33,7 +33,7 @@
  ******************************************************************************/
 
 /* Screen settings */
-#define MAX_SUPPORTED_HEIGHT 800
+#define MAX_SUPPORTED_HEIGHT 1200
 #define MAX_SUPPORTED_WIDTH  1920
 #define MAX_SUPPORTED_BPP    32
 
@@ -91,10 +91,6 @@ static const uint32_t vga_color_table[16] = {
      #endif
      while(double_buffering == 1)
      {
-         /* Wait vertical retrace */
-         //while ((inb(0x3DA) & 0x08));
-         //while (!(inb(0x3DA) & 0x08));
-
          memcpy((uint32_t*)current_mode->framebuffer, vesa_buffer, vesa_buffer_size);
          sleep(10);
      }
@@ -630,6 +626,46 @@ OS_RETURN_E set_vesa_mode(const vesa_mode_info_t mode)
     {
         return vesa_enable_double_buffering();
     }
+
+    return OS_NO_ERR;
+}
+
+OS_RETURN_E vesa_get_pixel(const uint16_t x, const uint16_t y,
+                            uint8_t* alpha, uint8_t* red,
+                            uint8_t* green, uint8_t* blue)
+{
+    uint8_t* addr;
+    if(vesa_supported == 0)
+    {
+        return OS_ERR_VESA_NOT_SUPPORTED;
+    }
+
+    if(current_mode == NULL)
+    {
+        return OS_ERR_VESA_NOT_INIT;
+    }
+
+    if(x > current_mode->width || y > current_mode->height)
+    {
+        return OS_ERR_OUT_OF_BOUND;
+    }
+
+
+    /* Get framebuffer address */
+    if(double_buffering == 1)
+    {
+        addr = (uint8_t*)((uint32_t*)vesa_buffer + (current_mode->width * y) + x);
+    }
+    else
+    {
+        addr = (uint8_t*)(((uint32_t*)current_mode->framebuffer) +
+                         (current_mode->width * y) + x);
+    }
+
+    *blue = *(addr++);
+    *green = *(addr++);
+    *red = *(addr++);
+    *alpha = 0xFF;
 
     return OS_NO_ERR;
 }

@@ -26,22 +26,22 @@
 uint8_t selected_driver = VGA_DRIVER_SELECTED;
 
 static const uint32_t vga_color_table[16] = {
-    0x00000000,
-    0x000000AA,
-    0x0000aa00,
-    0x0000aaaa,
-    0x00aa0000,
-    0x00aa00aa,
-    0x00aa5500,
-    0x00aaaaaa,
-    0x00555555,
-    0x005555ff,
-    0x0055ff55,
-    0x0055ffff,
-    0x00ff5555,
-    0x00ff55ff,
-    0x00ffff55,
-    0x00ffffff
+    0xFF000000,
+    0xFF0000AA,
+    0xFF00AA00,
+    0xFF00AAAA,
+    0xFFAA0000,
+    0xFFAA00AA,
+    0xFFAA5500,
+    0xFFAAAAAA,
+    0xFF555555,
+    0xFF5555FF,
+    0xFF55FF55,
+    0xFF55FFFF,
+    0xFFFF5555,
+    0xFFFF55FF,
+    0xFFFFFF55,
+    0xFFFFFFFF
 };
 
 /*******************************************************************************

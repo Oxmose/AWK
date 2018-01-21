@@ -292,7 +292,7 @@ void kernel_kickstart(void)
         kernel_panic();
     }
 #ifdef TESTS
-    test_ata();
+    //test_ata();
 #endif
 
     /* Init Scheduler */

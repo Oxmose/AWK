@@ -35,9 +35,10 @@ static const int32_t tests_count = 4;
 void *launch_tests(void*args)
 {
 
+
     //test_mouse2(NULL);
 
-    //while(1);
+    while(1);
 
     (void)args;
 #ifdef TESTS

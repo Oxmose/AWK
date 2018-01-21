@@ -45,7 +45,7 @@ void test_ata(void)
         recv[35] = 0;
         buffer[35] = 0;
         kernel_error("Failed to compare\n --> %s \n --> %s\n", buffer, buffer);
-        kernel_panic();;
+        kernel_panic();
     }
 
     memset(recv, 0, 36);

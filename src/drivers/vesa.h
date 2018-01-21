@@ -155,6 +155,22 @@ OS_RETURN_E get_vesa_modes(vesa_mode_info_t* buffer, const uint32_t size);
  */
 OS_RETURN_E set_vesa_mode(const vesa_mode_info_t mode);
 
+/* Get pixel color component at the given coordinates. The top left hand corner
+ * of the screen has coordinates x = 0 and y = 0. The color of the pixel is
+ * expressed in the bpp format of the current set mode.
+ *
+ * @param x The x coordinate of the pixel.
+ * @param y The y coordinate of the pixel.
+ * @param alpha The alpha component of the pixel buffer.
+ * @param red The red component of the pixel buffer.
+ * @param green The green component of the pixel buffer.
+ * @param blue The blue component of the pixel buffer.
+ * @return The state or error code.
+ */
+OS_RETURN_E vesa_get_pixel(const uint16_t x, const uint16_t y,
+                           uint8_t* alpha, uint8_t* red,
+                           uint8_t* green, uint8_t* blue);
+
 /* Draw a pixel on the screen at the given coordinates. The top left hand corner
  * of the screen has coordinates x = 0 and y = 0. The color of the pixel should
  * be expressed in the bpp format of the current set mode.

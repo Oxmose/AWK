@@ -149,26 +149,6 @@ static void mouse_interrupt_handler(cpu_state_t* cpu_state, uint32_t int_id,
                         break;
                     }
 
-                    /* SENSIVITY */
-                    #if 0
-                    if(mouse_byte[1] < -11)
-                    {
-                        mouse_byte[1] = -1;
-                    }
-                    else if(mouse_byte[1] > 1)
-                    {
-                        mouse_byte[1] = 1;
-                    }
-
-                    if(mouse_byte[2] < -1)
-                    {
-                        mouse_byte[2] = -1;
-                    }
-                    else if(mouse_byte[2] > 1)
-                    {
-                        mouse_byte[2] = 1;
-                    }
-                    #endif
                     if(mouse_byte[1] != 0 || mouse_byte[2] != 0)
                     {
                         mouse_state.pos_x = mouse_byte[1];
@@ -260,6 +240,10 @@ OS_RETURN_E init_mouse(void)
 
     /* Set PS2 IRQ */
     err = set_IRQ_mask(MOUSE_IRQ_LINE, 1);
+
+    /* Dummy read port to enable interrupt in case it's disabled */
+    inb(MOUSE_COMM_PORT);
+    inb(MOUSE_DATA_PORT);
 
     return err;
 }
