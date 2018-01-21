@@ -1,11 +1,22 @@
-/*
-	Linked List Bucket Heap 2013 Goswin von Brederlow <goswin-v-b@web.de>
+/*******************************************************************************
+ *
+ * File: heap.c
+ *
+ * Author: Alexy Torres Aurora Dugo
+ *
+ * Date: 10/01/2017
+ *
+ * Version: 1.0
+ *
+ * Kernel heap allocators
+ ******************************************************************************/
 
-*/
-#include "../lib/stdint.h"
-#include "../lib/stdlib.h"
-#include "../lib/string.h"
+#include "../lib/stdint.h" /* Generic int types */
+#include "../lib/stdlib.h" /* atoi */
+#include "../lib/string.h" /* memset */
+#include "../sync/lock.h"  /* spinlock */
 
+/* Header file */
 #include "heap.h"
 
 /*******************************************************************************
@@ -17,12 +28,15 @@ extern uint8_t mem_heap_start;
 extern uint8_t mem_heap_end;
 
 /* Heap data */
-mem_chunk_t* free_chunk[NUM_SIZES] = { NULL };
-mem_chunk_t* first_chunk;
-mem_chunk_t* last_chunk;
-uint32_t mem_free;
-uint32_t mem_used;
-uint32_t mem_meta;
+static mem_chunk_t* free_chunk[NUM_SIZES] = { NULL };
+static mem_chunk_t* first_chunk;
+static mem_chunk_t* last_chunk;
+static uint32_t mem_free;
+static uint32_t mem_used;
+static uint32_t mem_meta;
+
+/* Lock */
+static lock_t lock;
 
 /*******************************************************************************
  * FUNCTIONS
@@ -238,6 +252,8 @@ void setup_kheap(void)
     first_chunk = NULL;
     last_chunk = NULL;
 
+    spinlock_init(&lock);
+
     first_chunk = (mem_chunk_t*)mem_start;
     second = first_chunk + 1;
 
@@ -268,6 +284,8 @@ void* kmalloc(uint32_t size)
     uint32_t     size2;
     uint32_t     len;
 
+    spinlock_lock(&lock);
+
     size = (size + ALIGN - 1) & (~(ALIGN - 1));
 
 	if (size < MIN_SIZE)
@@ -279,6 +297,7 @@ void* kmalloc(uint32_t size)
 
 	if (n >= NUM_SIZES)
     {
+        spinlock_unlock(&lock);
         return NULL;
     }
 
@@ -287,6 +306,7 @@ void* kmalloc(uint32_t size)
 		++n;
 		if (n >= NUM_SIZES)
         {
+            spinlock_unlock(&lock);
             return NULL;
         }
     }
@@ -317,11 +337,15 @@ void* kmalloc(uint32_t size)
     mem_free -= size2;
     mem_used += size2 - len - HEADER_SIZE;
 
+    spinlock_unlock(&lock);
+
     return chunk->data;
 }
 
 void kfree(void* ptr)
 {
+    spinlock_lock(&lock);
+
     mem_chunk_t *chunk = (mem_chunk_t*)((int8_t*)ptr - HEADER_SIZE);
     mem_chunk_t *next = CONTAINER(mem_chunk_t, all, chunk->all.next);
     mem_chunk_t *prev = CONTAINER(mem_chunk_t, all, chunk->all.prev);
@@ -352,4 +376,6 @@ void kfree(void* ptr)
 		LIST_INIT(chunk, free);
 		push_free(chunk);
     }
+
+    spinlock_unlock(&lock);
 }
