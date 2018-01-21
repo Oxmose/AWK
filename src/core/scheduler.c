@@ -188,7 +188,7 @@ static void* idle_sys(void* args)
     set_color_scheme(new_scheme);
 
     /* Print tag */
-    kernel_printf("PathOS\n\n");
+    kernel_printf("AWK\n\n");
 
     /* Restore original screen color scheme */
     set_color_scheme(buffer);
@@ -340,6 +340,11 @@ static void thread_wrapper(void)
     /* TODO STAT PROBE OR SOMETHING */
     active_thread->start_time = get_current_uptime();
 
+    if(active_thread->function == NULL)
+    {
+        kernel_error("Thread routine cannot be NULL\n");
+        kernel_panic();
+    }
     active_thread->ret_val = active_thread->function(active_thread->args);
 
     active_thread->end_time = get_current_uptime();
@@ -567,16 +572,16 @@ static void schedule_int(cpu_state_t *cpu_state, uint32_t int_id,
 {
     OS_RETURN_E err;
 
-#if SCHEDULE_DYN_PRIORITY
-    kernel_list_node_t *cursor;
-    kernel_thread_t* thread;
-
     if(get_local_interrupt_enabled() != 1)
     {
         kernel_error("Interrupts should not be disabled when calling the\
  scheduler\n");
         kernel_panic();
     }
+
+#if SCHEDULE_DYN_PRIORITY
+    kernel_list_node_t *cursor;
+    kernel_thread_t* thread;
 
     if(active_thread != idle_thread && active_thread != init_thread)
     {
@@ -636,6 +641,12 @@ static void schedule_int(cpu_state_t *cpu_state, uint32_t int_id,
     {
         first_schedule = 1;
     }
+
+    #ifdef DEBUG_SCHED
+    kernel_serial_debug("Sched %d -> %d\n",
+                         old_thread->pid,
+                         active_thread->pid);
+    #endif
 
     if(int_id == sched_hw_int_line)
     {
