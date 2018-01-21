@@ -27,7 +27,13 @@
  * STRUCTURES
  ******************************************************************************/
 
-typedef volatile uint32_t lock_t;
+/* Spinlock can be nested up to UINT16_MAX level */
+typedef volatile struct lock
+{
+    volatile uint16_t lock;
+    volatile uint16_t nest_level;
+    volatile int32_t  pid;
+} lock_t;
 
 /*******************************************************************************
  * FUNCTIONS
