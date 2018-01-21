@@ -235,6 +235,7 @@ OS_RETURN_E vesa_put_cursor_at(const uint32_t line, const uint32_t column);
  *
  * @param buffer The cursor buffer in which the current cursor possition is
  * going to be saved.
+ * @returns The error or success state.
  */
 OS_RETURN_E vesa_save_cursor(cursor_t* buffer);
 
@@ -242,6 +243,7 @@ OS_RETURN_E vesa_save_cursor(cursor_t* buffer);
  *
  * @param buffer The cursor buffer containing the new coordinates of the
  * cursor.
+ * @returns The error or success state.
  */
 OS_RETURN_E vesa_restore_cursor(const cursor_t buffer);
 
@@ -263,6 +265,7 @@ void vesa_set_color_scheme(const colorscheme_t color_scheme);
  *
  * @param buffer The buffer that will receive the current color scheme used by
  * the screen console.
+ * @returns The error or success state.
  */
 OS_RETURN_E vesa_save_color_scheme(colorscheme_t* buffer);
 
@@ -284,5 +287,17 @@ void vesa_put_char(const char character);
  * @param len The length of the string to display.
  */
 void vesa_console_write_keyboard(const char* str, const uint32_t len);
+
+/* Disable double buffering display metohd.
+ *
+ * @returns The error or success state.
+ */
+OS_RETURN_E vesa_disable_double_buffering(void);
+
+/* Enable double buffering display metohd.
+ *
+ * @returns The error or success state.
+ */
+OS_RETURN_E vesa_enable_double_buffering(void);
 
 #endif /* __VESA_H_ */

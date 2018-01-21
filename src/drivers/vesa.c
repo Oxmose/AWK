@@ -17,6 +17,8 @@
 #include "../lib/string.h"     /* memmove, memset */
 #include "../bios/bios_call.h" /* regs_t, bios_call */
 #include "../fonts/uni_vga.c"  /* __font_bitmap__ */
+#include "../core/scheduler.h" /* create_thread, thread_t */
+#include "../cpu/cpu.h"        /* inb  */
 #include "vga_text.h"          /* vga_get_framebuffer */
 #include "serial.h"            /* serial_write */
 #include "graphic.h"           /* structures */
@@ -31,7 +33,7 @@
  ******************************************************************************/
 
 /* Screen settings */
-#define MAX_SUPPORTED_HEIGHT 1000
+#define MAX_SUPPORTED_HEIGHT 800
 #define MAX_SUPPORTED_WIDTH  1920
 #define MAX_SUPPORTED_BPP    32
 
@@ -49,8 +51,13 @@ static uint8_t      vesa_supported = 0;
 static cursor_t      screen_cursor;
 static cursor_t      last_printed_cursor;
 static colorscheme_t screen_scheme;
+static uint32_t*     last_columns;
 
-static uint32_t*    last_columns;
+/* Double buffering methods */
+static uint8_t* vesa_buffer;
+static uint32_t vesa_buffer_size;
+static thread_t double_buffering_thread;
+static volatile uint8_t  double_buffering;
 
 static const uint32_t vga_color_table[16] = {
     0x00000000,
@@ -74,6 +81,29 @@ static const uint32_t vga_color_table[16] = {
 /*******************************************************************************
  * FUNCTIONS
  ******************************************************************************/
+
+ static void* swap_buffer(void* args)
+ {
+     (void)args;
+     #ifdef DEBUG_VESA
+        kernel_serial_debug("VESA double buffering thread online!\n");
+        kernel_serial_debug("\t SIZE = %d\n", vesa_buffer_size);
+     #endif
+     while(double_buffering == 1)
+     {
+         /* Wait vertical retrace */
+         //while ((inb(0x3DA) & 0x08));
+         //while (!(inb(0x3DA) & 0x08));
+
+         memcpy((uint32_t*)current_mode->framebuffer, vesa_buffer, vesa_buffer_size);
+         sleep(10);
+     }
+
+     #ifdef DEBUG_VESA
+        kernel_serial_debug("VESA double buffering thread offline!\n");
+     #endif
+     return NULL;
+ }
 
 /* Process the character in parameters.
  *
@@ -272,6 +302,10 @@ OS_RETURN_E init_vesa(void)
     vesa_supported = 0;
     current_mode   = NULL;
     saved_modes    = NULL;
+
+    vesa_buffer    = NULL;
+    vesa_buffer_size = 0;
+    double_buffering = 0;
 
     /* Console mode init */
     screen_cursor.x = 0;
@@ -517,10 +551,23 @@ OS_RETURN_E set_vesa_mode(const vesa_mode_info_t mode)
     bios_int_regs_t regs;
     uint32_t        last_columns_size;
     vesa_mode_t*    cursor;
+    uint8_t         double_beffering_save;
+    OS_RETURN_E     err;
 
     if(vesa_supported == 0)
     {
         return OS_ERR_VESA_NOT_SUPPORTED;
+    }
+
+    /* Desactivate double buffering */
+    double_beffering_save = double_buffering;
+    if(double_buffering == 1)
+    {
+        err = vesa_disable_double_buffering();
+        if(err != OS_NO_ERR)
+        {
+            return err;
+        }
     }
 
     /* Search for the mode in the saved modes */
@@ -575,13 +622,20 @@ OS_RETURN_E set_vesa_mode(const vesa_mode_info_t mode)
     /* Tell generic driver we loaded a VESA mode */
     set_selected_driver(VESA_DRIVER);
 
+    if(double_beffering_save == 1)
+    {
+        return vesa_enable_double_buffering();
+    }
+
     return OS_NO_ERR;
 }
 
-OS_RETURN_E vesa_draw_pixel(const uint16_t x, const uint16_t y,
-                            const uint8_t red, const uint8_t green,
-                            const uint8_t blue)
+__inline__ OS_RETURN_E vesa_draw_pixel(const uint16_t x, const uint16_t y,
+                                       const uint8_t red, const uint8_t green,
+                                       const uint8_t blue)
 {
+    uint32_t* addr;
+
     if(vesa_supported == 0)
     {
         return OS_ERR_VESA_NOT_SUPPORTED;
@@ -598,8 +652,15 @@ OS_RETURN_E vesa_draw_pixel(const uint16_t x, const uint16_t y,
     }
 
     /* Get framebuffer address */
-    uint32_t* addr = ((uint32_t*)current_mode->framebuffer) +
-                     (current_mode->width * y) + x;
+    if(double_buffering == 1)
+    {
+        addr = (uint32_t*)vesa_buffer + (current_mode->width * y) + x;
+    }
+    else
+    {
+        addr = ((uint32_t*)current_mode->framebuffer) +
+                         (current_mode->width * y) + x;
+    }
 
     uint8_t pixel[4] = {blue, green, red, 0x00};
 
@@ -608,14 +669,16 @@ OS_RETURN_E vesa_draw_pixel(const uint16_t x, const uint16_t y,
     return OS_NO_ERR;
 }
 
-OS_RETURN_E vesa_draw_rectangle(const uint16_t x, const uint16_t y,
-                                const uint16_t width, const uint16_t height,
-                                const uint8_t red, const uint8_t green,
-                                const uint8_t blue)
+__inline__ OS_RETURN_E vesa_draw_rectangle(const uint16_t x, const uint16_t y,
+                                           const uint16_t width, const uint16_t height,
+                                           const uint8_t red, const uint8_t green,
+                                           const uint8_t blue)
 {
     uint16_t i;
     uint16_t j;
     uint32_t* addr;
+    uint32_t* buffer;
+    uint32_t* pitch;
 
     if(vesa_supported == 0)
     {
@@ -634,14 +697,22 @@ OS_RETURN_E vesa_draw_rectangle(const uint16_t x, const uint16_t y,
 
     uint8_t pixel[4] = {blue, green, red, 0x00};
 
+    /* Get framebuffer address */
+    if(double_buffering == 1)
+    {
+        buffer = (uint32_t*)vesa_buffer;
+    }
+    else
+    {
+        buffer = (uint32_t*)current_mode->framebuffer;
+    }
+
     for(i = y; i < y + height; ++i)
     {
+        pitch = buffer + current_mode->width * i;
         for(j = x; j < x + width; ++j)
         {
-            /* Get framebuffer address */
-            addr = ((uint32_t*)current_mode->framebuffer) +
-                     (current_mode->width * i) + j;
-
+            addr = pitch + j;
             *addr = *((uint32_t*)pixel);
         }
     }
@@ -789,11 +860,30 @@ void vesa_scroll(const SCROLL_DIRECTION_E direction,
     uint8_t j;
     int32_t q;
     int32_t m;
+    uint32_t* buffer_addr;
+    uint32_t* src;
+    uint32_t* dst;
+    uint32_t line_size;
+    uint32_t bpp_size;
+    uint32_t line_mem_size;
 
     to_scroll = lines_count;
 
     q = current_mode->height / font_height;
     m = current_mode->height % (q * font_height);
+
+    if(double_buffering == 1)
+    {
+        buffer_addr = (uint32_t*)vesa_buffer;
+    }
+    else
+    {
+        buffer_addr = (uint32_t*)current_mode->framebuffer;
+    }
+
+    line_size = font_height * current_mode->width;
+    bpp_size = ((current_mode->bpp | 7) >> 3);
+    line_mem_size = bpp_size * line_size;
 
     /* Select scroll direction */
     if(direction == SCROLL_DOWN)
@@ -804,9 +894,9 @@ void vesa_scroll(const SCROLL_DIRECTION_E direction,
             /* Copy all the lines to the above one */
             for(i = 0; i < q; ++i)
             {
-                memmove(((uint32_t*)current_mode->framebuffer) + i * (font_height * current_mode->width),
-                        ((uint32_t*)current_mode->framebuffer) + (i + 1) * (font_height * current_mode->width),
-                        (current_mode->bpp / 8) * font_height * current_mode->width);
+                dst = buffer_addr + i * line_size;
+                src = dst + line_size;
+                memmove(dst, src ,line_mem_size);
                 last_columns[i] = last_columns[i + 1];
             }
         }
@@ -872,4 +962,81 @@ void vesa_console_write_keyboard(const char* string, const uint32_t size)
     {
         vesa_process_char(string[i]);
     }
+}
+
+OS_RETURN_E vesa_enable_double_buffering(void)
+{
+    OS_RETURN_E err;
+
+    if(vesa_supported == 0)
+    {
+        return OS_ERR_VESA_NOT_SUPPORTED;
+    }
+
+    if(current_mode == NULL)
+    {
+        return OS_ERR_VESA_NOT_INIT;
+    }
+
+    if(double_buffering == 0)
+    {
+        if(vesa_buffer != NULL)
+        {
+            kfree(vesa_buffer);
+        }
+
+        vesa_buffer_size = current_mode->width *
+                           current_mode->height *
+                           ((current_mode->bpp | 7) >> 3);
+
+        vesa_buffer = kmalloc(vesa_buffer_size);
+        if(vesa_buffer == NULL)
+        {
+            return OS_ERR_MALLOC;
+        }
+
+        memcpy((uint32_t*)vesa_buffer, (uint32_t*)current_mode->framebuffer, vesa_buffer_size);
+
+        double_buffering = 1;
+        err = create_thread(&double_buffering_thread, swap_buffer,
+                            KERNEL_HIGHEST_PRIORITY, "VESA Driver", NULL);
+        if(err != OS_NO_ERR)
+        {
+            double_buffering = 0;
+            return err;
+        }
+    }
+    return OS_NO_ERR;
+}
+
+OS_RETURN_E vesa_disable_double_buffering(void)
+{
+    OS_RETURN_E err;
+
+    if(vesa_supported == 0)
+    {
+        return OS_ERR_VESA_NOT_SUPPORTED;
+    }
+
+    if(current_mode == NULL)
+    {
+        return OS_ERR_VESA_NOT_INIT;
+    }
+
+    if(double_buffering == 1)
+    {
+        double_buffering = 0;
+        if(vesa_buffer != NULL)
+        {
+            kfree(vesa_buffer);
+        }
+        vesa_buffer = NULL;
+
+        err = wait_thread(double_buffering_thread, NULL);
+        if(err != OS_NO_ERR)
+        {
+            return err;
+        }
+    }
+    return OS_NO_ERR;
 }
