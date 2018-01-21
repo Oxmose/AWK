@@ -60,22 +60,22 @@ static thread_t double_buffering_thread;
 static volatile uint8_t  double_buffering;
 
 static const uint32_t vga_color_table[16] = {
-    0x00000000,
-    0x000000AA,
-    0x0000aa00,
-    0x0000aaaa,
-    0x00aa0000,
-    0x00aa00aa,
-    0x00aa5500,
-    0x00aaaaaa,
-    0x00555555,
-    0x005555ff,
-    0x0055ff55,
-    0x0055ffff,
-    0x00ff5555,
-    0x00ff55ff,
-    0x00ffff55,
-    0x00ffffff
+    0xFF000000,
+    0xFF0000AA,
+    0xFF00AA00,
+    0xFF00AAAA,
+    0xFFAA0000,
+    0xFFAA00AA,
+    0xFFAA5500,
+    0xFFAAAAAA,
+    0xFF555555,
+    0xFF5555FF,
+    0xFF55FF55,
+    0xFF55FFFF,
+    0xFFFF5555,
+    0xFFFF55FF,
+    0xFFFFFF55,
+    0xFFFFFFFF
 };
 
 /*******************************************************************************
@@ -132,9 +132,10 @@ static void vesa_process_char(const char character)
                 for(j = screen_cursor.y; j < screen_cursor.y + font_height; ++j)
                 {
                     vesa_draw_pixel(i, j,
-                                   (screen_scheme.background & 0x00ff0000) >> 16,
-                                   (screen_scheme.background & 0x0000ff00) >> 8,
-                                   (screen_scheme.background & 0x000000ff));
+                               (screen_scheme.background & 0xFF000000) >> 24,
+                               (screen_scheme.background & 0x00FF0000) >> 16,
+                               (screen_scheme.background & 0x0000FF00) >> 8,
+                               (screen_scheme.background & 0x000000FF));
                 }
             }
             vesa_put_cursor_at(screen_cursor.y + font_height, 0);
@@ -164,9 +165,10 @@ static void vesa_process_char(const char character)
                 for(j = screen_cursor.y; j < screen_cursor.y + font_height; ++j)
                 {
                     vesa_draw_pixel(i, j,
-                                   (screen_scheme.background & 0x00ff0000) >> 16,
-                                   (screen_scheme.background & 0x0000ff00) >> 8,
-                                   (screen_scheme.background & 0x000000ff));
+                                (screen_scheme.background & 0xFF000000) >> 24,
+                                (screen_scheme.background & 0x00FF0000) >> 16,
+                                (screen_scheme.background & 0x0000FF00) >> 8,
+                                (screen_scheme.background & 0x000000FF));
                 }
             }
             vesa_put_cursor_at(screen_cursor.y + font_height, 0);
@@ -247,9 +249,10 @@ static void vesa_process_char(const char character)
                     for(j = screen_cursor.y; j < screen_cursor.y + font_height; ++j)
                     {
                         vesa_draw_pixel(i, j,
-                                       (screen_scheme.background & 0x00ff0000) >> 16,
-                                       (screen_scheme.background & 0x0000ff00) >> 8,
-                                       (screen_scheme.background & 0x000000ff));
+                                       (screen_scheme.background & 0xFF000000) >> 24,
+                                       (screen_scheme.background & 0x00FF0000) >> 16,
+                                       (screen_scheme.background & 0x0000FF00) >> 8,
+                                       (screen_scheme.background & 0x000000FF));
                     }
                 }
                 last_columns[(screen_cursor.y / font_height)] = screen_cursor.x;
@@ -261,9 +264,10 @@ static void vesa_process_char(const char character)
                         for(j = screen_cursor.y; j < screen_cursor.y + font_height; ++j)
                         {
                             vesa_draw_pixel(i, j,
-                                           (screen_scheme.background & 0x00ff0000) >> 16,
-                                           (screen_scheme.background & 0x0000ff00) >> 8,
-                                           (screen_scheme.background & 0x000000ff));
+                                           (screen_scheme.background & 0xFF000000) >> 24,
+                                           (screen_scheme.background & 0x00FF0000) >> 16,
+                                           (screen_scheme.background & 0x0000FF00) >> 8,
+                                           (screen_scheme.background & 0x000000FF));
                         }
                     }
                     vesa_put_cursor_at(screen_cursor.y + font_height, 0);
@@ -310,7 +314,7 @@ OS_RETURN_E init_vesa(void)
     /* Console mode init */
     screen_cursor.x = 0;
     screen_cursor.y = 0;
-    screen_scheme.foreground = 0x00FFFFFF;
+    screen_scheme.foreground = 0xFFFFFFFF;
     screen_scheme.background = 0x00000000;
     screen_scheme.vga_color  = 0;
 
@@ -631,10 +635,12 @@ OS_RETURN_E set_vesa_mode(const vesa_mode_info_t mode)
 }
 
 __inline__ OS_RETURN_E vesa_draw_pixel(const uint16_t x, const uint16_t y,
-                                       const uint8_t red, const uint8_t green,
-                                       const uint8_t blue)
+                                       const uint8_t alpha, const uint8_t red,
+                                       const uint8_t green, const uint8_t blue)
 {
     uint32_t* addr;
+    uint8_t   pixel[4] = {0};
+    uint8_t*  back;
 
     if(vesa_supported == 0)
     {
@@ -662,7 +668,22 @@ __inline__ OS_RETURN_E vesa_draw_pixel(const uint16_t x, const uint16_t y,
                          (current_mode->width * y) + x;
     }
 
-    uint8_t pixel[4] = {blue, green, red, 0x00};
+    back = (uint8_t*)addr;
+
+    if(alpha == 0xFF)
+    {
+        pixel[0] = blue;
+        pixel[1] = green;
+        pixel[2] = red;
+        pixel[3] = 0;
+    }
+    else if(alpha != 0x00)
+    {
+        pixel[0] = (blue * alpha + back[0] * (255 - alpha)) >> 8;
+        pixel[1] = (green * alpha + back[1] * (255 - alpha)) >> 8;
+        pixel[2] = (red * alpha + back[2] * (255 - alpha)) >> 8;
+        pixel[3] = 0;
+    }
 
     *addr = *((uint32_t*)pixel);
 
@@ -671,14 +692,11 @@ __inline__ OS_RETURN_E vesa_draw_pixel(const uint16_t x, const uint16_t y,
 
 __inline__ OS_RETURN_E vesa_draw_rectangle(const uint16_t x, const uint16_t y,
                                            const uint16_t width, const uint16_t height,
-                                           const uint8_t red, const uint8_t green,
-                                           const uint8_t blue)
+                                           const uint8_t alpha, const uint8_t red,
+                                           const uint8_t green, const uint8_t blue)
 {
     uint16_t i;
     uint16_t j;
-    uint32_t* addr;
-    uint32_t* buffer;
-    uint32_t* pitch;
 
     if(vesa_supported == 0)
     {
@@ -695,25 +713,11 @@ __inline__ OS_RETURN_E vesa_draw_rectangle(const uint16_t x, const uint16_t y,
         return OS_ERR_OUT_OF_BOUND;
     }
 
-    uint8_t pixel[4] = {blue, green, red, 0x00};
-
-    /* Get framebuffer address */
-    if(double_buffering == 1)
-    {
-        buffer = (uint32_t*)vesa_buffer;
-    }
-    else
-    {
-        buffer = (uint32_t*)current_mode->framebuffer;
-    }
-
     for(i = y; i < y + height; ++i)
     {
-        pitch = buffer + current_mode->width * i;
         for(j = x; j < x + width; ++j)
         {
-            addr = pitch + j;
-            *addr = *((uint32_t*)pixel);
+            vesa_draw_pixel(j, i, alpha, red, green, blue);
         }
     }
 
@@ -741,7 +745,7 @@ void vesa_drawchar(const unsigned char charracter,
             *((uint32_t*)pixel) = glyph[cy] & mask[cx] ? fgcolor : bgcolor;
 
             vesa_draw_pixel(x + (7 - cx ), y + cy,
-                            pixel[2], pixel[1], pixel[0]);
+                            pixel[3], pixel[2], pixel[1], pixel[0]);
         }
     }
 }
@@ -812,8 +816,8 @@ OS_RETURN_E vesa_put_cursor_at(const uint32_t line, const uint32_t column)
     {
         for(i = 0; i < 16; ++i)
         {
-            vesa_draw_pixel(column, line + i, 0xFF, 0xFF, 0xFF);
-            vesa_draw_pixel(column + 1, line + i, 0xFF, 0xFF, 0xFF);
+            vesa_draw_pixel(column, line + i, 0xFF, 0xFF, 0xFF, 0xFF);
+            vesa_draw_pixel(column + 1, line + i, 0xFF, 0xFF, 0xFF, 0xFF);
         }
     }
 

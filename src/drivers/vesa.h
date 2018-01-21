@@ -161,15 +161,16 @@ OS_RETURN_E set_vesa_mode(const vesa_mode_info_t mode);
  *
  * @param x The x coordinate of the pixel.
  * @param y The y coordinate of the pixel.
+ * @param alpha The alpha component of the pixel.
  * @param red The red component of the pixel.
  * @param green The green component of the pixel.
  * @param blue The blue component of the pixel.
  * @return The state or error code.
  */
 OS_RETURN_E vesa_draw_pixel(const uint16_t x, const uint16_t y,
-                            const uint8_t red, const uint8_t green,
-                            const uint8_t blue)
-                            ;
+                            const uint8_t alpha, const uint8_t red,
+                            const uint8_t green, const uint8_t blue);
+
 /* Draw a rectangle on the screen at the given coordinates. The top left hand
  * corner of the screen has coordinates x = 0 and y = 0. The color of the rect
  * should be expressed in the bpp format of the current set mode.
@@ -178,6 +179,7 @@ OS_RETURN_E vesa_draw_pixel(const uint16_t x, const uint16_t y,
  * @param y The y coordinate of the pixel.
  * @param width The width in pixels of the rectangle.
  * @param height The height in pixels of the rectangle.
+ * @param alpha The alpha component of the pixel.
  * @param red The red component of the pixel.
  * @param green The green component of the pixel.
  * @param blue The blue component of the pixel.
@@ -185,8 +187,8 @@ OS_RETURN_E vesa_draw_pixel(const uint16_t x, const uint16_t y,
  */
 OS_RETURN_E vesa_draw_rectangle(const uint16_t x, const uint16_t y,
                                 const uint16_t width, const uint16_t height,
-                                const uint8_t red, const uint8_t green,
-                                const uint8_t blue);
+                                const uint8_t alpha, const uint8_t red,
+                                const uint8_t green, const uint8_t blue);
 
 /* Draw a character on the screen at the given coordinates. The top left hand
  * corner of the screen has coordinates x = 0 and y = 0. The coordinates reffer
