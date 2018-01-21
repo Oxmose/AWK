@@ -22,7 +22,7 @@ void test_ata(void)
     dev.port = PRIMARY_PORT;
     dev.type = MASTER;
 
-    char buffer[36] = "THIS IS A TEST FOR PATHOS TEST TEST\0";
+    char buffer[36] = "THIS IS A TEST FOR WAK  TEST  TEST \0";
     char recv[36] = {0};
     if(ata_write_sector(dev, 500, (uint8_t*)buffer, 35) != OS_NO_ERR)
     {

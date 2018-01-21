@@ -4067,12 +4067,3 @@ void start_gui(void)
         sleep(500);
     }
 }
-
-void *test_mouse2(void*args)
-{
-    (void)args;
-
-    start_gui();
-
-    return NULL;
-}

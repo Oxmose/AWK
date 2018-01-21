@@ -4,10 +4,10 @@
 #include "../core/power_management.h"
 #include "../drivers/vesa.h"
 #include "../drivers/keyboard.h"
+#include "../tests/other/tests.h"
 
+extern void start_gui(void);
 
-extern void* launch_tests(void*);
-extern void* test_mouse2(void*);
 int main(int argc, char** argv)
 {
 	(void)argc;
@@ -21,25 +21,22 @@ int main(int argc, char** argv)
 		printf("\nERROR WHILE ENABLING VESA DOUBLE BUFFER %d\n", err);
 	}
 
-    thread_t test_th;
+
 
 	printf("\n");
 	printf("\nPress enter key to start demo");
     char t;
     getch(&t);
 
-	test_mouse2(NULL);
+	printf("MEM IS %08x\n", (uint32_t) launch_tests);
 
-    create_thread(&test_th, launch_tests, 64, "tests\0", NULL);
-    wait_thread(test_th, NULL);
+	thread_t test_th[2];
+    create_thread(&test_th[0], launch_tests, 64, "tests\0", NULL);
+    wait_thread(test_th[0], NULL);
 
+	start_gui();
 
 	printf("MAIN OUT \n");
-
-	//while(1)
-	//{
-	//	schedule();
-//	}
 
     return 0;
 }

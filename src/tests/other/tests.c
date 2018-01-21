@@ -34,11 +34,9 @@ static const int32_t tests_count = 4;
 
 void *launch_tests(void*args)
 {
+    //test_mouse(NULL);
 
-
-    //test_mouse2(NULL);
-
-    while(1);
+    //while(1);
 
     (void)args;
 #ifdef TESTS
@@ -59,19 +57,19 @@ void *launch_tests(void*args)
         wait_thread(test_ths[i], NULL);
     }
     printf("\n");
-    kernel_success("Test payload passed\n");
+    printf("Test payload passed\n");
 #endif
 
 #ifdef TEST_SEM
     printf("2/%d\n", tests_count);
     if(test_sem())
     {
-        kernel_error(" Test semaphores failed\n");
+        printf(" Test semaphores failed\n");
     }
     else
     {
 
-        kernel_success(" Test semaphores passed\n");
+        printf(" Test semaphores passed\n");
     }
 #endif
     printf("\n");
@@ -79,11 +77,11 @@ void *launch_tests(void*args)
     printf("3/%d\n", tests_count);
     if(test_mutex())
     {
-        kernel_error(" Test mutex failed\n");
+        printf(" Test mutex failed\n");
     }
     else
     {
-        kernel_success(" Test mutex passed\n");
+        printf(" Test mutex passed\n");
     }
 #endif
     printf("\n");
@@ -91,11 +89,11 @@ void *launch_tests(void*args)
     printf("4/%d\n", tests_count);
     if(test_multithread())
     {
-        kernel_error(" Test multithread failed\n");
+        printf(" Test multithread failed\n");
     }
     else
     {
-        kernel_success(" Test multithread passed\n");
+        printf(" Test multithread passed\n");
     }
 #endif
     printf("\n");

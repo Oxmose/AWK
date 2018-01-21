@@ -31,7 +31,7 @@ LD = ld
 OBJCOPY = objcopy
 QEMU = /usr/bin/qemu-system-i386
 
-CFLAGS = -m32 -g -gstabs -O2 -std=c99 -nostdinc -fno-builtin\
+CFLAGS = -m32 -g -gstabs -O0 -std=c99 -nostdinc -fno-builtin\
          -nostdlib -fno-stack-protector -nostartfiles -nodefaultlibs -Wall\
 		 -Wextra -Werror -Wimplicit-fallthrough=0 -c
 ASFLAGS = -f elf -w+gnu-elf-extensions
