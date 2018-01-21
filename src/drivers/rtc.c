@@ -213,6 +213,10 @@ OS_RETURN_E init_rtc(void)
 
     err = set_IRQ_mask(RTC_IRQ_LINE, 1);
 
+    /* Just dummy read register C to unlock interrupt */
+    outb(CMOS_REG_C, CMOS_COMM_PORT);
+    inb(CMOS_DATA_PORT);
+
     return err;
 }
 
