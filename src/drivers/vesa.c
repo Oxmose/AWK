@@ -33,7 +33,7 @@
  ******************************************************************************/
 
 /* Screen settings */
-#define MAX_SUPPORTED_HEIGHT 1200
+#define MAX_SUPPORTED_HEIGHT 800
 #define MAX_SUPPORTED_WIDTH  1920
 #define MAX_SUPPORTED_BPP    32
 
@@ -139,7 +139,7 @@ static void vesa_process_char(const char character)
         }
 
         /* Manage end of screen cursor position */
-        if(screen_cursor.y >= current_mode->height - font_height)
+        if(screen_cursor.y > current_mode->height - font_height)
         {
             vesa_scroll(SCROLL_DOWN, 1);
         }
@@ -932,7 +932,7 @@ void vesa_scroll(const SCROLL_DIRECTION_E direction,
         for(j = 0; j < to_scroll; ++j)
         {
             /* Copy all the lines to the above one */
-            for(i = 0; i < q; ++i)
+            for(i = 0; i < q - 1; ++i)
             {
                 dst = buffer_addr + i * line_size;
                 src = dst + line_size;
@@ -941,6 +941,8 @@ void vesa_scroll(const SCROLL_DIRECTION_E direction,
             }
         }
     }
+
+    memset(src, 0, line_mem_size);
 
     /* Replace cursor */
     vesa_put_cursor_at(current_mode->height - m - font_height, 0);
