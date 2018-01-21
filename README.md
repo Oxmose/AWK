@@ -7,7 +7,7 @@ The kernel is based on the x86 acrhitecture and currently supports:
 * GDT
 * IDT
 * CPUID
-* VGA Text mode (80x25) 
+* VGA Text mode (80x25)
 * VESA
 * Real Mode <-> Protected Mode switch
 * Serial
@@ -25,3 +25,7 @@ The kernel is based on the x86 acrhitecture and currently supports:
 * Communication (mailbox, queue)
 * Dynamic allocation
 * Printf
+
+## Screenshots
+![Boot](https://raw.githubusercontent.com/Oxmose/AWK/master/screenshots/1.png)
+![Test GUI](https://raw.githubusercontent.com/Oxmose/AWK/master/screenshots/2.png)
