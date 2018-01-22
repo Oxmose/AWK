@@ -29,3 +29,4 @@ The kernel is based on the x86 acrhitecture and currently supports:
 ## Screenshots
 ![Boot](https://raw.githubusercontent.com/Oxmose/AWK/master/screenshots/1.png)
 ![Test GUI](https://raw.githubusercontent.com/Oxmose/AWK/master/screenshots/2.png)
+![Test GUI](https://raw.githubusercontent.com/Oxmose/AWK/master/screenshots/3.png)

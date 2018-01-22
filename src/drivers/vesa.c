@@ -34,7 +34,7 @@
 
 /* Screen settings */
 #define MAX_SUPPORTED_HEIGHT 1080
-#define MAX_SUPPORTED_WIDTH  1600
+#define MAX_SUPPORTED_WIDTH  1920
 #define MAX_SUPPORTED_BPP    32
 
 /* VESA data structures */
@@ -790,46 +790,46 @@ void vesa_drawchar(const unsigned char charracter,
     }
 }
 
-int32_t vesa_get_screen_width(void)
+uint32_t vesa_get_screen_width(void)
 {
     if(vesa_supported == 0)
     {
-        return -1;
+        return 0;
     }
 
     if(current_mode == NULL)
     {
-        return -1;
+        return 0;
     }
 
     return current_mode->width;
 }
 
-int32_t vesa_get_screen_height(void)
+uint32_t vesa_get_screen_height(void)
 {
     if(vesa_supported == 0)
     {
-        return -1;
+        return 0;
     }
 
     if(current_mode == NULL)
     {
-        return -1;
+        return 0;
     }
 
     return current_mode->height;
 }
 
-int8_t vesa_get_screen_bpp(void)
+uint8_t vesa_get_screen_bpp(void)
 {
     if(vesa_supported == 0)
     {
-        return -1;
+        return 0;
     }
 
     if(current_mode == NULL)
     {
-        return -1;
+        return 0;
     }
 
     return current_mode->bpp;

@@ -5,8 +5,7 @@
 #include "../drivers/vesa.h"
 #include "../drivers/keyboard.h"
 #include "../tests/other/tests.h"
-
-extern void start_gui(void);
+#include "../gui/gui.h"
 
 int main(int argc, char** argv)
 {
@@ -28,15 +27,15 @@ int main(int argc, char** argv)
     char t;
     getch(&t);
 
-	printf("MEM IS %08x\n", (uint32_t) launch_tests);
-
 	//thread_t test_th[2];
     //create_thread(&test_th[0], launch_tests, 64, "tests\0", NULL);
     //wait_thread(test_th[0], NULL);
-	keyboard_disable_display();
-	start_gui();
 
-	printf("MAIN OUT \n");
+	keyboard_disable_display();
+	if(start_gui() != OS_NO_ERR)
+	{
+		kernel_panic();
+	}
 
     return 0;
 }

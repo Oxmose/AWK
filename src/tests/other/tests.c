@@ -8,9 +8,7 @@
 #include "test_sem.h"
 #include "test_mutex.h"
 #include "test_multithread.h"
-#include "test_mouse.h"
 #include "test_dyn_sched.h"
-#include "test_mouse.h"
 
 #include "../../lib/stdio.h"
 #include "../../sync/lock.h"

@@ -15,12 +15,13 @@ SYNC_DIR = $(wildcard sync/*.c sync/*.S)
 COMM_DIR = $(wildcard comm/*.c comm/*.S)
 TESTS_DIR = $(wildcard tests/core/*.c tests/core/*.S tests/other/*.c tests/other/*.S)
 USER_DIR = $(wildcard user/*.c user/*.S)
+GUI_DIR = $(wildcard gui/*.c gui/*.S)
 
 
 # on compile tous les fichiers assembleur et c du repertoire
 SRCS = $(BOOT_DIR) $(CPU_DIR) $(CORE_DIR) $(DRIVERS_DIR) $(LIB_DIR)\
 $(STDLIB_DIR) $(STRLIB_DIR) $(SYNC_DIR) $(COMM_DIR) $(TESTS_DIR) $(USER_DIR)\
-$(BIOS_DIR) $(MEM_DIR) $(STDIO_DIR)
+$(BIOS_DIR) $(MEM_DIR) $(STDIO_DIR) $(GUI_DIR)
 
 # crt0.o doit etre linke en premier
 OBJS = $(patsubst %.S,%.o,$(patsubst %.c,%.o,$(SRCS)))

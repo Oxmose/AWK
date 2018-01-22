@@ -220,23 +220,26 @@ void vesa_drawchar(const unsigned char character,
                    const uint32_t x, const uint32_t y,
                    const uint32_t fgcolor, const uint32_t bgcolor);
 
-/* Returns the current VESA mode screen width.
+/* Returns the current VESA mode screen width. 0 is returned if VESA is not
+ * supported.
  *
  * @returns The current VESA mode screen width.
  */
-int32_t vesa_get_screen_width(void);
+uint32_t vesa_get_screen_width(void);
 
-/* Returns the current VESA mode screen height.
+/* Returns the current VESA mode screen height. 0 is returned if VESA is not
+ * supported.
  *
- * @returns The current VESA mode screen height.
+ * @returns The current VESA mode screen height
  */
-int32_t vesa_get_screen_height(void);
+uint32_t vesa_get_screen_height(void);
 
-/* Returns the current VESA mode screen bpp.
+/* Returns the current VESA mode screen bpp. 0 is returned if VESA is not
+ * supported.
  *
  * @returns The current VESA mode screen bpp.
  */
-int8_t vesa_get_screen_bpp(void);
+uint8_t vesa_get_screen_bpp(void);
 
 /* Clear the screen */
 void vesa_clear_screen(void);

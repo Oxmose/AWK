@@ -154,6 +154,11 @@ static void mouse_interrupt_handler(cpu_state_t* cpu_state, uint32_t int_id,
                         mouse_state.pos_x = mouse_byte[1];
                         mouse_state.pos_y = mouse_byte[2];
                     }
+                    else
+                    {
+                        mouse_state.pos_x = 0;
+                        mouse_state.pos_y = 0;
+                    }
 
                     /* Managing clicks */
                     if (mouse_byte[0] & 0x01)
