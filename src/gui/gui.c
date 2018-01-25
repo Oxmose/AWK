@@ -23,7 +23,7 @@ static thread_t update_thread;
 
 static lock_t desktop_buffer_lock;
 
-window_t windows[5];
+window_t windows[10];
 
 static void* update_desktop(void* args)
 {
@@ -49,7 +49,7 @@ static void* update_desktop(void* args)
         vesa_fill_screen(desktop_buffer);
         spinlock_unlock(&desktop_buffer_lock);
 
-        sleep(10);
+        //sleep(10);
     }
 
     return NULL;
@@ -107,11 +107,16 @@ OS_RETURN_E start_gui(void)
     }
 
     /* Draw some windows */
-    init_window(&windows[0], -50, -50, 100, 100);
-    init_window(&windows[1], screen_width - 50, -50, 100, 100);
-    init_window(&windows[2], screen_width - 50, screen_height - 50, 100, 100);
-    init_window(&windows[3],  -50, screen_height - 50, 100, 100);
-    init_window(&windows[4], screen_width / 2 - 50, screen_height / 2 - 50, 100, 100);
+    for(uint32_t w = 0; w < 10; ++w)
+    {
+        init_window(&windows[w], 50 + 30 * w, 50 + 30 * w, 200, 200);
+    }
+
+    init_window(&windows[10], -50, -50, 100, 100);
+    init_window(&windows[11], screen_width - 50, -50, 100, 100);
+    init_window(&windows[12], screen_width - 50, screen_height - 50, 100, 100);
+    init_window(&windows[13],  -50, screen_height - 50, 100, 100);
+    init_window(&windows[14], screen_width / 2 - 50, screen_height / 2 - 50, 100, 100);
 
     /* Init pointer */
     err = init_pointer();

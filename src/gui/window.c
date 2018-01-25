@@ -19,6 +19,7 @@ static uint32_t screen_height;
 static void setup_window(window_t *window)
 {
     uint32_t i;
+    uint32_t j;
     uint32_t offset_0;
     uint32_t offset_1;
     uint32_t offset_2;
@@ -45,6 +46,37 @@ static void setup_window(window_t *window)
         canvas[i * window->width + 1] = 0xFF111111;
         canvas[i * window->width + window->width - 1] = 0xFF111111;
         canvas[i * window->width + window->width - 2] = 0xFF111111;
+    }
+
+    /* Draw title bar */
+    for(i = 2; i < 27; ++i)
+    {
+        /* REST */
+        for(j = 2; j < window->width - 2; ++j)
+        {
+            canvas[i * window->width + j] = 0xFF2c3e50;
+        }
+    }
+
+    for(i = 7; i < 22; ++i)
+    {
+        /* QUIT */
+        for(j = 7; j < 22; ++j)
+        {
+            canvas[i * window->width + j] = 0xFFc0392b;
+        }
+
+        /* MIN */
+        for(j = 27; j < 42; ++j)
+        {
+            canvas[i * window->width + j] = 0xFF27ae60;
+        }
+
+        /* MAX */
+        for(j = 47; j < 62; ++j)
+        {
+            canvas[i * window->width + j] = 0xFF2980b9;
+        }
     }
 }
 
@@ -163,8 +195,6 @@ OS_RETURN_E draw_window(const window_t *window)
     {
         adjusted_height = screen_height - real_y;
     }
-
-    kernel_serial_debug("x= %d, y= %d, width= %d, height= %d\n", real_x, real_y, adjusted_width, adjusted_height);
 
     /* Draw canvas on screen */
     canvas = window->canvas;
