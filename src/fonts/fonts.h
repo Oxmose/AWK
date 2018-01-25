@@ -1,6 +1,6 @@
 /*******************************************************************************
  *
- * File: statusbar.h
+ * File: fonts.h
  *
  * Author: Alexy Torres Aurora Dugo
  *
@@ -8,14 +8,11 @@
  *
  * Version: 1.0
  *
- * GUI statusbar manager.
+ * Fonts manager.
  ******************************************************************************/
 
-#ifndef __STATUSBAR_H__
-#define __STATUSBAR_H__
-
-#include "../lib/stdint.h" /* Generic int types */
-#include "../lib/stddef.h" /* OS_RETURN_E */
+#ifndef __FONTS_H_
+#define __FONTS_H_
 
 /*******************************************************************************
  * CONSTANTS
@@ -25,11 +22,12 @@
 * STRUCTURES
 ******************************************************************************/
 
+extern const unsigned int font_width;
+extern const unsigned int font_height;
+extern unsigned char __font_bitmap__[];
+
 /*******************************************************************************
 * FUNCTIONS
 ******************************************************************************/
 
-OS_RETURN_E init_statusbar(void);
-void draw_status_bar(void);
-
-#endif /* __STATUSBAR_H__ */
+#endif /* __FONTS_H_ */

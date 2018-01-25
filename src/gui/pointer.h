@@ -30,6 +30,7 @@
 ******************************************************************************/
 
 OS_RETURN_E init_pointer(void);
-void draw_mouse(const uint32_t x, const uint32_t y);
+void update_mouse(const uint32_t x, const uint32_t y);
+void draw_mouse(void);
 
 #endif /* __POINTER_H__ */

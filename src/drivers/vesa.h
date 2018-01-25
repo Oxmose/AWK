@@ -321,4 +321,6 @@ OS_RETURN_E vesa_disable_double_buffering(void);
  */
 OS_RETURN_E vesa_enable_double_buffering(void);
 
+void vesa_fill_screen(uint32_t* pointer);
+
 #endif /* __VESA_H_ */

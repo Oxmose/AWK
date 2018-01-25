@@ -33,7 +33,7 @@
  ******************************************************************************/
 
 /* Screen settings */
-#define MAX_SUPPORTED_HEIGHT 1080
+#define MAX_SUPPORTED_HEIGHT 800
 #define MAX_SUPPORTED_WIDTH  1920
 #define MAX_SUPPORTED_BPP    32
 
@@ -92,7 +92,7 @@ static const uint32_t vga_color_table[16] = {
      while(double_buffering == 1)
      {
          memcpy((uint32_t*)current_mode->framebuffer, vesa_buffer, vesa_buffer_size);
-         sleep(10);
+         //sleep(10);
      }
 
      #ifdef DEBUG_VESA
@@ -837,11 +837,20 @@ uint8_t vesa_get_screen_bpp(void)
 
 void vesa_clear_screen(void)
 {
-    memset((void*)current_mode->framebuffer, 0,
+    uint32_t* buffer;
+
+    if(double_buffering == 1)
+    {
+        buffer = (uint32_t*)vesa_buffer;
+    }
+    else
+    {
+        buffer = (uint32_t*)current_mode->framebuffer;
+    }
+    memset(buffer, 0,
            current_mode->width *
            current_mode->height *
            (current_mode->bpp / 8));
-    memset(last_columns, 0, sizeof(uint32_t) * current_mode->height / font_width);
     vesa_put_cursor_at(0, 0);
 }
 
@@ -1085,4 +1094,22 @@ OS_RETURN_E vesa_disable_double_buffering(void)
         }
     }
     return OS_NO_ERR;
+}
+
+void vesa_fill_screen(uint32_t* pointer)
+{
+    uint32_t* buffer;
+
+    if(double_buffering == 1)
+    {
+        buffer = (uint32_t*)vesa_buffer;
+    }
+    else
+    {
+        buffer = (uint32_t*)current_mode->framebuffer;
+    }
+    memcpy(buffer, pointer,
+           current_mode->width *
+           current_mode->height *
+           (current_mode->bpp / 8));
 }
