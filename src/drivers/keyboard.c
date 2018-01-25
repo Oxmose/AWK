@@ -426,8 +426,9 @@ void getch(char* character)
     /* If no character is in the buffer but the thread in IO waiting state */
     while(keyboard_buffer == 0)
     {
-        spinlock_unlock(&buffer_lock);
         lock_io(IO_KEYBOARD);
+        spinlock_unlock(&buffer_lock);
+        schedule();
         spinlock_lock(&buffer_lock);
     }
 

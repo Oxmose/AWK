@@ -135,7 +135,7 @@ OS_RETURN_E create_thread(thread_t* thread,
 OS_RETURN_E wait_thread(thread_t thread, void** ret_val);
 
 /* Add a thread to the active threads table, the thread might be contained
- * in an other structure such as a mutex
+ * in an other structure such as a mutex.
  *
  * @param node The node containing the thread to unlock.
  * @param block_type The type of block (mutex, sem, ...)
@@ -147,7 +147,8 @@ OS_RETURN_E unlock_thread(kernel_list_node_t* node,
                           const uint8_t do_schedule);
 
 /* Remove the active thread from the active threads table, the thread might be
- * contained in an other structure such as a mutex.
+ * contained in an other structure such as a mutex. The caller of this function
+ * must call schedule() after.
  *
  * @param block_type The type of block (mutex, sem, ...)
  * @returns The node to the thread that has been locked. NULL is returned if the
@@ -155,7 +156,8 @@ OS_RETURN_E unlock_thread(kernel_list_node_t* node,
  */
 kernel_list_node_t* lock_thread(const BLOCK_TYPE_E block_type);
 
-/* Lock the current thread waiting for an IO.
+/* Lock the current thread waiting for an IO. The caller of this function must
+ * call schedule() after.
  * @param block_type The type of IO that locks the thread.
  * @returns OS_NO_ERR on success, error code otherwise.
  */

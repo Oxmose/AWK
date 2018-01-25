@@ -19,6 +19,7 @@
 #include "../cpu/cpu.h"         /* sti, hlt */
 #include "../sync/lock.h"       /* spinlock */
 #include "../drivers/graphic.h" /* colorsheme */
+#include "../drivers/vesa.h"    /* vesa_enable_double_buffering */
 #include "interrupts.h"         /* register_interrupt_handler,
                                  set_IRQ_EOI, update_tick */
 #include "kernel_output.h"      /* kernel_success, kernel_error */
@@ -105,8 +106,20 @@ static void* init_func(void* args)
 
     (void)args;
 
+    err = vesa_enable_double_buffering();
+	if(err != OS_NO_ERR)
+	{
+		kernel_error("ERROR WHILE ENABLING VESA DOUBLE BUFFER %d\n", err);
+	}
+
     /* Call main */
     main(1, argv);
+
+    err = vesa_disable_double_buffering();
+	if(err != OS_NO_ERR)
+	{
+		kernel_error("ERROR WHILE DISABLING VESA DOUBLE BUFFER %d\n", err);
+	}
 
     #ifdef DEBUG_SCHED
     kernel_serial_debug("Main returned, INIT waiting for children\n");
@@ -1263,9 +1276,6 @@ OS_RETURN_E lock_io(const BLOCK_TYPE_E block_type)
                              active_thread->pid,
                              block_type);
         #endif
-
-        /* Schedule to let other thread execute */
-        schedule();
     }
 
     return OS_NO_ERR;
