@@ -122,6 +122,9 @@ divide your request into mulstiple read/write");
         case OS_ERR_VESA_NOT_INIT:
             printf("VESA driver non initialized");
             break;
+        case OS_ERR_NO_MORE_FREE_MEM:
+            printf("No more free memory in the system");
+            break;
         default:
             printf("Unknown error");
     }

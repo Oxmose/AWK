@@ -89,6 +89,8 @@ typedef enum __attribute__( ( packed, aligned( sizeof( uint16_t ) ) ) ) OS_RETUR
     OS_ERR_VESA_NOT_SUPPORTED              = 32,
     OS_ERR_VESA_MODE_NOT_SUPPORTED         = 33,
     OS_ERR_VESA_NOT_INIT                   = 34,
+
+    OS_ERR_NO_MORE_FREE_MEM                = 35,
 } OS_RETURN_E;
 
 typedef int32_t OS_EVENT_ID;

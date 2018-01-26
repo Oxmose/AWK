@@ -42,8 +42,8 @@
  ******************************************************************************/
 
 extern multiboot_info_t* multiboot_data_ptr;
-extern uint32_t          multiboot_data_size;
-extern mem_range_t       multiboot_data[];
+extern uint32_t          memory_map_size;
+extern mem_range_t       memory_map_data[];
 
 /*******************************************************************************
  * FUNCTIONS
@@ -68,29 +68,33 @@ void kernel_kickstart(void)
     i = 0;
     while((uint32_t)mmap < multiboot_data_ptr->mmap_addr + multiboot_data_ptr->mmap_length)
     {
-        multiboot_data[i].base  = (uint32_t)mmap->addr;
-        multiboot_data[i].limit = (uint32_t)mmap->addr + (uint32_t)mmap->len;
-        multiboot_data[i].type  = mmap->type;
+        memory_map_data[i].base  = (uint32_t)mmap->addr;
+        memory_map_data[i].limit = (uint32_t)mmap->addr + (uint32_t)mmap->len;
+        memory_map_data[i].type  = mmap->type;
         ++i;
         mmap = (multiboot_memory_map_t*)((uint32_t)mmap + mmap->size + sizeof(mmap->size));
     }
-    multiboot_data_size = i - 1;
+    memory_map_size = i - 1;
 
-    for(i = 0; i < multiboot_data_size; ++i)
+    for(i = 0; i < memory_map_size; ++i)
     {
-        kernel_info("Base 0x%08x, Limit 0x%08x, Length %uBytes, Type %d\n", multiboot_data[i].base, multiboot_data[i].limit, multiboot_data[i].base + multiboot_data[i].limit, multiboot_data[i].type);
+        kernel_info("Base 0x%08x, Limit 0x%08x, Length %uKB, Type %d\n",
+                    memory_map_data[i].base,
+                    memory_map_data[i].limit,
+                    (memory_map_data[i].limit - memory_map_data[i].base) / 1024,
+                    memory_map_data[i].type);
     }
 
     /* Init paging */
-    //err = init_paging();
-    //if(err == OS_NO_ERR)
-    //{
-    //    kernel_success("Paging Initialized\n");
-    //}
-    //else
-    //{
-    //    kernel_error("Paging Initialization error [%d]\n", err);
-    //}
+    err = init_paging();
+    if(err == OS_NO_ERR)
+    {
+        kernel_success("Paging Initialized\n");
+    }
+    else
+    {
+        kernel_error("Paging Initialization error [%d]\n", err);
+    }
 
     /* Get CPUID info */
     err = get_cpu_info(&cpu_info);
