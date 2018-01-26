@@ -941,6 +941,9 @@ void vesa_scroll(const SCROLL_DIRECTION_E direction,
     /* Select scroll direction */
     if(direction == SCROLL_DOWN)
     {
+        i = 0;
+        dst = buffer_addr + i * line_size;
+        src = dst + line_size;
         /* For each line scroll we want */
         for(j = 0; j < to_scroll; ++j)
         {
@@ -953,9 +956,10 @@ void vesa_scroll(const SCROLL_DIRECTION_E direction,
                 last_columns[i] = last_columns[i + 1];
             }
         }
+        memset(src, 0, line_mem_size);
     }
 
-    memset(src, 0, line_mem_size);
+
 
     /* Replace cursor */
     vesa_put_cursor_at(current_mode->height - m - font_height, 0);

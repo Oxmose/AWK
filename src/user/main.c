@@ -12,13 +12,30 @@ int main(int argc, char** argv)
 	(void)argc;
 	(void)argv;
 
+
+	OS_RETURN_E err = OS_NO_ERR;
+	err = vesa_enable_double_buffering();
+	if(err != OS_NO_ERR)
+	{
+		printf("\nERROR WHILE ENABLING VESA DOUBLE BUFFER %d\n", err);
+	}
+
+
+
+	printf("\n");
 	printf("\nPress enter key to start demo");
     char t;
     getch(&t);
 
-	//thread_t test_th;
-    //create_thread(&test_th, launch_tests, 64, "tests", NULL);
-    //wait_thread(test_th, NULL);
+	//thread_t test_th[2];
+    //create_thread(&test_th[0], launch_tests, 64, "tests\0", NULL);
+    //wait_thread(test_th[0], NULL);
+
+	keyboard_disable_display();
+	if(start_gui() != OS_NO_ERR)
+	{
+		kernel_panic();
+	}
 
     return 0;
 }

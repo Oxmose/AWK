@@ -112,11 +112,11 @@ OS_RETURN_E start_gui(void)
         init_window(&windows[w], 50 + 30 * w, 50 + 30 * w, 200, 200);
     }
 
-    init_window(&windows[10], -50, -50, 100, 100);
-    init_window(&windows[11], screen_width - 50, -50, 100, 100);
-    init_window(&windows[12], screen_width - 50, screen_height - 50, 100, 100);
-    init_window(&windows[13],  -50, screen_height - 50, 100, 100);
-    init_window(&windows[14], screen_width / 2 - 50, screen_height / 2 - 50, 100, 100);
+    //init_window(&windows[10], -50, -50, 100, 100);
+    //init_window(&windows[11], screen_width - 50, -50, 100, 100);
+    //init_window(&windows[12], screen_width - 50, screen_height - 50, 100, 100);
+    //init_window(&windows[13],  -50, screen_height - 50, 100, 100);
+    //init_window(&windows[14], screen_width / 2 - 50, screen_height / 2 - 50, 100, 100);
 
     /* Init pointer */
     err = init_pointer();

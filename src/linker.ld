@@ -58,6 +58,11 @@ SECTIONS
     cpu_gdt_base = 0x100808; /* 32 bits */
     cpu_gdt      = 0x10080C; /* SIZE = 16384bits, ends at 0x10100C */
 
+    /* Multiboot data pointer */
+    multiboot_data_ptr  = 0x10100C; /* 32bits */
+    multiboot_data_size = 0x101010; /* 32bits */
+    multiboot_data      = 0x101014; /* SIZE = 16384bits, ends at 0x101814 */
+
     /* Beginning of kernel memory heap 16Mb */
     mem_heap_start = 0x1000000;
 

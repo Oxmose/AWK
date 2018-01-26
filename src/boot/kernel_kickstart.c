@@ -12,6 +12,8 @@
  * AT THIS POINT INTERRUPT SHOULD BE DISABLED
  ******************************************************************************/
 
+#include "../memory/paging.h"       /* mem_range_t */
+#include "../lib/string.h"          /* memcpy */
 #include "../drivers/ata.h"         /* init_ata */
 #include "../drivers/serial.h"      /* init_serial */
 #include "../drivers/vesa.h"        /* init_vesa */
@@ -29,6 +31,7 @@
 #include "../core/panic.h"          /* kernel_panic */
 #include "../core/kernel_output.h"  /* kernel_success, kernel_error,
                                        kernel_info */
+#include "multiboot.h"           /* multiboot_header_t */
 
 #include "../tests/core/tests.h"      /* test_bank */
 
@@ -37,6 +40,10 @@
 /*******************************************************************************
  * GLOBAL VARIABLES
  ******************************************************************************/
+
+extern multiboot_info_t* multiboot_data_ptr;
+extern uint32_t          multiboot_data_size;
+extern mem_range_t       multiboot_data[];
 
 /*******************************************************************************
  * FUNCTIONS
@@ -52,7 +59,40 @@ void kernel_kickstart(void)
 
     uint32_t regs[4]; //eax, ebx, ecx, edx;
     uint32_t ret;
+    uint32_t i;
+    multiboot_memory_map_t* mmap;
 
+
+    /* Copy multiboot data in upper memory */
+    mmap = (multiboot_memory_map_t*)multiboot_data_ptr->mmap_addr;
+    i = 0;
+    while((uint32_t)mmap < multiboot_data_ptr->mmap_addr + multiboot_data_ptr->mmap_length)
+    {
+        multiboot_data[i].base  = (uint32_t)mmap->addr;
+        multiboot_data[i].limit = (uint32_t)mmap->addr + (uint32_t)mmap->len;
+        multiboot_data[i].type  = mmap->type;
+        ++i;
+        mmap = (multiboot_memory_map_t*)((uint32_t)mmap + mmap->size + sizeof(mmap->size));
+    }
+    multiboot_data_size = i - 1;
+
+    for(i = 0; i < multiboot_data_size; ++i)
+    {
+        kernel_info("Base 0x%08x, Limit 0x%08x, Length %uBytes, Type %d\n", multiboot_data[i].base, multiboot_data[i].limit, multiboot_data[i].base + multiboot_data[i].limit, multiboot_data[i].type);
+    }
+
+    /* Init paging */
+    //err = init_paging();
+    //if(err == OS_NO_ERR)
+    //{
+    //    kernel_success("Paging Initialized\n");
+    //}
+    //else
+    //{
+    //    kernel_error("Paging Initialization error [%d]\n", err);
+    //}
+
+    /* Get CPUID info */
     err = get_cpu_info(&cpu_info);
     if(err == OS_NO_ERR)
     {

@@ -23,6 +23,7 @@ extern setup_kheap
 
 extern _edata
 extern mem_heap_end
+extern multiboot_data_ptr
 
 extern cpu_info                 ; CPU INFO structure
 
@@ -56,6 +57,10 @@ section .text:
     ; Make sure interrupts are disabled and clear flags
     push  dword 0
     popfd
+
+    ; Save Multiboot info to Memory
+    mov edi, multiboot_data_ptr
+    mov [edi], ebx
 
     ; Init stack pointer
     mov  esp, kernel_stack + KERNEL_STACK_SIZE
