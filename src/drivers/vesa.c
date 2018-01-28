@@ -114,8 +114,10 @@ static void vesa_process_char(const char character)
     int32_t diff;
     int8_t tab_width = 4;
 
+    #ifdef KERNEL_DEBUG
     /* Write on serial */
     serial_write(COM1, character);
+    #endif
 
     /* If character is a normal ASCII character */
     if(character > 31 && character < 127)
@@ -592,22 +594,6 @@ OS_RETURN_E set_vesa_mode(const vesa_mode_info_t mode)
         return OS_ERR_VESA_MODE_NOT_SUPPORTED;
     }
 
-    last_columns_size = sizeof(uint32_t) * current_mode->height / font_height;
-
-    if(last_columns != NULL)
-    {
-        kfree(last_columns);
-    }
-
-    last_columns = kmalloc(last_columns_size);
-    if(last_columns == NULL)
-    {
-        return OS_ERR_MALLOC;
-    }
-
-    /* Set the last collumn array */
-    memset(last_columns, 0, last_columns_size);
-
     /* Set the VESA mode */
     regs.ax = BIOS_CALL_SET_VESA_MODE;
     regs.bx = cursor->mode_id | VESA_FLAG_LFB_ENABLE;
@@ -620,6 +606,19 @@ OS_RETURN_E set_vesa_mode(const vesa_mode_info_t mode)
     }
 
     current_mode = cursor;
+
+    /* Set the last collumn array */
+    last_columns_size = sizeof(uint32_t) * current_mode->height / font_height;
+    if(last_columns != NULL)
+    {
+        kfree(last_columns);
+    }
+    last_columns = kmalloc(last_columns_size);
+    if(last_columns == NULL)
+    {
+        return OS_ERR_MALLOC;
+    }
+    memset(last_columns, 0, last_columns_size);
 
     /* Map framebuffer in the kernel page table */
     mmap_size = current_mode->width * current_mode->height;
