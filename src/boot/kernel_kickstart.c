@@ -44,6 +44,7 @@
 extern multiboot_info_t* multiboot_data_ptr;
 extern uint32_t          memory_map_size;
 extern mem_range_t       memory_map_data[];
+extern uint32_t          _end;
 
 /*******************************************************************************
  * FUNCTIONS
@@ -85,10 +86,7 @@ void kernel_kickstart(void)
                     (memory_map_data[i].limit - memory_map_data[i].base) / 1024,
                     memory_map_data[i].type);
     }
-
-
-    extern uint32_t _end;
-    kernel_serial_debug("Kernel static memory ends 0x%08x \n", &_end);
+    kernel_info("Kernel static memory ends 0x%08x \n", &_end);
 
     /* Init paging */
     err = init_paging();
@@ -99,6 +97,7 @@ void kernel_kickstart(void)
     else
     {
         kernel_error("Paging Initialization error [%d]\n", err);
+        kernel_panic();
     }
 
     /* Get CPUID info */
@@ -343,8 +342,6 @@ void kernel_kickstart(void)
 #ifdef TESTS
     //test_ata();
 #endif
-
-    kernel_serial_debug("END 0x%08x \n", &_end);
 
     /* Init Scheduler */
     err = init_scheduler();

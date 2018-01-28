@@ -260,13 +260,6 @@ static OS_RETURN_E acpi_parse_dsdt(acpi_dsdt_t* dsdt_ptr)
     /* Verify checksum */
     sum = 0;
 
-    kernel_serial_debug("DSDT Length \n");
-
-
-    #ifdef DEBUG_ACPI
-    kernel_serial_debug("DSDT Length %d\n", dsdt_ptr->header.length);
-    #endif
-
     /* Mapping DSDT */
     err = kernel_mmap((uint8_t*)dsdt_ptr,
                       (uint8_t*)dsdt_ptr,

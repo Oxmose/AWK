@@ -6,6 +6,7 @@ The kernel is based on the x86 acrhitecture and currently supports:
 
 * GDT
 * IDT
+* Paging
 * CPUID
 * VGA Text mode (80x25)
 * VESA

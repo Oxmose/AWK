@@ -20,7 +20,8 @@
  * CONSTANTS
  ******************************************************************************/
 
-#define KERNEL_PAGE_SIZE 4096
+#define KERNEL_PAGE_SIZE      4096
+#define KERNEL_MEMORY_KB_SIZE 32768
 
 #define PG_DIR_FLAG_PAGE_SIZE_4KB       0x00000000
 #define PG_DIR_FLAG_PAGE_SIZE_4MB       0x00000080

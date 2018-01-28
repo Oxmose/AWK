@@ -490,7 +490,6 @@ void test_sw_interupts(void)
     __asm__ __volatile__("int %0" :: "i" (MIN_INTERRUPT_LINE + 220));
     __asm__ __volatile__("int %0" :: "i" (MIN_INTERRUPT_LINE + 221));
     __asm__ __volatile__("int %0" :: "i" (MIN_INTERRUPT_LINE + 222));
-    __asm__ __volatile__("int %0" :: "i" (MIN_INTERRUPT_LINE + 223));
 
     disable_local_interrupt();
 
@@ -752,7 +751,6 @@ void test_sw_interupts(void)
     __asm__ __volatile__("int %0" :: "i" (MIN_INTERRUPT_LINE + 220));
     __asm__ __volatile__("int %0" :: "i" (MIN_INTERRUPT_LINE + 221));
     __asm__ __volatile__("int %0" :: "i" (MIN_INTERRUPT_LINE + 222));
-    __asm__ __volatile__("int %0" :: "i" (MIN_INTERRUPT_LINE + 223));
 
     disable_local_interrupt();
 

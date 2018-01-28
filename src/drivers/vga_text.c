@@ -80,8 +80,10 @@ static OS_RETURN_E vga_print_char(const uint8_t line, const uint8_t column,
  */
 static void vga_process_char(const char character)
 {
+    #ifdef KERNEL_DEBUG
     /* Write on serial */
     serial_write(COM1, character);
+    #endif
 
     /* If character is a normal ASCII character */
     if(character > 31 && character < 127)

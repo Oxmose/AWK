@@ -25,10 +25,13 @@
  * GLOBAL VARIABLES
  ******************************************************************************/
 
+/* Memory map data */
 extern uint32_t    memory_map_size;
 extern mem_range_t memory_map_data[];
 
+/* Allocation tracking */
 static mem_range_t current_mem_range;
+static uint8_t*    next_free_frame;
 
 /* Todo page allocator */
 static uint32_t kernel_pgdir[1024] __attribute__((aligned(4096)));
@@ -45,6 +48,7 @@ OS_RETURN_E init_paging(void)
 {
     uint32_t i;
     uint32_t j;
+    uint32_t kernel_memory_size;
 
     /* Get the first range that is free */
     for(i = 0; i < memory_map_size; ++i)
@@ -62,6 +66,12 @@ OS_RETURN_E init_paging(void)
     if(i == memory_map_size)
     {
         return OS_ERR_NO_MORE_FREE_MEM;
+    }
+
+    kernel_memory_size = KERNEL_MEMORY_KB_SIZE / KERNEL_PAGE_SIZE;
+    if(KERNEL_MEMORY_KB_SIZE % KERNEL_PAGE_SIZE != 0)
+    {
+        ++kernel_memory_size;
     }
 
     #ifdef DEBUG_MEM
@@ -82,8 +92,8 @@ OS_RETURN_E init_paging(void)
                           PG_DIR_FLAG_PAGE_NOT_PRESENT;
     }
 
-    /* Map the first 32MB of the kernel, ID mapped for the kernel */
-    for(i = 0; i < 8; ++i)
+    /* Map the first MB of the kernel, ID mapped for the kernel */
+    for(i = 0; i < kernel_memory_size; ++i)
     {
         for(j = 0; j < 1024; ++j)
         {
@@ -97,6 +107,22 @@ OS_RETURN_E init_paging(void)
                           PG_DIR_FLAG_PAGE_SUPER_ACCESS |
                           PG_DIR_FLAG_PAGE_READ_WRITE |
                           PG_DIR_FLAG_PAGE_PRESENT;
+    }
+
+    /* First page is not mapped (catch NULL pointers) */
+    kernel_page_tables[0][0] = PAGE_FLAG_SUPER_ACCESS |
+                               PAGE_FLAG_READ_WRITE |
+                               PAGE_FLAG_NOT_PRESENT;
+
+    /* Init next free frame */
+    next_free_frame = (uint8_t*)((kernel_memory_size * 1024) * 0x1000);
+
+    /* Check bounds */
+    if((uint32_t)next_free_frame < current_mem_range.base ||
+       (uint32_t)next_free_frame >= current_mem_range.limit)
+    {
+        kernel_error("Paging Out of Bounds: request=0x%08x, base=0x%08x, limit=0x%08x\n", next_free_frame, current_mem_range.base, current_mem_range.limit);
+        return OS_ERR_NO_MORE_FREE_MEM;
     }
 
     /* Set CR3 register */
@@ -202,10 +228,9 @@ OS_RETURN_E kernel_mmap(uint8_t* virt_addr, uint8_t* phys_addr,
     virt_addr = (uint8_t*)((uint32_t)virt_addr & 0xFFFFF000);
     phys_addr = (uint8_t*)((uint32_t)phys_addr & 0xFFFFF000);
 
+    #ifdef DEBUG_MEM
     kernel_serial_debug("Mapping (after align) 0x%08x, to 0x%08x (%d bytes)\n",
                         virt_addr, phys_addr, mapping_size);
-
-    #ifdef DEBUG_MEM
     virt_save = (uint32_t)virt_addr;
     #endif
 
