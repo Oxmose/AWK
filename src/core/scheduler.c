@@ -206,9 +206,6 @@ static void* idle_sys(void* args)
     /* Restore original screen color scheme */
     set_color_scheme(buffer);
 
-    (void)args;
-    (void)err;
-    (void)init_func;
     /* We create the init thread */
     err = create_thread(&init_thread, init_func,
                         KERNEL_HIGHEST_PRIORITY, "init", args);
@@ -350,7 +347,7 @@ static void thread_exit(void)
  */
 static void thread_wrapper(void)
 {
-    /* TODO STAT PROBE OR SOMETHING */
+    /* STAT PROBE OR SOMETHING */
     active_thread->start_time = get_current_uptime();
 
     if(active_thread->function == NULL)

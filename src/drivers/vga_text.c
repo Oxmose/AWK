@@ -22,6 +22,8 @@
 #include "../drivers/serial.h" /* serial_write */
 #include "graphic.h"            /* structures */
 
+#include "../debug.h"      /* kernel_serial_debug */
+
 /* Header file */
 #include "vga_text.h"
 

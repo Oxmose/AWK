@@ -68,8 +68,8 @@ void panic(cpu_state_t* cpu_state, uint32_t int_id, stack_state_t* stack_state)
 
     set_color_scheme(panic_scheme);
 
-    kernel_printf("#=============================    KERNEL PANIC    ============================# ");
-    kernel_printf("|                                                                             | ");
+    kernel_printf("#=============================    KERNEL PANIC    ============================#\n");
+    kernel_printf("|                                                                             |\n");
     kernel_printf("| Reason: ");
     switch(int_id)
     {
@@ -155,14 +155,14 @@ void panic(cpu_state_t* cpu_state, uint32_t int_id, stack_state_t* stack_state)
     __asm__ __volatile__("pop %eax");
 
 
-    kernel_printf("INT ID: 0x%02x                | ", int_id);
-    kernel_printf("| Instruction [EIP]: 0x%08x                   Error code: 0x%08x      | ", stack_state->eip, stack_state->error_code);
-    kernel_printf("|                                                                             | ");
-    kernel_printf("|================================= CPU STATE =================================| ");
-    kernel_printf("|                                                                             | ");
-    kernel_printf("| EAX: 0x%08x  |  EBX: 0x%08x  |  ECX: 0x%08x  |  EDX: 0x%08x | ", cpu_state->eax, cpu_state->ebx, cpu_state->ecx, cpu_state->edx);
-    kernel_printf("| ESI: 0x%08x  |  EDI: 0x%08x  |  EBP: 0x%08x  |  ESP: 0x%08x | ", cpu_state->esi, cpu_state->edi, cpu_state->ebp, cpu_state->esp);
-    kernel_printf("| CR0: 0x%08x  |  CR2: 0x%08x  |  CR3: 0x%08x  |  CR4: 0x%08x | ", CR0, CR2, CR3, CR4);
+    kernel_printf("INT ID: 0x%02x                |\n", int_id);
+    kernel_printf("| Instruction [EIP]: 0x%08x                   Error code: 0x%08x      |\n", stack_state->eip, stack_state->error_code);
+    kernel_printf("|                                                                             |\n");
+    kernel_printf("|================================= CPU STATE =================================|\n");
+    kernel_printf("|                                                                             |\n");
+    kernel_printf("| EAX: 0x%08x  |  EBX: 0x%08x  |  ECX: 0x%08x  |  EDX: 0x%08x |\n", cpu_state->eax, cpu_state->ebx, cpu_state->ecx, cpu_state->edx);
+    kernel_printf("| ESI: 0x%08x  |  EDI: 0x%08x  |  EBP: 0x%08x  |  ESP: 0x%08x |\n", cpu_state->esi, cpu_state->edi, cpu_state->ebp, cpu_state->esp);
+    kernel_printf("| CR0: 0x%08x  |  CR2: 0x%08x  |  CR3: 0x%08x  |  CR4: 0x%08x |\n", CR0, CR2, CR3, CR4);
     kernel_printf("|                                                                             |\n");
     kernel_printf("|============================= SEGMENT REGISTERS =============================|\n");
     kernel_printf("|                                                                             |\n");

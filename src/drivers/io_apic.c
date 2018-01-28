@@ -72,7 +72,9 @@ OS_RETURN_E init_io_apic(void)
     /* Map IO APIC registers address */
     err = kernel_mmap((uint8_t*)io_apic_base_addr,
                       (uint8_t*)io_apic_base_addr,
-                      sizeof(uint8_t));
+                      sizeof(uint8_t),
+                      PAGE_FLAG_SUPER_ACCESS | PAGE_FLAG_READ_WRITE,
+                      0);
     if(err != OS_NO_ERR)
     {
         return err;

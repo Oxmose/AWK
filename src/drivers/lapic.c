@@ -120,7 +120,9 @@ OS_RETURN_E init_lapic(void)
     /* Map Local APIC registers address */
     err = kernel_mmap((uint8_t*)lapic_base_addr,
                       (uint8_t*)lapic_base_addr,
-                      sizeof(uint8_t));
+                      sizeof(uint8_t),
+                      PAGE_FLAG_SUPER_ACCESS | PAGE_FLAG_READ_WRITE,
+                      0);
     if(err != OS_NO_ERR)
     {
         return err;

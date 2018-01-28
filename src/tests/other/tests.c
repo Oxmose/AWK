@@ -55,7 +55,7 @@ void *launch_tests(void*args)
         wait_thread(test_ths[i], NULL);
     }
     printf("\n");
-    printf("Test payload passed\n");
+    printf("[OK] Test payload passed\n");
 #endif
 
 #ifdef TEST_SEM
@@ -67,7 +67,7 @@ void *launch_tests(void*args)
     else
     {
 
-        printf(" Test semaphores passed\n");
+        printf("[OK] Test semaphores passed\n");
     }
 #endif
     printf("\n");
@@ -79,7 +79,7 @@ void *launch_tests(void*args)
     }
     else
     {
-        printf(" Test mutex passed\n");
+        printf("[OK] Test mutex passed\n");
     }
 #endif
     printf("\n");
@@ -91,7 +91,7 @@ void *launch_tests(void*args)
     }
     else
     {
-        printf(" Test multithread passed\n");
+        printf("[OK] Test multithread passed\n");
     }
 #endif
     printf("\n");

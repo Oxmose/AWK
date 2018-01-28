@@ -131,9 +131,6 @@ OS_RETURN_E init_kernel_interrupt(void)
     kernel_interrupt_handlers[SPURIOUS_INT_LINE].enabled = 1;
     kernel_interrupt_handlers[SPURIOUS_INT_LINE].handler = spurious_handler;
 
-    (void) io_apic_capable;
-    (void) lapic_capable;
-
     /* Get IO-APIC availability */
     io_apic_capable = acpi_get_io_apic_available();
 

@@ -68,4 +68,7 @@ SECTIONS
 
     /* End of kernel memory heap 32Mb = 16Mb */
     mem_heap_end = 0x2000000;
+
+    /* User/Kernel SPACE Memory start */
+    user_mem_start = mem_heap_end;
 }

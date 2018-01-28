@@ -205,7 +205,6 @@ typedef struct acpi_facs
 {
     acpi_header_t      header;
 
-    /* TODO */
 }  __attribute__((__packed__)) acpi_facs_t;
 
 /* DSDT content */
@@ -213,7 +212,6 @@ typedef struct acpi_dsdt
 {
     acpi_header_t      header;
 
-    /* TODO */
 }  __attribute__((__packed__)) acpi_dsdt_t;
 
 /* MADT content */

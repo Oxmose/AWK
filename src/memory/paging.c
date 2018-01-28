@@ -44,6 +44,13 @@ static uint8_t enabled;
  * FUNCTIONS
  ******************************************************************************/
 
+__inline__ static void invalidate_tlb(void)
+{
+    /* Invalidate the TLB */
+    __asm__ __volatile__("movl	%cr3,%eax");
+	__asm__ __volatile__("movl	%eax,%cr3");
+}
+
 OS_RETURN_E init_paging(void)
 {
     uint32_t i;
@@ -154,11 +161,12 @@ OS_RETURN_E enable_paging(void)
         return OS_NO_ERR;
     }
 
+    /* Enable paging and write protect */
     __asm__ __volatile__("push %eax");
     __asm__ __volatile__("push %ebp");
     __asm__ __volatile__("mov %esp, %ebp");
     __asm__ __volatile__("mov %cr0, %eax");
-    __asm__ __volatile__("or $0x80000000, %eax");
+    __asm__ __volatile__("or $0x80010000, %eax");
     __asm__ __volatile__("mov %eax, %cr0");
     __asm__ __volatile__("mov %ebp, %esp");
     __asm__ __volatile__("pop %ebp");
@@ -185,10 +193,11 @@ OS_RETURN_E disable_paging(void)
         return OS_NO_ERR;
     }
 
+    /* Disable paging and write protect */
     __asm__ __volatile__("push %ebp");
     __asm__ __volatile__("mov %esp, %ebp");
     __asm__ __volatile__("mov %cr0, %eax");
-    __asm__ __volatile__("and $0x7FFFFFFF, %eax");
+    __asm__ __volatile__("and $0x7FF7FFFF, %eax");
     __asm__ __volatile__("mov %eax, %cr0");
     __asm__ __volatile__("mov %ebp, %esp");
     __asm__ __volatile__("pop %ebp");
@@ -203,7 +212,9 @@ OS_RETURN_E disable_paging(void)
 }
 
 OS_RETURN_E kernel_mmap(uint8_t* virt_addr, uint8_t* phys_addr,
-                        const uint32_t mapping_size)
+                        const uint32_t mapping_size,
+                        const uint16_t flags,
+                        const uint16_t allow_remap)
 {
     uint32_t  pgdir_entry;
     uint32_t  pgtable_entry;
@@ -243,14 +254,15 @@ OS_RETURN_E kernel_mmap(uint8_t* virt_addr, uint8_t* phys_addr,
         pgtable_entry = (((uint32_t)virt_addr) >> 12) & 0x03FF;
 
         /* If page table not present createe it */
-        if((kernel_pgdir[pgdir_entry] & PG_DIR_FLAG_PAGE_PRESENT) != PG_DIR_FLAG_PAGE_PRESENT)
+        if((kernel_pgdir[pgdir_entry] & PG_DIR_FLAG_PAGE_PRESENT) !=
+           PG_DIR_FLAG_PAGE_PRESENT)
         {
             page_table = (uint32_t*)kernel_page_tables[pgdir_entry];
 
             for(i = 0; i < 1024; ++i)
             {
                 page_table[i] = PAGE_FLAG_SUPER_ACCESS |
-                                PAGE_FLAG_READ_WRITE |
+                                PAGE_FLAG_READ_ONLY |
                                 PAGE_FLAG_NOT_PRESENT;
             }
 
@@ -264,10 +276,23 @@ OS_RETURN_E kernel_mmap(uint8_t* virt_addr, uint8_t* phys_addr,
         /* Map the address */
         page_table = (uint32_t*)kernel_page_tables[pgdir_entry];
         page_entry = &page_table[pgtable_entry];
+
+        /* Check if already mapped */
+        if((*page_entry & PAGE_FLAG_PRESENT) == PAGE_FLAG_PRESENT &&
+           allow_remap == 0)
+        {
+            #ifdef DEBUG_MEM
+            kernel_serial_debug("Mapping (after align) 0x%08x, to 0x%08x (%d bytes) Already mapped)\n",
+                                virt_addr, phys_addr, mapping_size);
+            virt_save = (uint32_t)virt_addr;
+            #endif
+
+            return OS_ERR_MAPPING_ALREADY_EXISTS;
+        }
+
         *page_entry = (uint32_t)phys_addr |
-                          PAGE_FLAG_SUPER_ACCESS |
-                          PAGE_FLAG_READ_WRITE |
-                          PAGE_FLAG_PRESENT;
+                      flags |
+                      PAGE_FLAG_PRESENT;
 
         virt_addr += KERNEL_PAGE_SIZE;
         phys_addr += KERNEL_PAGE_SIZE;
@@ -283,9 +308,83 @@ OS_RETURN_E kernel_mmap(uint8_t* virt_addr, uint8_t* phys_addr,
                         ((uint32_t*)kernel_page_tables[pgdir_entry])[pgtable_entry]);
     #endif
 
-    /* Flush the TLB */
-    __asm__ __volatile__("movl	%cr3,%eax");
-	__asm__ __volatile__("movl	%eax,%cr3");
+    invalidate_tlb();
+
+    return OS_NO_ERR;
+}
+
+OS_RETURN_E kernel_munmap(uint8_t* virt_addr, const uint32_t mapping_size)
+{
+    uint32_t  pgdir_entry;
+    uint32_t  pgtable_entry;
+    uint32_t* page_table;
+    uint32_t* page_entry;
+    uint32_t  end_map;
+
+    #ifdef DEBUG_MEM
+    uint32_t virt_save;
+    #endif
+
+    /* Get end mapping addr */
+    end_map = (uint32_t)virt_addr + mapping_size;
+
+    #ifdef DEBUG_MEM
+    kernel_serial_debug("Unmapping (before align) 0x%08x (%d bytes)\n",
+                        virt_addr, mapping_size);
+    #endif
+
+    /* Align addr */
+    virt_addr = (uint8_t*)((uint32_t)virt_addr & 0xFFFFF000);
+
+    #ifdef DEBUG_MEM
+    kernel_serial_debug("Unmapping (after align) 0x%08x (%d bytes)\n",
+                        virt_addr, mapping_size);
+    virt_save = (uint32_t)virt_addr;
+    #endif
+
+    /* Map all pages needed */
+    while((uint32_t)virt_addr < end_map)
+    {
+        /* Get PGDIR entry */
+        pgdir_entry = (((uint32_t)virt_addr) >> 22);
+        /* Get PGTABLE entry */
+        pgtable_entry = (((uint32_t)virt_addr) >> 12) & 0x03FF;
+
+        /* If page table not present createe it */
+        if((kernel_pgdir[pgdir_entry] & PG_DIR_FLAG_PAGE_PRESENT) !=
+           PG_DIR_FLAG_PAGE_PRESENT)
+        {
+            return OS_ERR_MEMORY_NOT_MAPPED;
+        }
+
+        /* Map the address */
+        page_table = (uint32_t*)kernel_page_tables[pgdir_entry];
+        page_entry = &page_table[pgtable_entry];
+
+        if((*page_entry & PAGE_FLAG_PRESENT) !=
+           PAGE_FLAG_PRESENT)
+        {
+            return OS_ERR_MEMORY_NOT_MAPPED;
+        }
+
+        *page_entry = PAGE_FLAG_SUPER_ACCESS |
+                      PAGE_FLAG_READ_ONLY |
+                      PAGE_FLAG_NOT_PRESENT;
+
+        virt_addr += KERNEL_PAGE_SIZE;
+    }
+
+    #ifdef DEBUG_MEM
+    /* Get PGDIR entry */
+    pgdir_entry = (((uint32_t)virt_save) >> 22);
+    /* Get PGTABLE entry */
+    pgtable_entry = (((uint32_t)virt_save) >> 12) & 0x03FF;
+
+    kernel_serial_debug("Unmapped 0x%08x -> 0x%08x\n", virt_save,
+                        ((uint32_t*)kernel_page_tables[pgdir_entry])[pgtable_entry]);
+    #endif
+
+    invalidate_tlb();
 
     return OS_NO_ERR;
 }

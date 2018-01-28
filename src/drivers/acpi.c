@@ -98,7 +98,9 @@ static OS_RETURN_E acpi_parse_apic(acpi_madt_t* madt_ptr)
     /* Mapping MADP */
     err = kernel_mmap((uint8_t*)madt_ptr,
                       (uint8_t*)madt_ptr,
-                      sizeof(acpi_madt_t));
+                      sizeof(acpi_madt_t),
+                      PAGE_FLAG_SUPER_ACCESS | PAGE_FLAG_READ_ONLY,
+                      1);
     if(err != OS_NO_ERR)
     {
         return err;
@@ -211,7 +213,9 @@ static OS_RETURN_E acpi_parse_facs(acpi_facs_t* facs_ptr)
     /* Mapping FACS */
     err = kernel_mmap((uint8_t*)facs_ptr,
                       (uint8_t*)facs_ptr,
-                      sizeof(acpi_facs_t));
+                      sizeof(acpi_facs_t),
+                      PAGE_FLAG_SUPER_ACCESS | PAGE_FLAG_READ_ONLY,
+                      1);
     if(err != OS_NO_ERR)
     {
         return err;
@@ -251,7 +255,9 @@ static OS_RETURN_E acpi_parse_dsdt(acpi_dsdt_t* dsdt_ptr)
     /* Mapping DSDT */
     err = kernel_mmap((uint8_t*)dsdt_ptr,
                       (uint8_t*)dsdt_ptr,
-                      sizeof(acpi_dsdt_t));
+                      sizeof(acpi_dsdt_t),
+                      PAGE_FLAG_SUPER_ACCESS | PAGE_FLAG_READ_ONLY,
+                      1);
     if(err != OS_NO_ERR)
     {
         return err;
@@ -263,7 +269,9 @@ static OS_RETURN_E acpi_parse_dsdt(acpi_dsdt_t* dsdt_ptr)
     /* Mapping DSDT */
     err = kernel_mmap((uint8_t*)dsdt_ptr,
                       (uint8_t*)dsdt_ptr,
-                      dsdt_ptr->header.length);
+                      dsdt_ptr->header.length,
+                      PAGE_FLAG_SUPER_ACCESS | PAGE_FLAG_READ_ONLY,
+                      1);
     if(err != OS_NO_ERR)
     {
         return err;
@@ -323,7 +331,9 @@ static OS_RETURN_E acpi_parse_fadt(acpi_fadt_t* fadt_ptr)
     /* Mapping FADT */
     err = kernel_mmap((uint8_t*)fadt_ptr,
                       (uint8_t*)fadt_ptr,
-                      sizeof(acpi_fadt_t));
+                      sizeof(acpi_fadt_t),
+                      PAGE_FLAG_SUPER_ACCESS | PAGE_FLAG_READ_ONLY,
+                      1);
     if(err != OS_NO_ERR)
     {
         return err;
@@ -463,7 +473,9 @@ static OS_RETURN_E acpi_parse_rsdt(rsdt_descriptor_t* rsdt_ptr)
     /* Mapping RSDT */
     err = kernel_mmap((uint8_t*)rsdt_ptr,
                       (uint8_t*)rsdt_ptr,
-                      sizeof(rsdt_descriptor_t));
+                      sizeof(rsdt_descriptor_t),
+                      PAGE_FLAG_SUPER_ACCESS | PAGE_FLAG_READ_ONLY,
+                      1);
     if(err != OS_NO_ERR)
     {
         return err;
@@ -544,7 +556,9 @@ static OS_RETURN_E acpi_parse_xsdt(xsdt_descriptor_t* xsdt_ptr)
     /* Mapping XSDT */
     err = kernel_mmap((uint8_t*)xsdt_ptr,
                       (uint8_t*)xsdt_ptr,
-                      sizeof(xsdt_descriptor_t));
+                      sizeof(xsdt_descriptor_t),
+                      PAGE_FLAG_SUPER_ACCESS | PAGE_FLAG_READ_ONLY,
+                      1);
     if(err != OS_NO_ERR)
     {
         return err;

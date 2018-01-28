@@ -93,7 +93,7 @@ static const uint32_t vga_color_table[16] = {
      while(double_buffering == 1)
      {
          memcpy((uint32_t*)current_mode->framebuffer, vesa_buffer, vesa_buffer_size);
-         //sleep(10);
+         sleep(10);
      }
 
      #ifdef DEBUG_VESA
@@ -605,6 +605,19 @@ OS_RETURN_E set_vesa_mode(const vesa_mode_info_t mode)
         return OS_ERR_VESA_MODE_NOT_SUPPORTED;
     }
 
+    /* If current mode exists, unmap the framebuffer */
+    if(current_mode != NULL)
+    {
+        mmap_size = current_mode->width * current_mode->height;
+        bpp_size = (current_mode->bpp | 7) >> 3;
+        mmap_size *= bpp_size;
+        err = kernel_munmap((uint8_t*)current_mode->framebuffer, mmap_size);
+        if(err != OS_NO_ERR)
+        {
+            return err;
+        }
+    }
+
     current_mode = cursor;
 
     /* Set the last collumn array */
@@ -624,18 +637,15 @@ OS_RETURN_E set_vesa_mode(const vesa_mode_info_t mode)
     mmap_size = current_mode->width * current_mode->height;
     bpp_size = (current_mode->bpp | 7) >> 3;
     mmap_size *= bpp_size;
-
-    /* TODO UNMAP PREV */
-
     err = kernel_mmap((uint8_t*)current_mode->framebuffer,
                       (uint8_t*)current_mode->framebuffer,
-                      mmap_size);
+                      mmap_size,
+                      PAGE_FLAG_SUPER_ACCESS | PAGE_FLAG_READ_WRITE,
+                      0);
     if(err != OS_NO_ERR)
     {
         return err;
     }
-
-    *((uint32_t*)current_mode->framebuffer) = 0xFF00FF00;
 
     /* Tell generic driver we loaded a VESA mode, ID mapped */
     set_selected_driver(VESA_DRIVER);
@@ -923,6 +933,7 @@ OS_RETURN_E vesa_restore_cursor(const cursor_t buffer)
  * @param direction The direction to whoch the console should be scrolled.
  * @param lines_count The number of lines to scroll.
  */
+ #include "../core/interrupts.h"
 void vesa_scroll(const SCROLL_DIRECTION_E direction,
                  const uint32_t lines_count)
 {
@@ -976,8 +987,6 @@ void vesa_scroll(const SCROLL_DIRECTION_E direction,
         }
         memset(src, 0, line_mem_size);
     }
-
-
 
     /* Replace cursor */
     vesa_put_cursor_at(current_mode->height - m - font_height, 0);
@@ -1142,6 +1151,8 @@ OS_RETURN_E vesa_switch_vga_text(void)
 {
     OS_RETURN_E     err;
     bios_int_regs_t regs;
+    uint32_t        mmap_size;
+    uint32_t        bpp_size;
 
     if(vesa_supported == 0)
     {
@@ -1160,7 +1171,15 @@ OS_RETURN_E vesa_switch_vga_text(void)
         return err;
     }
 
-    /* TODO UNMAP FRame buffer */
+    /* Unmap current framebuffer */
+    mmap_size = current_mode->width * current_mode->height;
+    bpp_size = (current_mode->bpp | 7) >> 3;
+    mmap_size *= bpp_size;
+    err = kernel_munmap((uint8_t*)current_mode->framebuffer, mmap_size);
+    if(err != OS_NO_ERR)
+    {
+        return err;
+    }
 
     if(last_columns != NULL)
     {

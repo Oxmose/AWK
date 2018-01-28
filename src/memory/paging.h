@@ -36,7 +36,6 @@
 #define PG_DIR_FLAG_PAGE_PRESENT        0x00000001
 #define PG_DIR_FLAG_PAGE_NOT_PRESENT    0x00000000
 
-
 #define PAGE_FLAG_GLOBAL                0x00000100
 #define PAGE_FLAG_DIRTY                 0x00000080
 #define PAGE_FLAG_ACCESSED              0x00000020
@@ -72,6 +71,10 @@ OS_RETURN_E enable_paging(void);
 OS_RETURN_E disable_paging(void);
 
 OS_RETURN_E kernel_mmap(uint8_t* virt_addr, uint8_t* phys_addr,
-                        const uint32_t mapping_size);
+                        const uint32_t mapping_size,
+                        const uint16_t flags,
+                        const uint16_t allow_remap);
+
+OS_RETURN_E kernel_munmap(uint8_t* virt_addr, const uint32_t mapping_size);
 
 #endif /* __PAGING_H_ */

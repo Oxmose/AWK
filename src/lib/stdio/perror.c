@@ -128,6 +128,12 @@ divide your request into mulstiple read/write");
         case OS_ERR_PAGING_NOT_INIT:
             printf("Paging has not been initialized");
             break;
+        case OS_ERR_MAPPING_ALREADY_EXISTS:
+            printf("Address already mapped to memory");
+            break;
+        case OS_ERR_MEMORY_NOT_MAPPED:
+            printf("Address is not mapped to memory");
+            break;
         default:
             printf("Unknown error");
     }
