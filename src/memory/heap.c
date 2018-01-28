@@ -11,10 +11,11 @@
  * Kernel heap allocators
  ******************************************************************************/
 
-#include "../lib/stdint.h" /* Generic int types */
-#include "../lib/stdlib.h" /* atoi */
-#include "../lib/string.h" /* memset */
-#include "../sync/lock.h"  /* spinlock */
+#include "../lib/stdint.h"          /* Generic int types */
+#include "../lib/stdlib.h"          /* atoi */
+#include "../lib/string.h"          /* memset */
+#include "../core/kernel_output.h"  /* kernel_success */
+#include "../sync/lock.h"           /* spinlock */
 
 /* Header file */
 #include "heap.h"
@@ -242,7 +243,7 @@ void setup_kheap(void)
     int32_t  n;
 
     void* mem = &mem_heap_start;
-    uint32_t size = &mem_heap_start - &mem_heap_end;
+    uint32_t size = &mem_heap_end - &mem_heap_start;
     int8_t *mem_start = (int8_t*)(((intptr_t)mem + ALIGN - 1) & (~(ALIGN - 1)));
     int8_t *mem_end = (int8_t*)(((intptr_t)mem + size) & (~(ALIGN - 1)));
 
@@ -275,7 +276,10 @@ void setup_kheap(void)
     LIST_PUSH(&free_chunk[n], second, free);
     mem_free = len - HEADER_SIZE;
     mem_meta = sizeof(mem_chunk_t) * 2 + HEADER_SIZE;
+
+    kernel_success("Kernel Heap Initialized at 0x%08x\n", mem_start);
 }
+
 void* kmalloc(uint32_t size)
 {
     int32_t n;
