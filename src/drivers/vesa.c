@@ -12,6 +12,7 @@
  ******************************************************************************/
 
 #include "../memory/heap.h"    /* kmalloc, kfree */
+#include "../memory/paging.h"  /* kernel_mmap */
 #include "../lib/stdint.h"     /* Generic int types */
 #include "../lib/stddef.h"     /* OS_RETURN_E */
 #include "../lib/string.h"     /* memmove, memset */
@@ -457,7 +458,6 @@ OS_RETURN_E text_vga_to_vesa(void)
     #endif
 
     err = set_vesa_mode(selected_mode);
-
     if(err != OS_NO_ERR)
     {
         return err;
@@ -552,6 +552,8 @@ OS_RETURN_E set_vesa_mode(const vesa_mode_info_t mode)
     uint32_t        last_columns_size;
     vesa_mode_t*    cursor;
     uint8_t         double_beffering_save;
+    uint32_t        mmap_size;
+    uint8_t         bpp_size;
     OS_RETURN_E     err;
 
     if(vesa_supported == 0)
@@ -619,7 +621,24 @@ OS_RETURN_E set_vesa_mode(const vesa_mode_info_t mode)
 
     current_mode = cursor;
 
-    /* Tell generic driver we loaded a VESA mode */
+    /* Map framebuffer in the kernel page table */
+    mmap_size = current_mode->width * current_mode->height;
+    bpp_size = (current_mode->bpp | 7) >> 3;
+    mmap_size *= bpp_size;
+
+    /* TODO UNMAP PREV */
+
+    err = kernel_mmap((uint8_t*)current_mode->framebuffer,
+                      (uint8_t*)current_mode->framebuffer,
+                      mmap_size);
+    if(err != OS_NO_ERR)
+    {
+        return err;
+    }
+
+    *((uint32_t*)current_mode->framebuffer) = 0xFF00FF00;
+
+    /* Tell generic driver we loaded a VESA mode, ID mapped */
     set_selected_driver(VESA_DRIVER);
 
     if(double_beffering_save == 1)
@@ -978,6 +997,7 @@ void vesa_scroll(const SCROLL_DIRECTION_E direction,
 
 void vesa_set_color_scheme(const colorscheme_t color_scheme)
 {
+    screen_scheme.vga_color = color_scheme.vga_color;
     screen_scheme.foreground = color_scheme.foreground;
     screen_scheme.background = color_scheme.background;
 }
@@ -990,6 +1010,7 @@ OS_RETURN_E vesa_save_color_scheme(colorscheme_t* buffer)
     }
 
     /* Save color scheme into buffer */
+    buffer->vga_color = screen_scheme.vga_color;
     buffer->foreground = screen_scheme.foreground;
     buffer->background = screen_scheme.background;
 
@@ -1116,4 +1137,43 @@ void vesa_fill_screen(uint32_t* pointer)
            current_mode->width *
            current_mode->height *
            (current_mode->bpp / 8));
+}
+
+OS_RETURN_E vesa_switch_vga_text(void)
+{
+    OS_RETURN_E     err;
+    bios_int_regs_t regs;
+
+    if(vesa_supported == 0)
+    {
+        return OS_ERR_VESA_NOT_SUPPORTED;
+    }
+
+    if(current_mode == NULL)
+    {
+        return OS_ERR_VESA_NOT_INIT;
+    }
+
+    /* Disabled double buffering */
+    err = vesa_disable_double_buffering();
+    if(err != OS_NO_ERR)
+    {
+        return err;
+    }
+
+    /* TODO UNMAP FRame buffer */
+
+    if(last_columns != NULL)
+    {
+        kfree(last_columns);
+    }
+
+    /* Do the switch */
+    regs.ax = BIOS_CALL_SET_VGA_TEXT_MODE;
+    bios_int(BIOS_INTERRUPT_VGA, &regs);
+
+    /* Tell generic driver we loaded a VGA mode */
+    set_selected_driver(VGA_DRIVER);
+
+    return OS_NO_ERR;
 }

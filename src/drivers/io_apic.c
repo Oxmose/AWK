@@ -12,6 +12,7 @@
  *
  ******************************************************************************/
 
+#include "../memory/paging.h"   /* kernel_mmap */
 #include "../lib/stdint.h"      /* Generic int types */
 #include "../lib/stddef.h"      /* OS_RETURN_E, NULL */
 #include "../core/interrupts.h" /* INT_IRQ_OFFSET */
@@ -67,6 +68,15 @@ OS_RETURN_E init_io_apic(void)
 
     /* Get IO APIC base address */
     io_apic_base_addr = acpi_get_io_apic_address();
+
+    /* Map IO APIC registers address */
+    err = kernel_mmap((uint8_t*)io_apic_base_addr,
+                      (uint8_t*)io_apic_base_addr,
+                      sizeof(uint8_t));
+    if(err != OS_NO_ERR)
+    {
+        return err;
+    }
 
     /* Maximum entry count */
     read_count = io_apic_read(IOAPICVER);

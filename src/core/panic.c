@@ -12,10 +12,12 @@
  * and the interrupt ID and cause.
  ******************************************************************************/
 
-#include "interrupts.h"    /* cpu_state_t, stack_state_t, PANIC_INT_LINE */
-#include "kernel_output.h" /* kernel_printf */
-#include "../lib/stdint.h" /* Generic int types */
-#include "../cpu/cpu.h"    /* hlt cli */
+#include "interrupts.h"          /* cpu_state_t, stack_state_t, PANIC_INT_LINE */
+#include "kernel_output.h"       /* kernel_printf */
+#include "../lib/stdint.h"       /* Generic int types */
+#include "../cpu/cpu.h"          /* hlt cli */
+#include "../drivers/vesa.h"     /* vesa_switch_vga_text */
+#include "../drivers/graphic.h"  /* set_color_scheme */
 
 /* Header file */
 #include "panic.h"
@@ -50,9 +52,24 @@ void panic(cpu_state_t* cpu_state, uint32_t int_id, stack_state_t* stack_state)
     int8_t vif_f = (stack_state->eflags & 0x8000) >> 19;
     int8_t vip_f = (stack_state->eflags & 0x100000) >> 20;
 
+    uint32_t CR0;
+    uint32_t CR2;
+    uint32_t CR3;
+    uint32_t CR4;
 
-    kernel_printf("#=============================      OS PANIC      ============================#\n");
-    kernel_printf("|                                                                             |\n");
+    colorscheme_t panic_scheme;
+
+    /* Fall back to VGA text display */
+    vesa_switch_vga_text();
+
+    panic_scheme.background = BG_RED;
+    panic_scheme.foreground = FG_WHITE;
+    panic_scheme.vga_color  = 1;
+
+    set_color_scheme(panic_scheme);
+
+    kernel_printf("#=============================    KERNEL PANIC    ============================# ");
+    kernel_printf("|                                                                             | ");
     kernel_printf("| Reason: ");
     switch(int_id)
     {
@@ -125,14 +142,27 @@ void panic(cpu_state_t* cpu_state, uint32_t int_id, stack_state_t* stack_state)
         default:
             kernel_printf("Unknown                                 ");
     }
-    kernel_printf("INT ID: 0x%02x                |\n", int_id);
-    kernel_printf("|                                                                             |\n");
-    kernel_printf("| Instruction [EIP]: 0x%08x                                               |\n", stack_state->eip);
-    kernel_printf("|                                                                             |\n");
-    kernel_printf("|================================= CPU STATE =================================|\n");
-    kernel_printf("|                                                                             |\n");
-    kernel_printf("| EAX: 0x%08x  |  EBX: 0x%08x  |  ECX: 0x%08x  |  EDX: 0x%08x |\n", cpu_state->eax, cpu_state->ebx, cpu_state->ecx, cpu_state->edx);
-    kernel_printf("| ESI: 0x%08x  |  EDI: 0x%08x  |  EBP: 0x%08x  |  ESP: 0x%08x |\n", cpu_state->esi, cpu_state->edi, cpu_state->ebp, cpu_state->esp);
+
+    __asm__ __volatile__("push %eax");
+    __asm__ __volatile__("movl %cr0, %eax");
+    __asm__ __volatile__("movl %%eax, %0" : "=rm"(CR0));
+    __asm__ __volatile__("movl %cr2, %eax");
+    __asm__ __volatile__("movl %%eax, %0" : "=rm"(CR2));
+    __asm__ __volatile__("movl %cr3, %eax");
+    __asm__ __volatile__("movl %%eax, %0" : "=rm"(CR3));
+    __asm__ __volatile__("movl %cr4, %eax");
+    __asm__ __volatile__("movl %%eax, %0" : "=rm"(CR4));
+    __asm__ __volatile__("pop %eax");
+
+
+    kernel_printf("INT ID: 0x%02x                | ", int_id);
+    kernel_printf("| Instruction [EIP]: 0x%08x                   Error code: 0x%08x      | ", stack_state->eip, stack_state->error_code);
+    kernel_printf("|                                                                             | ");
+    kernel_printf("|================================= CPU STATE =================================| ");
+    kernel_printf("|                                                                             | ");
+    kernel_printf("| EAX: 0x%08x  |  EBX: 0x%08x  |  ECX: 0x%08x  |  EDX: 0x%08x | ", cpu_state->eax, cpu_state->ebx, cpu_state->ecx, cpu_state->edx);
+    kernel_printf("| ESI: 0x%08x  |  EDI: 0x%08x  |  EBP: 0x%08x  |  ESP: 0x%08x | ", cpu_state->esi, cpu_state->edi, cpu_state->ebp, cpu_state->esp);
+    kernel_printf("| CR0: 0x%08x  |  CR2: 0x%08x  |  CR3: 0x%08x  |  CR4: 0x%08x | ", CR0, CR2, CR3, CR4);
     kernel_printf("|                                                                             |\n");
     kernel_printf("|============================= SEGMENT REGISTERS =============================|\n");
     kernel_printf("|                                                                             |\n");
@@ -144,6 +174,7 @@ void panic(cpu_state_t* cpu_state, uint32_t int_id, stack_state_t* stack_state)
     kernel_printf("| CF: %d  |  PF: %d  |  AF: %d  |  ZF: %d  |  SF: %d  |  TF: %d  |  IF: %d  |  DF: %d |\n", cf_f, pf_f, af_f, zf_f, sf_f, tf_f, if_f, df_f);
     kernel_printf("| OF: %d  |  NT: %d  |  RF: %d  |  VM: %d  |  AC: %d  |  ID: %d                     |\n", of_f, nt_f, rf_f, vm_f, ac_f, id_f);
     kernel_printf("| IOPL: %d  |  VIF: %d  |  VIP: %d                                               |\n", (iopl0_f | iopl1_f << 1), vif_f, vip_f);
+    kernel_printf("|                                                                             |\n");
     kernel_printf("|                                                                             |\n");
     kernel_printf("|                         LET'S HOPE IT WON'T EXPLODE                         |\n");
     kernel_printf("#=============================================================================#");

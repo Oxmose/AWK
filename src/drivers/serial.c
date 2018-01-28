@@ -114,7 +114,7 @@ OS_RETURN_E init_serial(void)
         outb(0x00, SERIAL_DATA_PORT_2(com));    // Disable all interrupts
 
         /* Init baud rate */
-        err = set_baudrate(BAUDRATE_38400, com);
+        err = set_baudrate(BAUDRATE_115200, com);
         if(err != OS_NO_ERR)
         {
             return err;
@@ -169,8 +169,8 @@ void serial_write(const uint32_t port, const uint8_t data)
         outb(data, port);
     }
 
-   while((SERIAL_LINE_STATUS_PORT(port) & 0x20) == 0)
-   {}
+    while((SERIAL_LINE_STATUS_PORT(port) & 0x20) == 0)
+    {}
 }
 
 void serial_put_string(const char* string)

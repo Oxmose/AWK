@@ -23,10 +23,13 @@
  ******************************************************************************/
 
 #define BIOS_INTERRUPT_VESA 0x10
+#define BIOS_INTERRUPT_VGA  0x10
 
 #define BIOS_CALL_GET_VESA_INFO 0x4F00
 #define BIOS_CALL_GET_VESA_MODE 0x4F01
 #define BIOS_CALL_SET_VESA_MODE 0x4F02
+
+#define BIOS_CALL_SET_VGA_TEXT_MODE 0x03
 
 #define VESA_FLAG_LINEAR_FB  0x90
 #define VESA_FLAG_LFB_ENABLE 0x4000
@@ -321,6 +324,17 @@ OS_RETURN_E vesa_disable_double_buffering(void);
  */
 OS_RETURN_E vesa_enable_double_buffering(void);
 
+/* Fill the entire screen with the content of the buffer given as parameter.
+ * The buffer should be se size of the video buffer.
+ *
+ * @param pointer The pointer to the buffer to copy to the video memory.
+ */
 void vesa_fill_screen(uint32_t* pointer);
+
+/* Switch to VGA 80x25 text mode.
+ *
+ * @returns The error or success state.
+ */
+OS_RETURN_E vesa_switch_vga_text(void);
 
 #endif /* __VESA_H_ */

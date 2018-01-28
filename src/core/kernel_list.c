@@ -35,6 +35,7 @@
 
      /* Create new node */
      new_node = kmalloc(sizeof(kernel_list_node_t));
+
      if(new_node == NULL)
      {
          if(error != NULL)

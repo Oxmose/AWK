@@ -125,6 +125,9 @@ divide your request into mulstiple read/write");
         case OS_ERR_NO_MORE_FREE_MEM:
             printf("No more free memory in the system");
             break;
+        case OS_ERR_PAGING_NOT_INIT:
+            printf("Paging has not been initialized");
+            break;
         default:
             printf("Unknown error");
     }

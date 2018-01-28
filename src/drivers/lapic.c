@@ -12,6 +12,7 @@
  *
  ******************************************************************************/
 
+#include "../memory/paging.h"   /* kernel_mmap */
 #include "../lib/stdint.h"       /* Generic int types */
 #include "../lib/stddef.h"       /* OS_RETURN_E */
 #include "../core/interrupts.h"  /* SPURIOUS_INTERRUPT_LINE,
@@ -111,8 +112,19 @@ static void lapic_init_pit_handler(cpu_state_t* cpu_state, uint32_t int_id,
 
 OS_RETURN_E init_lapic(void)
 {
+    OS_RETURN_E err;
+
     /* Get Local APIC base address */
     lapic_base_addr = get_lapic_addr();
+
+    /* Map Local APIC registers address */
+    err = kernel_mmap((uint8_t*)lapic_base_addr,
+                      (uint8_t*)lapic_base_addr,
+                      sizeof(uint8_t));
+    if(err != OS_NO_ERR)
+    {
+        return err;
+    }
 
     /* Enable all interrupts */
     lapic_write(LAPIC_TPR, 0);

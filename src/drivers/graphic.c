@@ -121,8 +121,8 @@ void set_color_scheme(colorscheme_t color_scheme)
 	{
 		if(color_scheme.vga_color == 1)
 		{
-			color_scheme.foreground = vga_color_table[color_scheme.foreground];
-			color_scheme.background = vga_color_table[color_scheme.background];
+			color_scheme.foreground = vga_color_table[color_scheme.foreground & 0xFF];
+			color_scheme.background = vga_color_table[color_scheme.background & 0xFF];
 		}
 		vesa_set_color_scheme(color_scheme);
 	}

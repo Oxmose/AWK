@@ -16,6 +16,7 @@
 #include "../lib/string.h"         /* memcpy */
 #include "../cpu/cpu.h"            /* MAX_CPU_COUNT */
 #include "../core/kernel_output.h" /* kernel_error */
+#include "../memory/paging.h"      /* kernel_mmap */
 
 #include "../debug.h"              /* DEBUG */
 
@@ -82,6 +83,7 @@ static OS_RETURN_E acpi_parse_apic(acpi_madt_t* madt_ptr)
     uint8_t*       madt_limit;
     uint8_t        type;
     apic_header_t* header;
+    OS_RETURN_E    err;
 
     if(madt_ptr == NULL)
     {
@@ -91,6 +93,16 @@ static OS_RETURN_E acpi_parse_apic(acpi_madt_t* madt_ptr)
     #ifdef DEBUG_ACPI
     kernel_serial_debug("Parsing MADT at 0x%08x\n", (uint32_t)madt_ptr);
     #endif
+
+
+    /* Mapping MADP */
+    err = kernel_mmap((uint8_t*)madt_ptr,
+                      (uint8_t*)madt_ptr,
+                      sizeof(acpi_madt_t));
+    if(err != OS_NO_ERR)
+    {
+        return err;
+    }
 
     /* Verify checksum */
     sum = 0;
@@ -185,6 +197,8 @@ static OS_RETURN_E acpi_parse_apic(acpi_madt_t* madt_ptr)
  */
 static OS_RETURN_E acpi_parse_facs(acpi_facs_t* facs_ptr)
 {
+    OS_RETURN_E err;
+
     if(facs_ptr == NULL)
     {
         return OS_ERR_NULL_POINTER;
@@ -193,6 +207,15 @@ static OS_RETURN_E acpi_parse_facs(acpi_facs_t* facs_ptr)
     #ifdef DEBUG_ACPI
     kernel_serial_debug("Parsing FACS at 0x%08x\n", (uint32_t)facs_ptr);
     #endif
+
+    /* Mapping FACS */
+    err = kernel_mmap((uint8_t*)facs_ptr,
+                      (uint8_t*)facs_ptr,
+                      sizeof(acpi_facs_t));
+    if(err != OS_NO_ERR)
+    {
+        return err;
+    }
 
     if(*((uint32_t*)facs_ptr->header.signature) != ACPI_FACS_SIG)
     {
@@ -212,8 +235,9 @@ static OS_RETURN_E acpi_parse_facs(acpi_facs_t* facs_ptr)
  */
 static OS_RETURN_E acpi_parse_dsdt(acpi_dsdt_t* dsdt_ptr)
 {
-    int32_t  sum;
-    uint32_t i;
+    int32_t     sum;
+    uint32_t    i;
+    OS_RETURN_E err;
 
     if(dsdt_ptr == NULL)
     {
@@ -224,13 +248,42 @@ static OS_RETURN_E acpi_parse_dsdt(acpi_dsdt_t* dsdt_ptr)
     kernel_serial_debug("Parsing DSDT at 0x%08x\n", (uint32_t)dsdt_ptr);
     #endif
 
+    /* Mapping DSDT */
+    err = kernel_mmap((uint8_t*)dsdt_ptr,
+                      (uint8_t*)dsdt_ptr,
+                      sizeof(acpi_dsdt_t));
+    if(err != OS_NO_ERR)
+    {
+        return err;
+    }
+
     /* Verify checksum */
     sum = 0;
+
+    kernel_serial_debug("DSDT Length \n");
+
+
+    #ifdef DEBUG_ACPI
+    kernel_serial_debug("DSDT Length %d\n", dsdt_ptr->header.length);
+    #endif
+
+    /* Mapping DSDT */
+    err = kernel_mmap((uint8_t*)dsdt_ptr,
+                      (uint8_t*)dsdt_ptr,
+                      dsdt_ptr->header.length);
+    if(err != OS_NO_ERR)
+    {
+        return err;
+    }
 
     for(i = 0; i < dsdt_ptr->header.length; ++i)
     {
         sum += ((uint8_t*)dsdt_ptr)[i];
     }
+
+    #ifdef DEBUG_ACPI
+    kernel_serial_debug("Parsing END DSDT at 0x%08x\n", (uint32_t)dsdt_ptr);
+    #endif
 
     if((sum & 0xFF) != 0)
     {
@@ -243,6 +296,10 @@ static OS_RETURN_E acpi_parse_dsdt(acpi_dsdt_t* dsdt_ptr)
         kernel_error("DSDT Signature comparison failed\n");
         return OS_ERR_CHECKSUM_FAILED;
     }
+
+    #ifdef DEBUG_ACPI
+    kernel_serial_debug("Parsing END DSDT at 0x%08x\n", (uint32_t)dsdt_ptr);
+    #endif
 
     return OS_NO_ERR;
 }
@@ -269,6 +326,15 @@ static OS_RETURN_E acpi_parse_fadt(acpi_fadt_t* fadt_ptr)
     #ifdef DEBUG_ACPI
     kernel_serial_debug("Parsing FADT at 0x%08x\n", (uint32_t)fadt_ptr);
     #endif
+
+    /* Mapping FADT */
+    err = kernel_mmap((uint8_t*)fadt_ptr,
+                      (uint8_t*)fadt_ptr,
+                      sizeof(acpi_fadt_t));
+    if(err != OS_NO_ERR)
+    {
+        return err;
+    }
 
     /* Verify checksum */
     sum = 0;
@@ -401,6 +467,15 @@ static OS_RETURN_E acpi_parse_rsdt(rsdt_descriptor_t* rsdt_ptr)
     kernel_serial_debug("Parsing RSDT at 0x%08x\n", (uint32_t)rsdt_ptr);
     #endif
 
+    /* Mapping RSDT */
+    err = kernel_mmap((uint8_t*)rsdt_ptr,
+                      (uint8_t*)rsdt_ptr,
+                      sizeof(rsdt_descriptor_t));
+    if(err != OS_NO_ERR)
+    {
+        return err;
+    }
+
     /* Verify checksum */
     sum = 0;
 
@@ -428,6 +503,11 @@ static OS_RETURN_E acpi_parse_rsdt(rsdt_descriptor_t* rsdt_ptr)
     while(range_begin < range_end)
     {
         address = *range_begin;
+
+        #ifdef DEBUG_ACPI
+        kernel_serial_debug("Parsing SDT at 0x%08x\n", (uint32_t)address);
+        #endif
+
         err = acpi_parse_dt((acpi_header_t*)address);
 
         if(err != OS_NO_ERR)
@@ -468,6 +548,15 @@ static OS_RETURN_E acpi_parse_xsdt(xsdt_descriptor_t* xsdt_ptr)
     kernel_serial_debug("Parsing XSDT at 0x%08x\n", (uint32_t)xsdt_ptr);
     #endif
 
+    /* Mapping XSDT */
+    err = kernel_mmap((uint8_t*)xsdt_ptr,
+                      (uint8_t*)xsdt_ptr,
+                      sizeof(xsdt_descriptor_t));
+    if(err != OS_NO_ERR)
+    {
+        return err;
+    }
+
     /* Verify checksum */
     sum = 0;
 
@@ -495,6 +584,11 @@ static OS_RETURN_E acpi_parse_xsdt(xsdt_descriptor_t* xsdt_ptr)
     while(range_begin < range_end)
     {
         address = (uint32_t)*range_begin;
+
+        #ifdef DEBUG_ACPI
+        kernel_serial_debug("Parsing SDT at 0x%08x\n", (uint32_t)address);
+        #endif
+
         err = acpi_parse_dt((acpi_header_t*)address);
 
         if(err != OS_NO_ERR)

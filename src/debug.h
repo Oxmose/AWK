@@ -35,7 +35,7 @@
 //#define DEBUG_MOUSE
 //#define DEBUG_MUTEX
 //#define DEBUG_SEM
-#define DEBUG_MEM
+//define DEBUG_MEM
 
 #endif /* DEBUG */
 

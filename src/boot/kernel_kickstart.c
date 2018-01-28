@@ -76,6 +76,7 @@ void kernel_kickstart(void)
     }
     memory_map_size = i - 1;
 
+    kernel_info("Memory map: \n");
     for(i = 0; i < memory_map_size; ++i)
     {
         kernel_info("Base 0x%08x, Limit 0x%08x, Length %uKB, Type %d\n",
@@ -84,6 +85,10 @@ void kernel_kickstart(void)
                     (memory_map_data[i].limit - memory_map_data[i].base) / 1024,
                     memory_map_data[i].type);
     }
+
+
+    extern uint32_t _end;
+    kernel_serial_debug("Kernel static memory ends 0x%08x \n", &_end);
 
     /* Init paging */
     err = init_paging();
@@ -338,6 +343,8 @@ void kernel_kickstart(void)
 #ifdef TESTS
     //test_ata();
 #endif
+
+    kernel_serial_debug("END 0x%08x \n", &_end);
 
     /* Init Scheduler */
     err = init_scheduler();
