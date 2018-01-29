@@ -645,6 +645,10 @@ static void format_idt_entry(volatile uint64_t* entry,
 
 void setup_gdt(void)
 {
+    /************************************
+     * KERNEL GDT ENTRIES
+     ***********************************/
+
     /* Set the kernel code descriptor */
     uint32_t kernel_code_seg_flags = GDT_FLAG_GRANULARITY_4K |
                                      GDT_FLAG_32_BIT_SEGMENT |
@@ -687,6 +691,52 @@ void setup_gdt(void)
     uint32_t kernel_data_16_seg_type =  GDT_TYPE_WRITABLE |
                                         GDT_TYPE_GROW_DOWN;
 
+    /************************************
+     * USER GDT ENTRIES
+     ***********************************/
+
+    /* Set the user code descriptor */
+    uint32_t user_code_seg_flags = GDT_FLAG_GRANULARITY_4K |
+                                   GDT_FLAG_32_BIT_SEGMENT |
+                                   GDT_FLAG_PL3 |
+                                   GDT_FLAG_SEGMENT_PRESENT |
+                                   GDT_FLAG_CODE_TYPE;
+
+    uint32_t user_code_seg_type =  GDT_TYPE_EXECUTABLE |
+                                   GDT_TYPE_READABLE |
+                                   GDT_TYPE_PROTECTED;
+
+    /* Set the user data descriptor */
+    uint32_t user_data_seg_flags = GDT_FLAG_GRANULARITY_4K |
+                                   GDT_FLAG_32_BIT_SEGMENT |
+                                   GDT_FLAG_PL3 |
+                                   GDT_FLAG_SEGMENT_PRESENT |
+                                   GDT_FLAG_DATA_TYPE;
+
+    uint32_t user_data_seg_type =  GDT_TYPE_WRITABLE |
+                                   GDT_TYPE_GROW_DOWN;
+
+    /* Set the user 16 bits code descriptor */
+    uint32_t user_code_16_seg_flags = GDT_FLAG_GRANULARITY_4K |
+                                      GDT_FLAG_16_BIT_SEGMENT |
+                                      GDT_FLAG_PL3 |
+                                      GDT_FLAG_SEGMENT_PRESENT |
+                                      GDT_FLAG_CODE_TYPE;
+
+    uint32_t user_code_16_seg_type =  GDT_TYPE_EXECUTABLE |
+                                      GDT_TYPE_READABLE |
+                                      GDT_TYPE_PROTECTED;
+
+    /* Set the user 16 bits data descriptor */
+    uint32_t user_data_16_seg_flags = GDT_FLAG_GRANULARITY_4K |
+                                      GDT_FLAG_16_BIT_SEGMENT |
+                                      GDT_FLAG_PL3 |
+                                      GDT_FLAG_SEGMENT_PRESENT |
+                                      GDT_FLAG_DATA_TYPE;
+
+    uint32_t user_data_16_seg_type = GDT_TYPE_WRITABLE |
+                                     GDT_TYPE_GROW_DOWN;
+
     /* Blank the GDT, set the NULL descriptor */
     memset(cpu_gdt, 0, sizeof(uint64_t) * GDT_ENTRY_COUNT);
 
@@ -705,6 +755,22 @@ void setup_gdt(void)
     format_gdt_entry(&cpu_gdt[KERNEL_DS_16 / 8],
                      KERNEL_DATA_SEGMENT_BASE_16, KERNEL_DATA_SEGMENT_LIMIT_16,
                      kernel_data_16_seg_type, kernel_data_16_seg_flags);
+
+    format_gdt_entry(&cpu_gdt[USER_CS / 8],
+                     USER_CODE_SEGMENT_BASE, USER_CODE_SEGMENT_LIMIT,
+                     user_code_seg_type, user_code_seg_flags);
+
+    format_gdt_entry(&cpu_gdt[USER_DS / 8],
+                     USER_DATA_SEGMENT_BASE, USER_DATA_SEGMENT_LIMIT,
+                     user_data_seg_type, user_data_seg_flags);
+
+    format_gdt_entry(&cpu_gdt[USER_CS_16 / 8],
+                     USER_CODE_SEGMENT_BASE_16, USER_CODE_SEGMENT_LIMIT_16,
+                     user_code_16_seg_type, user_code_16_seg_flags);
+
+    format_gdt_entry(&cpu_gdt[USER_DS_16 / 8],
+                     USER_DATA_SEGMENT_BASE_16, USER_DATA_SEGMENT_LIMIT_16,
+                     user_data_16_seg_type, user_data_16_seg_flags);
 
     /* Set the GDT descriptor */
     cpu_gdt_size = ((sizeof(uint64_t) * GDT_ENTRY_COUNT) - 1);
