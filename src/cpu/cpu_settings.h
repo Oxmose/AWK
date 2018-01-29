@@ -21,8 +21,10 @@
  * CONSTANTS
  ******************************************************************************/
 
+#define KERNEL_STACK_SIZE 16384 /* DO NOT FORGET TO MODIFY IN LOADER.S */
+
 /* GDT Settings */
-#define GDT_ENTRY_COUNT 9
+#define GDT_ENTRY_COUNT 10
 
 #define KERNEL_CS    0x08
 #define KERNEL_DS    0x10
@@ -54,6 +56,8 @@
 #define USER_DATA_SEGMENT_BASE_16  0x02000000
 #define USER_DATA_SEGMENT_LIMIT_16 0x000FFFFF
 
+#define TSS_SEGMENT 0x48
+
 /* GDT Flags */
 #define GDT_FLAG_GRANULARITY_4K   0x800000
 #define GDT_FLAG_GRANULARITY_BYTE 0x000000
@@ -69,6 +73,7 @@
 #define GDT_FLAG_CODE_TYPE        0x001000
 #define GDT_FLAG_DATA_TYPE        0x001000
 #define GDT_FLAG_SYSTEM_TYPE      0x000000
+#define GDT_FLAG_TSS              0x09
 
 #define GDT_TYPE_EXECUTABLE       0x8
 #define GDT_TYPE_GROW_UP          0x4
@@ -97,6 +102,37 @@
 /*******************************************************************************
  * STRUCTURES
  ******************************************************************************/
+
+typedef struct cpu_tss_entry
+{
+   uint32_t prev_tss;
+   uint32_t esp0;
+   uint32_t ss0;
+   uint32_t esp1;
+   uint32_t ss1;
+   uint32_t esp2;
+   uint32_t ss2;
+   uint32_t cr3;
+   uint32_t eip;
+   uint32_t eflags;
+   uint32_t eax;
+   uint32_t ecx;
+   uint32_t edx;
+   uint32_t ebx;
+   uint32_t esp;
+   uint32_t ebp;
+   uint32_t esi;
+   uint32_t edi;
+   uint32_t es;
+   uint32_t cs;
+   uint32_t ss;
+   uint32_t ds;
+   uint32_t fs;
+   uint32_t gs;
+   uint32_t ldt;
+   uint16_t trap;
+   uint16_t iomap_base;
+} __attribute__((__packed__)) cpu_tss_entry_t;
 
 /*******************************************************************************
  * FUNCTIONS
@@ -362,7 +398,7 @@ extern void interrupt_handler_253(void);
 extern void interrupt_handler_254(void);
 extern void interrupt_handler_255(void);
 
-/* Setup a flat GDT for the kernel. Fills the entries in the GDT table and load
+/* Setup a GDT for the kernel. Fills the entries in the GDT table and load
  * the new GDT. Set the segment registers (CS, DS, ES, FS, GS, SS).
  */
 void setup_gdt(void);
@@ -371,5 +407,8 @@ void setup_gdt(void);
  * adding basic support to the x86 excetion (int 0 - 32)
  */
 void setup_idt(void);
+
+/* Setup the main CPU TSS for the kernel. */
+void setup_tss(void);
 
 #endif /* __CPU_SETTINGS_H_ */

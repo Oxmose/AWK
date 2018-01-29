@@ -12,9 +12,9 @@ int main(int argc, char** argv)
 	(void)argc;
 	(void)argv;
 
-	thread_t test_th[2];
-	create_thread(&test_th[0], launch_tests, 64, "tests\0", NULL);
-	wait_thread(test_th[0], NULL);
+	//thread_t test_th[2];
+	//create_thread(&test_th[0], launch_tests, 64, "tests\0", NULL);
+	//wait_thread(test_th[0], NULL);
 
 	OS_RETURN_E err = OS_NO_ERR;
 	err = vesa_enable_double_buffering();

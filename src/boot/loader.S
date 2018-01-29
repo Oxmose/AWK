@@ -16,6 +16,7 @@
 ;-----------------------------------------
 extern setup_gdt
 extern setup_idt
+extern setup_tss
 extern clear_screen
 extern init_serial
 extern kernel_kickstart
@@ -28,11 +29,12 @@ extern multiboot_data_ptr
 extern cpu_info                 ; CPU INFO structure
 
 global loader                   ; Kernel entry point
+global kernel_stack             ; Kernel first stack
 
 ;-----------------------------
-; KERNEL STACK SETTIGNS
+; KERNEL STACK SETTINGS
 ;-----------------------------
-KERNEL_STACK_SIZE equ 16384
+KERNEL_STACK_SIZE equ 16384     ; DO NOT FORGET TO MODIFY IN CPU_SETTINGS.H
 
 ;-----------------------------
 ; MULTIBOOT SETTINGS
@@ -101,6 +103,9 @@ section .text:
 
     ; Setup kernel IDT
     call setup_idt
+
+    ; Setup kernel TSS
+    call setup_tss
 
     ; Setup kernel heap management
     call setup_kheap

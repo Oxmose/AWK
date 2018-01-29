@@ -33,6 +33,11 @@ extern uint64_t cpu_idt[IDT_ENTRY_COUNT];
 extern uint16_t cpu_idt_size;
 extern uint32_t cpu_idt_base;
 
+/* Kernel main TSS */
+static cpu_tss_entry_t cpu_main_tss __attribute__((aligned(4096)));
+
+extern uint32_t* kernel_stack;
+
 /*******************************************************************************
  * FUNCTIONS
  ******************************************************************************/
@@ -737,8 +742,21 @@ void setup_gdt(void)
     uint32_t user_data_16_seg_type = GDT_TYPE_WRITABLE |
                                      GDT_TYPE_GROW_DOWN;
 
+    /************************************
+     * TSS ENTRY
+     ***********************************/
+
+    uint32_t tss_seg_flags = GDT_FLAG_32_BIT_SEGMENT |
+                             GDT_FLAG_SEGMENT_PRESENT |
+                             GDT_FLAG_PL0;
+
+    uint32_t tss_seg_type = GDT_TYPE_ACCESSED |
+                            GDT_TYPE_EXECUTABLE;
+
     /* Blank the GDT, set the NULL descriptor */
     memset(cpu_gdt, 0, sizeof(uint64_t) * GDT_ENTRY_COUNT);
+
+    /* Load the segments */
 
     format_gdt_entry(&cpu_gdt[KERNEL_CS / 8],
                      KERNEL_CODE_SEGMENT_BASE, KERNEL_CODE_SEGMENT_LIMIT,
@@ -771,6 +789,11 @@ void setup_gdt(void)
     format_gdt_entry(&cpu_gdt[USER_DS_16 / 8],
                      USER_DATA_SEGMENT_BASE_16, USER_DATA_SEGMENT_LIMIT_16,
                      user_data_16_seg_type, user_data_16_seg_flags);
+
+    format_gdt_entry(&cpu_gdt[TSS_SEGMENT / 8],
+                     (uint32_t)&cpu_main_tss,
+                     ((uint32_t)(&cpu_main_tss)) + sizeof(cpu_tss_entry_t),
+                     tss_seg_type, tss_seg_flags);
 
     /* Set the GDT descriptor */
     cpu_gdt_size = ((sizeof(uint64_t) * GDT_ENTRY_COUNT) - 1);
@@ -815,4 +838,28 @@ void setup_idt(void)
     __asm__ __volatile__("lidt %0" :: "m" (cpu_idt_size), "m" (cpu_idt_base));
 
     kernel_success("IDT Initialized at 0x%08x\n", cpu_idt_base);
+}
+
+void setup_tss(void)
+{
+    /* Blank the TSS */
+    memset(&cpu_main_tss, 0, sizeof(cpu_tss_entry_t));
+
+    /* Set basic values */
+    cpu_main_tss.ss0 = KERNEL_DS;
+	cpu_main_tss.esp0 = (uint32_t)(kernel_stack + KERNEL_STACK_SIZE);
+
+    cpu_main_tss.es = KERNEL_DS;
+    cpu_main_tss.cs = KERNEL_CS;
+    cpu_main_tss.ss = KERNEL_DS;
+    cpu_main_tss.ds = KERNEL_DS;
+    cpu_main_tss.fs = KERNEL_DS;
+    cpu_main_tss.gs = KERNEL_DS;
+
+	cpu_main_tss.iomap_base = sizeof(cpu_tss_entry_t);
+
+    /* Load TSS */
+    __asm__ __volatile__("ltr %0" : : "rm" ((uint16_t)(TSS_SEGMENT)));
+
+    kernel_success("TSS Initialized at 0x%08x\n", &cpu_main_tss);
 }
