@@ -19,6 +19,7 @@
 #include "../lib/stdint.h"      /* Generic int types */
 #include "../lib/stddef.h"      /* OS_RETURN_E */
 #include "../core/interrupts.h" /* cpu_state_t stack_state_t */
+#include "../sync/semaphore.h"  /* semaphore_t */
 
 /*******************************************************************************
  * CONSTANTS
@@ -43,6 +44,15 @@ typedef struct key_mapper
     uint16_t regular[128];
     uint16_t shifted[128];
 } key_mapper_t;
+
+typedef struct kbd_buffer
+{
+    semaphore_t sem;
+    int8_t      type; /* 0 non init, 1 read, 2 getch */
+    char*       char_buf;
+    uint32_t    read_size;
+    uint32_t    read;
+} kbd_buffer_t;
 
 /*******************************************************************************
  * FUNCTIONS

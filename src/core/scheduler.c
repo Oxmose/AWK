@@ -65,7 +65,6 @@ static volatile SYSTEM_STATE_E system_state;
  * Sorted by priority:
  *     - active_thread: thread priority
  *     - sleeping_threads: thread wakeup time
- *     - io_waiting_threads: thread priority
  *
  * Global thread table used to browse the threads, even those
  * kept in a nutex / semaphore or other structure and that do
@@ -75,7 +74,6 @@ static volatile SYSTEM_STATE_E system_state;
 static kernel_list_t* active_threads_table;
 static kernel_list_t* zombie_threads_table;
 static kernel_list_t* sleeping_threads_table;
-static kernel_list_t* io_waiting_threads_table;
 static kernel_list_t* global_threads_table;
 
 /*******************************************************************************
@@ -746,12 +744,6 @@ OS_RETURN_E init_scheduler(void)
         kernel_error("Could not create sleeping_threads_table[%d]\n", err);
         kernel_panic();
     }
-    io_waiting_threads_table = kernel_list_create_list(&err);
-    if(err != OS_NO_ERR)
-    {
-        kernel_error("Could not create io_waiting_threads_table[%d]\n", err);
-        kernel_panic();
-    }
 
     /* Create idle thread */
     idle_thread = kmalloc(sizeof(kernel_thread_t));
@@ -1234,97 +1226,6 @@ OS_RETURN_E unlock_thread(kernel_list_node_t* node,
     {
         schedule();
     }
-
-    return OS_NO_ERR;
-}
-
-OS_RETURN_E lock_io(const BLOCK_TYPE_E block_type)
-{
-    OS_RETURN_E err;
-
-    /* Cant lock kernel thread */
-    if(active_thread == idle_thread)
-    {
-        return OS_ERR_UNAUTHORIZED_ACTION;
-    }
-
-    if(block_type == IO_KEYBOARD)
-    {
-        disable_local_interrupt();
-
-        /* Lock current tread */
-        active_thread->block_type = block_type;
-        active_thread->state = BLOCKED;
-
-        err = kernel_list_enlist_data(active_thread_node,
-                                      io_waiting_threads_table,
-                                      active_thread->io_req_time);
-        if(err != OS_NO_ERR)
-        {
-            kernel_error("Could not enqueue thread in kbd IO table[%d]\n", err);
-            kernel_panic();
-        }
-
-        enable_local_interrupt();
-
-
-        #ifdef DEBUG_SCHED
-        kernel_serial_debug("Thread %d io-locked, reason: %d\n",
-                             active_thread->pid,
-                             block_type);
-        #endif
-    }
-
-    return OS_NO_ERR;
-}
-
-OS_RETURN_E unlock_io(const BLOCK_TYPE_E block_type)
-{
-    kernel_thread_t*    thread;
-    kernel_list_node_t* node;
-    OS_RETURN_E         err;
-
-    if(block_type != IO_KEYBOARD)
-    {
-        return OS_ERR_UNAUTHORIZED_ACTION;
-    }
-
-    disable_local_interrupt();
-
-    node = kernel_list_delist_data(io_waiting_threads_table, &err);
-    if(err != OS_NO_ERR || node == NULL)
-    {
-        kernel_error("Could not dequeing thread in kbd IO table[%d]\n", err);
-        kernel_panic();
-    }
-
-    thread = node->data;
-    if(thread != NULL && err == OS_NO_ERR &&
-      thread->state == BLOCKED && thread->block_type == IO_KEYBOARD)
-    {
-        err = kernel_list_enlist_data(node,
-                                      active_threads_table,
-                                      thread->priority);
-        if(err != OS_NO_ERR)
-        {
-            kernel_error("Could not enqueue thread in active table[%d]\n", err);
-            kernel_panic();
-        }
-        thread->state = READY;
-    }
-    else
-    {
-        kernel_error("Could not dequee thread in kbd IO table[%d]\n", err);
-        kernel_panic();
-    }
-
-    #ifdef DEBUG_SCHED
-        kernel_serial_debug("Thread %d io-unlocked, reason: %d\n",
-                             active_thread->pid,
-                             block_type);
-        #endif
-
-    enable_local_interrupt();
 
     return OS_NO_ERR;
 }

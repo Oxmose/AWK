@@ -15,13 +15,13 @@
 #include "../cpu/cpu.h"            /* outb inb */
 #include "../core/interrupts.h"    /* register_interrupt, cpu_state,
                                     * stack_state, set_IRQ_mask, set_IRQ_EOI */
-#include "../core/scheduler.h"     /* lock_io, unlock_io */
 
 #include "../lib/stdint.h"         /* Generic int types */
 #include "../lib/stddef.h"         /* OS_RETURN_E, OS_EVENT_ID */
 #include "../lib/string.h"         /* memcpy */
 #include "../lib/stdio.h"          /* printf */
-#include "../sync/lock.h"          /* spinlock */
+#include "../sync/semaphore.h"     /* semaphore_t */
+#include "../sync/mutex.h"          /* mutex_t */
 
 /* Header file */
 #include "keyboard.h"
@@ -34,15 +34,12 @@
 static volatile uint8_t secure_input;
 static volatile uint8_t display_keyboard;
 
-/* Keybard buffer */
-static volatile uint8_t buffer_enabled;
-
 /* Shift key used */
 static volatile uint32_t keyboard_flags;
 
 /* Keyboard buffer */
-static volatile char keyboard_buffer;
-static lock_t        buffer_lock;
+static kbd_buffer_t kbd_buf;
+static mutex_t      kbd_mutex;
 
 /* Keyboard map */
 static const key_mapper_t qwerty_map =
@@ -235,6 +232,7 @@ static void manage_keycode(const int8_t keycode)
     int8_t  shifted;
     char    character;
     int32_t new_keycode;
+    OS_RETURN_E err;
     int8_t  mod = 0;
 
     /* Manage push of release */
@@ -264,10 +262,60 @@ static void manage_keycode(const int8_t keycode)
             character = (shifted > 0) ?
                          qwerty_map.shifted[keycode] :
                          qwerty_map.regular[keycode];
-            /* Save key */
-            if(buffer_enabled != 0)
+
+            /* Manage user buffer */
+            if(kbd_buf.type != 0)
             {
-                keyboard_buffer = character;
+                if(kbd_buf.type == 1)
+                {
+                    /* read */
+                    if(character == KEY_RETURN)
+                    {
+                        if(kbd_buf.read < kbd_buf.read_size)
+                        {
+                            kbd_buf.char_buf[kbd_buf.read++] = character;
+                        }
+
+                        kbd_buf.type = 0;
+
+                        err = sem_post(&kbd_buf.sem);
+                        if(err != OS_NO_ERR)
+                        {
+                            kernel_error("Keyboard driver failure");
+                            kernel_panic();
+                        }
+                    }
+                    else if(character == KEY_BACKSPACE)
+                    {
+                        if(kbd_buf.read > 0)
+                        {
+                            --kbd_buf.read;
+                        }
+
+                        kbd_buf.char_buf[kbd_buf.read] = 0;
+                    }
+                    else if(kbd_buf.read < kbd_buf.read_size)
+                    {
+                        kbd_buf.char_buf[kbd_buf.read++] = character;
+                    }
+                }
+                else if(kbd_buf.type  == 2)
+                {
+                    /* getch */
+                    if(kbd_buf.read < kbd_buf.read_size)
+                    {
+                        kbd_buf.char_buf[kbd_buf.read++] = character;
+                    }
+
+                    kbd_buf.type = 0;
+
+                    err = sem_post(&kbd_buf.sem);
+                    if(err != OS_NO_ERR)
+                    {
+                        kernel_error("Keyboard driver failure");
+                        kernel_panic();
+                    }
+                }
             }
 
             /* Display character */
@@ -327,12 +375,6 @@ static void keyboard_interrupt_handler(cpu_state_t* cpu_state, uint32_t int_id,
 
         /* Manage keycode */
         manage_keycode(keycode);
-
-        if(buffer_enabled != 0)
-        {
-            /* Unlock threads waiting for keyboards */
-            unlock_io(IO_KEYBOARD);
-        }
     }
 
     set_IRQ_EOI(KBD_IRQ_LINE);
@@ -343,12 +385,16 @@ OS_RETURN_E init_keyboard(void)
     OS_RETURN_E err;
 
     /* Init keyboard setings */
-    buffer_enabled   = 0;
-    keyboard_buffer  = 0;
     keyboard_flags   = 0;
     display_keyboard = 1;
 
-    spinlock_init(&buffer_lock);
+    err = mutex_init(&kbd_mutex, MUTEX_FLAG_NONE);
+    if(err != OS_NO_ERR)
+    {
+        return err;
+    }
+
+    memset(&kbd_buf, 0, sizeof(kbd_buffer_t));
 
     /* Init interuption settings */
     err = register_interrupt_handler(KBD_INTERRUPT_LINE,
@@ -365,35 +411,62 @@ OS_RETURN_E init_keyboard(void)
 
 uint32_t read_keyboard(char* buffer, const uint32_t size)
 {
-    char     read_char;
-    uint32_t read = 0;
+    OS_RETURN_E err;
+    uint32_t    read = 0;
 
-    do
+    if(buffer == NULL || size == 0)
     {
-        getch(&read_char);
-        if(read_char == KEY_RETURN)
-        {
-            break;
-        }
-        else if(read_char == KEY_BACKSPACE)
-        {
-            if(read > 0)
-            {
-                --read;
-            }
-
-            buffer[read] = 0;
-        }
-        else
-        {
-            buffer[read++] = read_char;
-        }
-        if(read >= size)
-        {
-            --read;
-        }
+        return 0;
     }
-    while(1);
+
+    err = mutex_pend(&kbd_mutex);
+    if(err != OS_NO_ERR)
+    {
+        kernel_error("Keyboard cannot release its mutex[%d]\n", err);
+        kernel_panic();
+    }
+
+    /* Set current buffer */
+    err = sem_init(&kbd_buf.sem, 0);
+    if(err != OS_NO_ERR)
+    {
+        kernel_error("Keyboard cannot create buffer semaphore[%d]\n", err);
+        kernel_panic();
+    }
+    kbd_buf.char_buf  = buffer;
+    kbd_buf.read_size = size;
+    kbd_buf.read      = 0;
+    kbd_buf.type      = 1;
+
+    /* Wait for completion */
+    err = sem_pend(&kbd_buf.sem);
+    if(err != OS_NO_ERR)
+    {
+        kernel_error("Keyboard cannot pend buffer semaphore[%d]\n", err);
+        kernel_panic();
+    }
+
+    read = kbd_buf.read;
+
+    /* Release resources */
+    err = sem_destroy(&kbd_buf.sem);
+    if(err != OS_NO_ERR)
+    {
+        kernel_error("Keyboard cannot delete buffer semaphore[%d]\n", err);
+        kernel_panic();
+    }
+
+    kbd_buf.char_buf  = NULL;
+    kbd_buf.read_size = 0;
+    kbd_buf.read      = 0;
+    kbd_buf.type      = 0;
+
+    err = mutex_post(&kbd_mutex);
+    if(err != OS_NO_ERR)
+    {
+        kernel_error("Keyboard cannot release its mutex[%d]\n", err);
+        kernel_panic();
+    }
 
     return read;
 }
@@ -418,27 +491,60 @@ uint32_t secure_read_keyboard(char* buffer, const uint32_t size)
 
 void getch(char* character)
 {
-    spinlock_lock(&buffer_lock);
+    OS_RETURN_E err;
 
-    /* Enable buffer */
-    ++buffer_enabled;
-
-    /* If no character is in the buffer but the thread in IO waiting state */
-    while(keyboard_buffer == 0)
+    if(character == NULL)
     {
-        lock_io(IO_KEYBOARD);
-        spinlock_unlock(&buffer_lock);
-        schedule();
-        spinlock_lock(&buffer_lock);
+        return;
     }
 
-    *character = keyboard_buffer;
-    keyboard_buffer = 0;
+    err = mutex_pend(&kbd_mutex);
+    if(err != OS_NO_ERR)
+    {
+        kernel_error("Keyboard cannot release its mutex[%d]\n", err);
+        kernel_panic();
+    }
 
-    /* Disable buffer */
-    --buffer_enabled;
+    /* Set current buffer */
+    err = sem_init(&kbd_buf.sem, 0);
+    if(err != OS_NO_ERR)
+    {
+        kernel_error("Keyboard cannot create buffer semaphore[%d]\n", err);
+        kernel_panic();
+    }
+    
+    kbd_buf.char_buf  = character;
+    kbd_buf.read_size = 1;
+    kbd_buf.read      = 0;
+    kbd_buf.type      = 2;
 
-    spinlock_unlock(&buffer_lock);
+    /* Wait for completion */
+    err = sem_pend(&kbd_buf.sem);
+    if(err != OS_NO_ERR)
+    {
+        kernel_error("Keyboard cannot pend buffer semaphore[%d]\n", err);
+        kernel_panic();
+    }
+
+    /* Release resources */
+    err = sem_destroy(&kbd_buf.sem);
+    if(err != OS_NO_ERR)
+    {
+        kernel_error("Keyboard cannot delete buffer semaphore[%d]\n", err);
+        kernel_panic();
+    }
+
+    kbd_buf.char_buf  = NULL;
+    kbd_buf.read_size = 0;
+    kbd_buf.read      = 0;
+    kbd_buf.type      = 0;
+
+    err = mutex_post(&kbd_mutex);
+    if(err != OS_NO_ERR)
+    {
+        kernel_error("Keyboard cannot release its mutex[%d]\n", err);
+        kernel_panic();
+    }
 }
 
 void keyboard_enable_secure(void)

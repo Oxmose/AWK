@@ -156,20 +156,6 @@ OS_RETURN_E unlock_thread(kernel_list_node_t* node,
  */
 kernel_list_node_t* lock_thread(const BLOCK_TYPE_E block_type);
 
-/* Lock the current thread waiting for an IO. The caller of this function must
- * call schedule() after.
- * @param block_type The type of IO that locks the thread.
- * @returns OS_NO_ERR on success, error code otherwise.
- */
-OS_RETURN_E lock_io(const BLOCK_TYPE_E block_type);
-
-/* Unlock a thread that was waiting for an IO.
- * Schedule if necessary.
- * @param block_type The type of IO that locks the thread.
- * @returns OS_NO_ERR on success, error code otherwise.
- */
-OS_RETURN_E unlock_io(const BLOCK_TYPE_E block_type);
-
 /* Get all the system threads information.
  * The function will fill the structure given as parameter until there is no
  * more thread to gather information from or the function already gathered
