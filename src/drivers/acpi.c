@@ -14,7 +14,7 @@
 #include "../lib/stdint.h"         /* Generic int types */
 #include "../lib/stddef.h"         /* OS_RETURN_E */
 #include "../lib/string.h"         /* memcpy */
-#include "../cpu/cpu.h"            /* MAX_CPU_COUNT */
+#include "../cpu/smp.h"            /* MAX_CPU_COUNT */
 #include "../core/kernel_output.h" /* kernel_error */
 #include "../memory/paging.h"      /* kernel_mmap */
 
@@ -28,7 +28,7 @@
  ******************************************************************************/
 
 /* CPU informations */
-static uint32_t cpu_count;
+static uint32_t cpu_count = 0;
 static uint32_t cpu_ids[MAX_CPU_COUNT];
 
 /* CPU LAPIC */
@@ -905,4 +905,14 @@ OS_RETURN_E acpi_check_lapic_id(const uint32_t lapic_id)
     }
 
     return OS_ERR_NO_SUCH_LAPIC_ID;
+}
+
+int32_t acpi_get_detected_cpu_count(void)
+{
+    if(cpu_count == 0)
+    {
+        return -1;
+    }
+
+    return cpu_count;
 }

@@ -12,7 +12,7 @@
  * AT THIS POINT INTERRUPT SHOULD BE DISABLED
  ******************************************************************************/
 
-#include "../memory/paging.h"       /* mem_range_t */
+#include "../memory/paging.h"       /* get_memory_map */
 #include "../lib/string.h"          /* memcpy */
 #include "../drivers/ata.h"         /* init_ata */
 #include "../drivers/serial.h"      /* init_serial */
@@ -26,6 +26,7 @@
 #include "../drivers/pic.h"         /* init_pic */
 #include "../drivers/acpi.h"        /* init_acpi */
 #include "../cpu/cpu.h"             /* get_cpu_info */
+#include "../cpu/smp.h"             /* get_cpu_count */
 #include "../core/scheduler.h"      /* init_scheduler */
 #include "../core/interrupts.h"     /* init_kernel_interrupt */
 #include "../core/panic.h"          /* kernel_panic */
@@ -41,11 +42,6 @@
  * GLOBAL VARIABLES
  ******************************************************************************/
 
-extern multiboot_info_t* multiboot_data_ptr;
-extern uint32_t          memory_map_size;
-extern mem_range_t       memory_map_data[];
-extern uint32_t          _end;
-
 /*******************************************************************************
  * FUNCTIONS
  ******************************************************************************/
@@ -60,33 +56,18 @@ void kernel_kickstart(void)
 
     uint32_t regs[4]; //eax, ebx, ecx, edx;
     uint32_t ret;
-    uint32_t i;
-    multiboot_memory_map_t* mmap;
 
-
-    /* Copy multiboot data in upper memory */
-    mmap = (multiboot_memory_map_t*)multiboot_data_ptr->mmap_addr;
-    i = 0;
-    while((uint32_t)mmap < multiboot_data_ptr->mmap_addr + multiboot_data_ptr->mmap_length)
+    /* Init memory map */
+    err = init_memory_map();
+    if(err == OS_NO_ERR)
     {
-        memory_map_data[i].base  = (uint32_t)mmap->addr;
-        memory_map_data[i].limit = (uint32_t)mmap->addr + (uint32_t)mmap->len;
-        memory_map_data[i].type  = mmap->type;
-        ++i;
-        mmap = (multiboot_memory_map_t*)((uint32_t)mmap + mmap->size + sizeof(mmap->size));
+        kernel_success("Memory map Initialized\n");
     }
-    memory_map_size = i - 1;
-
-    kernel_info("Memory map: \n");
-    for(i = 0; i < memory_map_size; ++i)
+    else
     {
-        kernel_info("Base 0x%08x, Limit 0x%08x, Length %uKB, Type %d\n",
-                    memory_map_data[i].base,
-                    memory_map_data[i].limit,
-                    (memory_map_data[i].limit - memory_map_data[i].base) / 1024,
-                    memory_map_data[i].type);
+        kernel_error("Memory map Initialization error [%d]\n", err);
+        kernel_panic();
     }
-    kernel_info("Kernel static memory ends 0x%08x \n", &_end);
 
     /* Init paging */
     err = init_paging();
@@ -99,6 +80,19 @@ void kernel_kickstart(void)
         kernel_error("Paging Initialization error [%d]\n", err);
         kernel_panic();
     }
+
+    /* Init ACPI */
+    err = init_acpi();
+    if(err == OS_NO_ERR)
+    {
+        kernel_success("ACPI Initialized\n");
+    }
+    else
+    {
+        kernel_error("ACPI Initialization error [%d]\n", err);
+    }
+
+    kernel_info("CPU count: %d\n", get_cpu_count());
 
     /* Get CPUID info */
     err = get_cpu_info(&cpu_info);
@@ -155,7 +149,7 @@ void kernel_kickstart(void)
     err = text_vga_to_vesa();
     if(err != OS_NO_ERR)
     {
-        kernel_error("VESA swtich error [%d]\n", err);
+        kernel_error("VESA switch error [%d]\n", err);
     }
 
     /* Init SERIAL */
@@ -167,17 +161,6 @@ void kernel_kickstart(void)
     else
     {
         kernel_error("SERIAL Initialization error [%d]\n", err);
-    }
-
-    /* Init ACPI */
-    err = init_acpi();
-    if(err == OS_NO_ERR)
-    {
-        kernel_success("ACPI Initialized\n");
-    }
-    else
-    {
-        kernel_error("ACPI Initialization error [%d]\n", err);
     }
 
     /* Init kernel interrupt handlers */

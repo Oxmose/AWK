@@ -23,7 +23,7 @@ extern kernel_kickstart
 extern setup_kheap
 
 extern _edata
-extern mem_heap_end
+extern kernel_heap_end
 extern multiboot_data_ptr
 
 extern cpu_info                 ; CPU INFO structure
@@ -76,7 +76,7 @@ section .text:
     blank_mem:
         mov  [edi], eax
         add  edi, 4
-        cmp  edi, mem_heap_end
+        cmp  edi, kernel_heap_end
         jl  blank_mem
 
     ; Init CPU info structure

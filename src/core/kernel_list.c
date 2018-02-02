@@ -208,8 +208,8 @@ kernel_list_node_t* kernel_list_delist_data(kernel_list_t* list,
         if(error != NULL)
         {
             *error = OS_ERR_NULL_POINTER;
-            return NULL;
         }
+        return NULL;
     }
 
     if(error != NULL)

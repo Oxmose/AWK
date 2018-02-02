@@ -104,20 +104,8 @@ static void* init_func(void* args)
 
     (void)args;
 
-    err = vesa_enable_double_buffering();
-	if(err != OS_NO_ERR)
-	{
-		kernel_error("ERROR WHILE ENABLING VESA DOUBLE BUFFER %d\n", err);
-	}
-
     /* Call main */
     main(1, argv);
-
-    err = vesa_disable_double_buffering();
-	if(err != OS_NO_ERR)
-	{
-		kernel_error("ERROR WHILE DISABLING VESA DOUBLE BUFFER %d\n", err);
-	}
 
     #ifdef DEBUG_SCHED
     kernel_serial_debug("Main returned, INIT waiting for children\n");

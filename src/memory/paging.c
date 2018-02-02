@@ -26,8 +26,11 @@
  ******************************************************************************/
 
 /* Memory map data */
-extern uint32_t    memory_map_size;
-extern mem_range_t memory_map_data[];
+extern uint32_t          memory_map_size;
+extern mem_range_t       memory_map_data[];
+extern multiboot_info_t* multiboot_data_ptr;
+extern uint32_t          _end;
+extern uint32_t          user_mem_start;
 
 /* Allocation tracking */
 static mem_range_t current_mem_range;
@@ -49,6 +52,39 @@ __inline__ static void invalidate_tlb(void)
     /* Invalidate the TLB */
     __asm__ __volatile__("movl	%cr3,%eax");
 	__asm__ __volatile__("movl	%eax,%cr3");
+}
+
+OS_RETURN_E init_memory_map(void)
+{
+    multiboot_memory_map_t* mmap;
+    uint32_t i;
+
+    /* Copy multiboot data in upper memory */
+    mmap = (multiboot_memory_map_t*)multiboot_data_ptr->mmap_addr;
+    i = 0;
+    while((uint32_t)mmap < multiboot_data_ptr->mmap_addr + multiboot_data_ptr->mmap_length)
+    {
+        memory_map_data[i].base  = (uint32_t)mmap->addr;
+        memory_map_data[i].limit = (uint32_t)mmap->addr + (uint32_t)mmap->len;
+        memory_map_data[i].type  = mmap->type;
+        ++i;
+        mmap = (multiboot_memory_map_t*)((uint32_t)mmap + mmap->size + sizeof(mmap->size));
+    }
+    memory_map_size = i - 1;
+
+    kernel_info("Memory map: \n");
+    for(i = 0; i < memory_map_size; ++i)
+    {
+        kernel_info("\tBase 0x%08x, Limit 0x%08x, Length %09uKB, Type %02d\n",
+                    memory_map_data[i].base,
+                    memory_map_data[i].limit,
+                    (memory_map_data[i].limit - memory_map_data[i].base) / 1024,
+                    memory_map_data[i].type);
+    }
+    kernel_info("Kernel memory limit [SATIC: 0x%08x | DYNAMIC: 0x%08x]\n", &_end, &user_mem_start);
+    kernel_info("Kernel free memory %uKb\n", (uint32_t)&user_mem_start - (uint32_t)&_end);
+
+    return OS_NO_ERR;
 }
 
 OS_RETURN_E init_paging(void)
@@ -75,13 +111,14 @@ OS_RETURN_E init_paging(void)
         return OS_ERR_NO_MORE_FREE_MEM;
     }
 
-    kernel_memory_size = KERNEL_MEMORY_KB_SIZE / KERNEL_PAGE_SIZE;
-    if(KERNEL_MEMORY_KB_SIZE % KERNEL_PAGE_SIZE != 0)
+    kernel_memory_size = ((uint32_t)&user_mem_start / 1024) / KERNEL_PAGE_SIZE;
+    if(((uint32_t)&user_mem_start / 1024)  % KERNEL_PAGE_SIZE != 0)
     {
         ++kernel_memory_size;
     }
 
     #ifdef DEBUG_MEM
+    kernel_serial_debug("Kernel memory size: %u \n", kernel_memory_size);
     kernel_serial_debug("Selected free memory range: \n");
     kernel_serial_debug("\tBase 0x%08x, Limit 0x%08x, Length %uKB, Type %d\n",
                 current_mem_range.base,

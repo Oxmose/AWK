@@ -17,7 +17,6 @@ TESTS_DIR = $(wildcard tests/core/*.c tests/core/*.S tests/other/*.c tests/other
 USER_DIR = $(wildcard user/*.c user/*.S)
 GUI_DIR = $(wildcard gui/*.c gui/*.S)
 
-
 # on compile tous les fichiers assembleur et c du repertoire
 SRCS = $(BOOT_DIR) $(CPU_DIR) $(CORE_DIR) $(DRIVERS_DIR) $(LIB_DIR)\
 $(STDLIB_DIR) $(STRLIB_DIR) $(SYNC_DIR) $(COMM_DIR) $(TESTS_DIR) $(USER_DIR)\
@@ -37,7 +36,8 @@ CFLAGS = -m32 -g -gstabs -O0 -std=c99 -nostdinc -fno-builtin\
 		 -Wextra -Werror -Wimplicit-fallthrough=0 -c
 ASFLAGS = -f elf -w+gnu-elf-extensions
 LDFLAGS = -e loader -T linker.ld -melf_i386
-QEMUOPTS = -cpu core2duo -d guest_errors -rtc base=localtime -m 128M -gdb tcp::1234 -vga std\
+QEMUOPTS = -cpu core2duo -d guest_errors -rtc base=localtime -m 128M\
+           -gdb tcp::1234 -vga std -smp 4\
            -hda ../hdd.img -kernel
 
 # cible principale, on nettoie systematiquement le repertoire avant
@@ -54,12 +54,11 @@ kernel.bin: linker.ld $(OBJS)
 %.o: %.S
 	$(AS) $(ASFLAGS) $< -o $@
 
-
 clean:
 	$(RM) $(OBJS) $(KERNEL)
 
 run:
-	$(QEMU) $(QEMUOPTS) $(KERNEL) -serial stdio 
+	$(QEMU) $(QEMUOPTS) $(KERNEL) -serial stdio
 
 debug:
 	$(QEMU) $(QEMUOPTS) $(KERNEL) -S

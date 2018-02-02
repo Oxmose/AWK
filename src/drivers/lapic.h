@@ -82,7 +82,7 @@
 
 #define LAPIC_TIMER_MODE_PERIODIC       0x20000
 #define LAPIC_DIVIDER_16                0x3
-#define LAPIC_TIMER_SCHED_FREQUENCY     1000
+#define LAPIC_TIMER_SCHED_FREQUENCY     500
 #define APIC_LVT_INT_MASKED             0x10000
 
 /*******************************************************************************

@@ -6,32 +6,32 @@ SECTIONS
     _start = .;
 
     /* Put the multiboot header */
-    .multiboot BLOCK(4K) : ALIGN(4K)
+    .multiboot ALIGN(4K) :
     {
         *(.multiboot)
     }
 
     /* Executable code */
-    .text BLOCK(4K) : ALIGN(4K)
+    .text ALIGN(4K) :
     {
         *(.text)
     }
 
     /* Read-only data. */
-    .rodata BLOCK(4K) : ALIGN(4K)
+    .rodata ALIGN(4K) :
     {
         *(.rodata)
     }
 
     /* Read-write data */
-    .data BLOCK(4K) : ALIGN(4K)
+    .data ALIGN(4K) :
     {
         *(.data)
         _edata  =  .;
     }
 
     /* Read-write data and stack */
-    .bss BLOCK(4K) : ALIGN(4K)
+    .bss ALIGN(4K) :
     {
         __bss_start = .;
         *(COMMON)
@@ -40,6 +40,15 @@ SECTIONS
     }
 
     _end = .;
+
+    /* Beginning of kernel memory heap */
+    kernel_heap_start = _end;
+
+    /* End of kernel memory heap at 32Mb */
+    kernel_heap_end = 0x2000000;
+
+    /* User/Kernel SPACE Memory start */
+    user_mem_start = kernel_heap_end;
 
     /**********************************************
      * SPECIFIC DATA STRUCTURES BASE ADDRESS
@@ -62,13 +71,4 @@ SECTIONS
     multiboot_data_ptr = 0x10100C; /* 32bits */
     memory_map_size    = 0x101010; /* 32bits */
     memory_map_data    = 0x101014; /* SIZE = 16384bits, ends at 0x101814 */
-
-    /* Beginning of kernel memory heap 16Mb */
-    mem_heap_start = 0x1000000;
-
-    /* End of kernel memory heap 32Mb = 16Mb */
-    mem_heap_end = 0x2000000;
-
-    /* User/Kernel SPACE Memory start */
-    user_mem_start = mem_heap_end;
 }

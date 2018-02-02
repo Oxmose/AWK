@@ -25,8 +25,8 @@
  ******************************************************************************/
 
 /* Heap position in memory */
-extern uint8_t mem_heap_start;
-extern uint8_t mem_heap_end;
+extern uint8_t kernel_heap_start;
+extern uint8_t kernel_heap_end;
 
 /* Heap data */
 static mem_chunk_t* free_chunk[NUM_SIZES] = { NULL };
@@ -242,8 +242,8 @@ void setup_kheap(void)
     uint32_t len;
     int32_t  n;
 
-    void* mem = &mem_heap_start;
-    uint32_t size = &mem_heap_end - &mem_heap_start;
+    void* mem = &kernel_heap_start;
+    uint32_t size = &kernel_heap_end - &kernel_heap_start;
     int8_t *mem_start = (int8_t*)(((intptr_t)mem + ALIGN - 1) & (~(ALIGN - 1)));
     int8_t *mem_end = (int8_t*)(((intptr_t)mem + size) & (~(ALIGN - 1)));
 

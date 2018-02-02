@@ -32,15 +32,16 @@ static void* update_desktop(void* args)
     (void)args;
     while(update_enabled)
     {
+
         spinlock_lock(&desktop_buffer_lock);
         memcpy(desktop_buffer, background, screen_mem_size);
         spinlock_unlock(&desktop_buffer_lock);
 
         draw_status_bar();
 
-        for(i = 0; i < 5; ++i)
+        for(i = 0; i < 10; ++i)
         {
-            draw_window(&windows[i]);
+            //draw_window(&windows[i]);
         }
 
         draw_mouse();
@@ -49,7 +50,7 @@ static void* update_desktop(void* args)
         vesa_fill_screen(desktop_buffer);
         spinlock_unlock(&desktop_buffer_lock);
 
-        //sleep(10);
+        sleep(10);
     }
 
     return NULL;
@@ -65,6 +66,12 @@ OS_RETURN_E start_gui(void)
     uint32_t offset_line;
     uint32_t i;
     uint32_t j;
+
+    err = vesa_enable_double_buffering();
+    if(err != OS_NO_ERR)
+    {
+        kernel_error("ERROR WHILE ENABLING VESA DOUBLE BUFFER %d\n", err);
+    }
 
     spinlock_init(&desktop_buffer_lock);
 

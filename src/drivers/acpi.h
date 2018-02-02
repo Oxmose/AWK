@@ -338,4 +338,11 @@ uint8_t* acpi_get_io_apic_address(void);
  */
 OS_RETURN_E acpi_check_lapic_id(const uint32_t lapic_id);
 
+/* Returns the number of CPU detected on the system. -1 is returned in case of
+ * error.
+ *
+ * @returns The number of CPU detected in the system, -1 on error.
+ */
+int32_t acpi_get_detected_cpu_count(void);
+
 #endif /* __ACPI_H_ */

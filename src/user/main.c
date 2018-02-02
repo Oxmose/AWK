@@ -16,17 +16,23 @@ int main(int argc, char** argv)
 	//create_thread(&test_th[0], launch_tests, 64, "tests\0", NULL);
 	//wait_thread(test_th[0], NULL);
 
-	OS_RETURN_E err = OS_NO_ERR;
-	err = vesa_enable_double_buffering();
-	if(err != OS_NO_ERR)
-	{
-		printf("\nERROR WHILE ENABLING VESA DOUBLE BUFFER %d\n", err);
-	}
+	printf("AWK v0.4.52\n");
 
-	printf("\n");
-	printf("\nPress enter key to start demo");
-    char t;
-    getch(&t);
+    char login[25];
+	char passwd[25];
+
+	do
+	{
+		printf("Login: ");
+	    secure_read_keyboard(login, 24);
+		printf("Password: ");
+		secure_read_keyboard(passwd, 24);
+		printf("\n");
+	}
+	while(strncmp(passwd, "root", 4) != 0);
+
+	printf("Welcome %s\n", login);
+	sleep(2000);
 
 	keyboard_disable_display();
 	if(start_gui() != OS_NO_ERR)
